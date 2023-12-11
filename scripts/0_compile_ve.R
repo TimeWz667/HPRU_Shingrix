@@ -1,0 +1,176 @@
+library(tidyverse)
+
+
+folder_raw <- function(x) here::here("data", "raw", x)
+folder_data <- function(x) here::here("data", x)
+
+
+## VE sampler
+sample_ve <- function(obj_ve, vaccination_age = 70, ...) {
+  UseMethod("sample_ve")
+}
+
+
+#### AJ zostavax ----
+VE <- read_csv(folder_raw("VE_old_AJ_model.csv")) %>% 
+  full_join(tibble(age = 0:100), by = "age") %>% 
+  arrange(age) %>% 
+  fill(VE, .direction = "updown")
+
+VE <- list(src = VE)
+class(VE) <- "ve_aj"
+
+
+sample_ve.ve_aj <- function(obj_ve, vaccination_age = 70, ...) {
+  obj_ve$src
+}
+
+
+save(VE, sample_ve, sample_ve.ve_aj, file = folder_data("VE_Zostavax_NIC_AJ.rdata"))
+save(VE, sample_ve, sample_ve.ve_aj, file = folder_data("VE_Zostavax_IC_AJ.rdata"))
+
+
+### VE HZ NIC -----
+sample_ve.ve_mcmc_nic <- function(obj_ve, vaccination_age = 70, years_projected = 100 - vaccination_age, ...) {
+  tibble(age = vaccination_age:(vaccination_age+years_projected)) %>% 
+    cross_join(obj_ve$src %>% filter(VID == sample(VID, 1))) %>% 
+    mutate(
+      lambda = lambda_intercept + lambda_slope * age,
+      VE = lambda * exp(- delta * seq(1, years_projected + 1) * 365)
+    ) %>% 
+    full_join(tibble(age = 0:100), by = "age") %>% 
+    mutate(
+      VE = ifelse(is.na(VE), 0, VE)
+    ) %>% 
+    select(age, VE) %>% 
+    arrange(age)
+}
+
+
+#### Zostavax nonIC ----
+VE <- list(
+  src = read_csv(folder_raw("01-01-2019 MCMC_chain_zostavax_50000.csv"))[-1] %>% 
+    rename(delta = X1, sigma_intercept = X2, sigma_slope = X3, lambda_intercept = X4, lambda_slope = X5, VID = iteration)
+)
+class(VE) <- "ve_mcmc_nic"
+
+save(VE, sample_ve, sample_ve.ve_mcmc_nic, file = folder_data("VE_Zostavax_NIC.rdata"))
+
+
+#### Shingrix nonIC ----
+VE <- list(
+  src = read_csv(folder_raw("31-07-2018 MCMC_chain_shingrix_50000.csv"))[-1] %>% 
+    rename(delta = X1, sigma_intercept = X2, sigma_slope = X3, lambda_intercept = X4, lambda_slope = X5, VID = iteration)
+)
+class(VE) <- "ve_mcmc_nic"
+
+save(VE, sample_ve, sample_ve.ve_mcmc_nic, file = folder_data("VE_Shingrix_NIC.rdata"))
+
+
+### VE HZ IC -----
+sample_ve.ve_mcmc_ic <- function(obj_ve, vaccination_age = 70, years_projected = 100 - vaccination_age, ...) {
+  ve_nic <- obj_ve$src %>% filter(VID == sample(VID, 1))
+  ve_ic <- sample(obj_ve$VE_IC$VE, 1)
+  
+  ratio54 <- with(as.list(ve_nic), {
+    years_projected_ic <- 2.35
+    lambda <- lambda_intercept + lambda_slope * 54
+    ve54 <- lambda * exp(-delta * (round(365*years_projected_ic)))
+    ve_ic / ve54
+  })
+  
+  
+  tibble(age = vaccination_age:(vaccination_age + years_projected)) %>% 
+    cross_join(ve_nic) %>% 
+    mutate(
+      lambda = lambda_intercept + lambda_slope * age,
+      VE = lambda * exp(- delta * seq(1, years_projected + 1) * 365),
+      VE = VE * ratio54
+    ) %>% 
+    full_join(tibble(age = 0:100), by = "age") %>% 
+    mutate(
+      VE = ifelse(is.na(VE), 0, VE)
+    ) %>% 
+    select(age, VE) %>% 
+    arrange(age)
+}
+
+# #### Zostavax IC ----
+# mcmc_ve <- read_csv(folder_raw("01-01-2019 MCMC_chain_zostavax_50000.csv"))[-1] %>% 
+#   rename(delta = X1, sigma_intercept = X2, sigma_slope = X3, lambda_intercept = X4, lambda_slope = X5, VID = iteration)
+# 
+# save(mcmc_ve, sample_ve, file = folder_data("VE_Zostavax_IC.rdata"))
+
+
+
+#### Shingrix IC ----
+VE <- list(
+  src = read_csv(folder_raw("31-07-2018 MCMC_chain_shingrix_50000.csv"))[-1] %>% 
+    rename(delta = X1, sigma_intercept = X2, sigma_slope = X3, lambda_intercept = X4, lambda_slope = X5, VID = iteration),
+  VE_IC = read_csv(folder_raw("03-01-2019 VE Shingrix IC.csv"))[-1]
+)
+class(VE) <- "ve_mcmc_ic"
+
+
+save(VE, sample_ve, sample_ve.ve_mcmc_ic, file = folder_data("VE_Shingrix_IC.rdata"))
+
+
+
+## Not run
+library(tidyverse)
+
+theme_set(theme_bw() + theme(text = element_text(family = "sans")))
+
+
+folder_data <- function(x) here::here("data", x)
+
+
+tab <- bind_rows(local({
+  load(folder_data("VE_Shingrix_IC.rdata")) 
+  bind_rows(lapply(1:500, function(i) {
+    sample_ve(VE) %>% 
+      mutate(
+        Key = i,
+        Vaccine = "Shingrix",
+        Gp = "IC"
+      )
+  }))
+}), local({
+  load(folder_data("VE_Shingrix_NIC.rdata")) 
+  bind_rows(lapply(1:500, function(i) {
+    sample_ve(VE) %>% 
+      mutate(
+        Key = i,
+        Vaccine = "Shingrix",
+        Gp = "NIC"
+      )
+  }))
+}), local({
+  load(folder_data("VE_Zostavax_NIC.rdata")) 
+  bind_rows(lapply(1:500, function(i) {
+    sample_ve(VE) %>% 
+      mutate(
+        Key = i,
+        Vaccine = "Zostavax",
+        Gp = "NIC"
+      )
+  }))
+})
+)
+
+
+tab %>% 
+  filter(age > 70) %>% 
+  group_by(age, Vaccine, Gp) %>% 
+  summarise(
+    M = median(VE),
+    L = quantile(VE, 0.025),
+    U = quantile(VE, 0.975)
+  ) %>% 
+  ggplot() + 
+  geom_ribbon(aes(ymin = L, ymax = U, x = age, fill = Gp), alpha = 0.3) +
+  geom_line(aes(x = age, y = M, colour = Gp)) +
+  scale_y_continuous("VE %", labels = scales::percent) +
+  expand_limits(y = 1) + 
+  facet_grid(. ~ Vaccine)
+
