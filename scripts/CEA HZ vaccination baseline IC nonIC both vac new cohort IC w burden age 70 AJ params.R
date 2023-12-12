@@ -143,7 +143,6 @@ VE <- read_csv(folder_data("VE_old_AJ_model.csv"))
 
 ### HZ mortality
 # AJ's old mortality
-
 HZ_mortality <- read_csv(folder_data("CFR_HZ_old_AJ_model.csv")) %>% 
   rename(age = Age, HZ_mortality_rate = CFR) %>% 
   mutate(p_deaths_HZ = 0)

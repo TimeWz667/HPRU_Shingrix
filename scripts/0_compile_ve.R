@@ -30,6 +30,9 @@ save(VE, sample_ve, sample_ve.ve_aj, file = folder_data("VE_Zostavax_NIC_AJ.rdat
 save(VE, sample_ve, sample_ve.ve_aj, file = folder_data("VE_Zostavax_IC_AJ.rdata"))
 
 
+
+
+
 ### VE HZ NIC -----
 sample_ve.ve_mcmc_nic <- function(obj_ve, vaccination_age = 70, years_projected = 100 - vaccination_age, ...) {
   tibble(age = vaccination_age:(vaccination_age+years_projected)) %>% 
@@ -47,6 +50,19 @@ sample_ve.ve_mcmc_nic <- function(obj_ve, vaccination_age = 70, years_projected 
 }
 
 
+sample_ve.ve_mcmc_phn <- function(obj_ve, vaccination_age = 70, years_projected = 100 - vaccination_age, ...) {
+  obj_ve$src %>% 
+    filter(Key == sample(unique(Key), 1)) %>% 
+    mutate(
+      age = vaccination_age + T_Covered
+    ) %>% 
+    select(age, VE_PHN = VE_PHN_w_HZ) %>% 
+    full_join(tibble(age = 0:100)) %>% 
+    arrange(age) %>% 
+    mutate(VE_PHN = ifelse(is.na(VE_PHN), 0, VE_PHN))
+}
+
+
 #### Zostavax nonIC ----
 VE <- list(
   src = read_csv(folder_raw("01-01-2019 MCMC_chain_zostavax_50000.csv"))[-1] %>% 
@@ -54,7 +70,18 @@ VE <- list(
 )
 class(VE) <- "ve_mcmc_nic"
 
-save(VE, sample_ve, sample_ve.ve_mcmc_nic, file = folder_data("VE_Zostavax_NIC.rdata"))
+
+# Add VE_PHN_w_HZ
+VE_PHN <- list(
+  src = read_csv(folder_raw("03-05-2018 VE for PHN w HZ for each year post vac 100 000 draws.csv"))[-1] %>% 
+    mutate(Key = 1:n()) %>% 
+    pivot_longer(- Key, values_to = "VE_PHN_w_HZ", names_to = "T_Covered") %>% 
+    mutate(T_Covered = as.numeric(gsub("age_", "", T_Covered)) - 70)
+)
+class(VE_PHN) <- "ve_mcmc_phn"
+
+
+save(VE, VE_PHN, sample_ve, sample_ve.ve_mcmc_nic, sample_ve.ve_mcmc_phn, file = folder_data("VE_Zostavax_NIC.rdata"))
 
 
 #### Shingrix nonIC ----
