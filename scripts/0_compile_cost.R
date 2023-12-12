@@ -36,6 +36,8 @@ index_2005_06<-240.9
 Cost_Hospitalisation_HZ <- read_csv(folder_raw("Cost HZ hospitalisation sim_coef_agelm_rr_100000.csv"))[-1] %>% 
   rename(beta_age = age) %>% 
   mutate(Key = 1:n()) %>% 
+  filter(Key == sample(Key, 1000)) %>% 
+  mutate(Key = 1:n()) %>% 
   crossing(tibble(age = 0:100)) %>% 
   arrange(Key, age) %>% 
   mutate(
@@ -56,6 +58,8 @@ save(Cost_Hospitalisation_HZ, file = folder_data("Cost_Hospitalisation_NIC.rdata
 #### IC read data & function to get hospitalisation costs from coefficients
 Cost_Hospitalisation_HZ <- read_csv(folder_raw("Cost HZ hospitalisation IC sim_coef_agelm_rr_100000.csv"))[-1] %>% 
   rename(beta_age = age) %>% 
+  mutate(Key = 1:n()) %>% 
+  filter(Key == sample(Key, 1000)) %>% 
   mutate(Key = 1:n()) %>% 
   crossing(tibble(age = 0:100)) %>% 
   arrange(Key, age) %>% 
