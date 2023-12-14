@@ -73,32 +73,3 @@ QOL %>% filter(Key == 1) %>% data.frame()
 
 
 save(QOL, file = folder_data("QOL_LE.rdata"))
-
-
-# Add QL over 3 months to the discounted QALY loss for year 2 (no QL from year 3 onward)
-for(i in 1:n.run){
-  l[[i]]$QL_o3m_pre_vac_d<-l[[i]]$QL_y1_o3m+l[[i]]$QL_y2_d
-}
-
-
-
-### EQ5D population norms
-# #Szende A, Janssen B, Cabases J. Self-reported population health: an international perspective based on EQ-5D. Dordrecht: Springer; 2014. TTO value set England. p30
-popest<-data.frame(age=18:100,
-                   pe=c(rep(0.929, length(18:24)),
-                        rep(0.919, length(25:34)),
-                        rep(0.893, length(35:44)),
-                        rep(0.855, length(45:54)),
-                        rep(0.810,  length(55:64)),
-                        rep(0.773, length(65:74)),
-                        rep(0.703, length(75:100))))
-# from AJs model
-# popest<-data.frame(age=0:100,
-#                     pe=c(rep(0.9, length(0:14)),
-#                          rep(0.88, length(15:19)),
-#                          rep(0.87, length(20:39)),
-#                          rep(0.85, length(40:49)),
-#                          rep(0.8,  length(50:69)),
-#                          rep(0.75, length(70:79)),
-#                          rep(0.725, length(80:100))))
-

@@ -66,7 +66,7 @@ Pop_IC_2015 <- Pop_IC %>%
 
 
 Pop <- Pop_IC_2015 %>% 
-  select(Pop = Pop_IC) %>% 
+  select(age, Pop = Pop_IC) %>% 
   full_join(Background_mortality)
 
 

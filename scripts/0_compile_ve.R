@@ -6,7 +6,7 @@ folder_data <- function(x) here::here("data", x)
 
 
 ## VE sampler
-sample_ve <- function(obj_ve, vaccination_age = 70, ...) {
+sample_ve <- function(obj_ve, vaccination_age = 70, vid = NA, ...) {
   UseMethod("sample_ve")
 }
 
@@ -34,9 +34,16 @@ save(VE, sample_ve, sample_ve.ve_aj, file = folder_data("VE_Zostavax_IC_AJ.rdata
 
 
 ### VE HZ NIC -----
-sample_ve.ve_mcmc_nic <- function(obj_ve, vaccination_age = 70, years_projected = 100 - vaccination_age, ...) {
+sample_ve.ve_mcmc_nic <- function(obj_ve, vaccination_age = 70, years_projected = 100 - vaccination_age, vid = NA, ...) {
+  if(is.na(vid)) {
+    sel <- obj_ve$src %>% filter(VID == sample(VID, 1))
+  } else {
+    sel <- obj_ve$src %>% filter(VID == vid)  
+  }
+  
+  
   tibble(age = vaccination_age:(vaccination_age+years_projected)) %>% 
-    cross_join(obj_ve$src %>% filter(VID == sample(VID, 1))) %>% 
+    cross_join(sel) %>% 
     mutate(
       lambda = lambda_intercept + lambda_slope * age,
       VE = lambda * exp(- delta * seq(1, years_projected + 1) * 365)
@@ -50,9 +57,14 @@ sample_ve.ve_mcmc_nic <- function(obj_ve, vaccination_age = 70, years_projected 
 }
 
 
-sample_ve.ve_mcmc_phn <- function(obj_ve, vaccination_age = 70, years_projected = 100 - vaccination_age, ...) {
-  obj_ve$src %>% 
-    filter(Key == sample(unique(Key), 1)) %>% 
+sample_ve.ve_mcmc_phn <- function(obj_ve, vaccination_age = 70, years_projected = 100 - vaccination_age, vid = NA, ...) {
+  if(is.na(vid)) {
+    sel <- obj_ve$src %>% filter(VID == sample(unique(Key), 1))
+  } else {
+    sel <- obj_ve$src %>% filter(VID == vid)  
+  }  
+  
+  sel %>% 
     mutate(
       age = vaccination_age + T_Covered
     ) %>% 
@@ -95,9 +107,18 @@ save(VE, sample_ve, sample_ve.ve_mcmc_nic, file = folder_data("VE_Shingrix_NIC.r
 
 
 ### VE HZ IC -----
-sample_ve.ve_mcmc_ic <- function(obj_ve, vaccination_age = 70, years_projected = 100 - vaccination_age, ...) {
-  ve_nic <- obj_ve$src %>% filter(VID == sample(VID, 1))
-  ve_ic <- sample(obj_ve$VE_IC$VE, 1)
+sample_ve.ve_mcmc_ic <- function(obj_ve, vaccination_age = 70, years_projected = 100 - vaccination_age, vid = NA, vid_ic = NA, ...) {
+  if (is.na(vid)) {
+    ve_nic <- obj_ve$src %>% filter(VID == sample(VID, 1))
+  } else {
+    ve_nic <- obj_ve$src %>% filter(VID == vid)
+  }
+  
+  if (is.na(vid_ic)) {
+    ve_ic <- sample(obj_ve$VE_IC$VE, 1)
+  } else {
+    ve_ic <- obj_ve$VE_IC$VE[vid_ic]
+  }
   
   ratio54 <- with(as.list(ve_nic), {
     years_projected_ic <- 2.35
