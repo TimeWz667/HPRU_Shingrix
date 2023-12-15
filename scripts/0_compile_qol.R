@@ -69,7 +69,7 @@ QOL <- full_join(QL_y1, QL_y2) %>%
   )
 
 
-QOL %>% filter(Key == 1) %>% data.frame()
+QOL %>% group_by(age) %>% summarise_all(mean) %>% data.frame
 
 
 save(QOL, file = folder_data("QOL_LE.rdata"))

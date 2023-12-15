@@ -38,7 +38,7 @@ set.seed(11667)
 
 IC_status<- "IC"
 vaccine<-"shingrix"
-N_Iter <- 100
+N_Iter <- 1000
 
 ### discount rate costs
 discount_rate_costs<-0.035
@@ -124,10 +124,11 @@ sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>%
   left_join(rand_table(Cost_GP, N_Iter)) %>% 
   left_join(QL_death) %>% 
   mutate(
-    p_death_hz = Death_HZ / Incidence_HZ,
-    p_hospitalised_hz = Hospitalisation_rate_HZ / Incidence_HZ,
+    p_death_hz = Death_HZ,
+    p_hospitalised_hz = 1 - exp(-Hospitalisation_rate_HZ),
     QL_y2_d = QL_y2 / ((1+discount_rate_effects)^(1)),
-    QL_HZ_d = QL_y1 + QL_y2,
+    QL_HZ = QL_y1 + QL_y2,
+    QL_HZ_d = QL_y1 + QL_y2_d,
     QL_o3m_pre_vac_d = QL_y1_o3m + QL_y2_d
   ) %>% 
   group_by(ID) %>% 
@@ -140,7 +141,7 @@ sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>%
 results <- list()
 
 
-for (vaccination_age in 65:75){
+for (vaccination_age in 70:72){
   scenario <- sprintf("CEA_%s_%s_%s", vaccine, IC_status, vaccination_age)
   scenario <- glue::as_glue(scenario)
   
@@ -174,7 +175,7 @@ for (vaccination_age in 65:75){
       p_HZ_GP_only_alive = p_HZ_GP_only * p_survival,
       p_HZ_post_vac = p_HZ_alive * (1 - VE),  # Probability pre-vaccination * (1- VE)
       p_deaths_HZ_post_vac = p_death_hz * (1 - VE), # Probability pre-vaccination * (1- VE)
-      p_hospitalisation = p_HZ_alive * p_hospitalised_hz,
+      p_hospitalisation = p_hospitalised_hz,
       p_hospitalisation_post_vac = p_hospitalisation * (1 - VE)
     ) %>% 
     #### QALY loss HZ
@@ -182,11 +183,11 @@ for (vaccination_age in 65:75){
       discount_ql = 1 / ((1 + discount_rate_effects)^(age - vaccination_age)),
       QL_HZ_pre_vac = p_HZ_alive * QL_HZ_d,
       QL_HZ_pre_vac_d = QL_HZ_pre_vac * discount_ql, # QALY loss HZ in the cohort
-      QL_o3m_pre_vac_d = p_HZ_alive * (QL_y1_o3m + QL_y2_d),
+      QL_o3m_pre_vac_d = QL_y1_o3m + QL_y2_d,
       QL_o3m_post_vac_d = QL_o3m_pre_vac_d * (1 - VE_PHN_w_HZ),
       QL_o3m_post_vac_with_VE_d = p_HZ_post_vac * QL_o3m_post_vac_d,
       QL_o3m_post_vac_no_VE_d = p_HZ_post_vac * QL_o3m_pre_vac_d,
-      additional_QL_o3m_d = 0, # QL_o3m_post_vac_no_VE_d - QL_o3m_post_vac_with_VE_d,
+      additional_QL_o3m_d = QL_o3m_post_vac_no_VE_d - QL_o3m_post_vac_with_VE_d,
       QL_HZ_post_vac = p_HZ_post_vac * QL_HZ_d - additional_QL_o3m_d,
       QL_HZ_post_vac_d = QL_HZ_post_vac * discount_ql,
       QL_death_pre_vac = p_death_hz * QL_death0,
@@ -214,9 +215,11 @@ for (vaccination_age in 65:75){
       # Costs for GP due to HZ in the cohort
       Cost_GP_post_vac = (p_PHN_post_vac * GP_cost_pp_PHN_inf) + (p_non_PHN_HZ_post_vac * GP_cost_pp_non_PHN_HZ_inf),
       Cost_GP_post_vac_d = Cost_GP_post_vac * discount_cost
-    )
-    select(Scenario, ID, age, age_vaccination, Pop, p_survival, starts_with("QL_"), starts_with("Cost_"))
+    ) 
   
+  # %>% 
+  #   select(Scenario, ID, age, age_vaccination, Pop, p_survival, starts_with("QL_"), starts_with("Cost_"))
+  # 
   
   tab <- sims %>% 
     group_by(ID, Scenario) %>% 
