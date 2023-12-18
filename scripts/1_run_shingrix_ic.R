@@ -41,18 +41,18 @@ vaccine<-"shingrix"
 N_Iter <- 1000
 
 ### discount rate costs
-discount_rate_costs<-0.035
+discount_rate_costs <- 0.035
 ### discount rate effects
-discount_rate_effects<-0.035
+discount_rate_effects <- 0.035
 
 ### vaccine coverage
-vaccine_coverage<-0.483 
+vaccine_coverage <- 0.483 
 ### cost per vaccine dose
-vaccine_cost_per_dose<-75
+vaccine_cost_per_dose <- 75
 ### admin cost per vaccine dose (item of service fee for 2018/19, https://www.nhsemployers.org/-/media/Employers/Documents/Primary-care-contracts/V-and-I/201819-Vaccination-and-immunisation-guidance-and-audit-requirements.PDF?la=en&hash=B3DFFE1BE23C5826841A87704FF305964A481A42)
-admin_cost_per_dose<-10
+admin_cost_per_dose <- 10
 ### number of doses
-number_courses<-2
+number_courses <- 2
 
 
 ##########################
@@ -75,40 +75,8 @@ load(folder_data("QOL_LE.rdata"))
 load(folder_data("Cost_GP_Gauthier.rdata"))
 load(folder_data("Cost_Hospitalisation_IC.rdata"))
 
-
 ### Vaccine efficacy
 load(folder_data("VE_Shingrix_IC.rdata"))
-
-
-### todo
-### EQ5D population norms
-# #Szende A, Janssen B, Cabases J. Self-reported population health: an international perspective based on EQ-5D. Dordrecht: Springer; 2014. TTO value set England. p30
-popest<-data.frame(age=18:100,
-                   pe=c(rep(0.929, length(18:24)),
-                        rep(0.919, length(25:34)),
-                        rep(0.893, length(35:44)),
-                        rep(0.855, length(45:54)),
-                        rep(0.810,  length(55:64)),
-                        rep(0.773, length(65:74)),
-                        rep(0.703, length(75:100))))
-
-
-## QoL adjusted discounted survival
-# add fake row to popest
-QL_death <- Pop %>% 
-  filter(age <= 100) %>% 
-  select(age, dr = Background_mortality) %>% 
-  mutate(
-    Survival = cumprod(1 - dr),
-    LE = rev(cumsum(rev(Survival)))
-  ) %>% 
-  left_join(popest) %>%
-  fill(pe, .direction = "updown") %>% 
-  mutate(
-    QL_death0 = LE * pe
-  ) %>% 
-  select(age, LE, QL_death0)
-
 
 
 ### Shared properties
@@ -122,11 +90,11 @@ sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>%
   left_join(rand_table(QOL, N_Iter))  %>% 
   left_join(rand_table(Cost_Hospitalisation_HZ, N_Iter)) %>% 
   left_join(rand_table(Cost_GP, N_Iter)) %>% 
-  left_join(QL_death) %>% 
   mutate(
     p_death_hz = Death_HZ,
     p_hospitalised_hz = 1 - exp(-Hospitalisation_rate_HZ),
-    QL_y2_d = QL_y2 / ((1+discount_rate_effects)^(1)),
+    QL_death0 = QOL * LE,
+    QL_y2_d = QL_y2 / (1 + discount_rate_effects),
     QL_HZ = QL_y1 + QL_y2,
     QL_HZ_d = QL_y1 + QL_y2_d,
     QL_o3m_pre_vac_d = QL_y1_o3m + QL_y2_d
@@ -141,7 +109,8 @@ sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>%
 results <- list()
 
 
-for (vaccination_age in 70:72){
+for (vaccination_age in 18:95){
+  print(vaccination_age)
   scenario <- sprintf("CEA_%s_%s_%s", vaccine, IC_status, vaccination_age)
   scenario <- glue::as_glue(scenario)
   
@@ -216,10 +185,7 @@ for (vaccination_age in 70:72){
       Cost_GP_post_vac = (p_PHN_post_vac * GP_cost_pp_PHN_inf) + (p_non_PHN_HZ_post_vac * GP_cost_pp_non_PHN_HZ_inf),
       Cost_GP_post_vac_d = Cost_GP_post_vac * discount_cost
     ) 
-  
-  # %>% 
-  #   select(Scenario, ID, age, age_vaccination, Pop, p_survival, starts_with("QL_"), starts_with("Cost_"))
-  # 
+
   
   tab <- sims %>% 
     group_by(ID, Scenario) %>% 
