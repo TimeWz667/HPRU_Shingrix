@@ -24,7 +24,8 @@
 
 library(tidyverse)
 folder_data <- function(x) here::here("data", x)
-folder_outputs <- function(x) here::here("outputs", x)
+folder_tab <- function(x) here::here("outputs", "tabs", x)
+folder_temp <- function(x) here::here("outputs", "temp", x)
 
 
 rand_table <- function(df, n_iter) {
@@ -38,7 +39,7 @@ set.seed(11667)
 
 IC_status<- "IC"
 vaccine<-"shingrix"
-N_Iter <- 1000
+N_Iter <- 500
 
 ### discount rate costs
 discount_rate_costs <- 0.035
@@ -62,7 +63,6 @@ load(folder_data("Population_IC_Ons_2015.rdata"))
 
 ### Incidence HZ 
 load(folder_data("Epi_HZ_IC.rdata"))
-
 load(folder_data("P_PHN_IC_CPRD.rdata"))
 
 ### Hospitalisation
@@ -211,7 +211,7 @@ for (vaccination_age in 18:95){
     ungroup()
 
   results[[scenario]] <- tab
-  write_csv(tab, file = here::here("outputs", "tabs", scenario + ".csv"))
+  write_csv(tab, file = folder_temp(scenario + ".csv"))
 
   # BoD<-data.frame(Scenario=c("No vaccination", "vaccination"),
   #                 N_HZ_cases=c(p_HZ_alive,HZ_post_vac),
@@ -227,9 +227,9 @@ for (vaccination_age in 18:95){
 
 results <- bind_rows(results)
 
-write_csv(results, file = here::here("outputs", "tabs", sprintf("CEA_%s_%s.csv", vaccine, IC_status)))
+write_csv(results, file = folder_temp(sprintf("CEA_%s_%s.csv", vaccine, IC_status)))
 
-save(results, file = here::here("outputs", "tabs", sprintf("CEA_%s_%s.rdata", vaccine, IC_status)))
+save(results, file = folder_temp(sprintf("CEA_%s_%s.rdata", vaccine, IC_status)))
 
 
 
