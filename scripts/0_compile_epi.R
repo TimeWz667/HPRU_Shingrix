@@ -37,7 +37,13 @@ Mortality_HZ <- read_csv(folder_raw("CFR_HZ_old_AJ_model.csv")) %>%
   mutate(p_deaths_HZ = 0)
 
 
-save(Incidence_HZ, Mortality_HZ, file = folder_data("Epi_HZ_AJ.rdata"))
+P_PHN <- read_csv(folder_raw("AJ_p_PHN.csv")) %>% 
+  full_join(tibble(age=0:100)) %>% 
+  arrange(age) %>% 
+  fill(p_PHN, .direction = "updown")
+
+
+save(Incidence_HZ, Mortality_HZ, P_PHN, file = folder_data("Epi_HZ_AJ.rdata"))
 
 
 ## Data Nick

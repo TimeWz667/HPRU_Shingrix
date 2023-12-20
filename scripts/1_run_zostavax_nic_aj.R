@@ -1,23 +1,3 @@
-# Both vaccines in one file
-# All data in the IC added
-# Incidence and p_PHN from CPRD Jemma study
-# VE zostavax now includes ZEST study
-# VE updated to incorporate age pyramid for ZVL and age variation for data in time for both vaccines
-# item of service fee updated to ?10.06  (for 2018/19, https://www.nhsemployers.org/-/media/Employers/Documents/Primary-care-contracts/V-and-I/201819-Vaccination-and-immunisation-guidance-and-audit-requirements.PDF?la=en&hash=B3DFFE1BE23C5826841A87704FF305964A481A42)
-# QALYs updated new data Brisson and Drolet vs Rampakakis Canada
-# incidences transformed to probabilities
-# mortality of HZ included
-# updated p_PHN excluding individuals vaccinated from 2013
-# oputpatients costs age 90+ all the same as age 90
-# updated costs of hospitalisation HZ using robust regression
-# 29-05-2018 extra QL avoided o3m PHN only for ZVL
-# Decide whether to include the extra reduction in QL against PHN for breakthrough HZ  (reduction in QL for the first 6 months meant for Zostavax but included for Sept 2017 CEA JCVI for both and o3m QL included for both in May 2018)
-# change vaccine_cost_per_dose, number_courses and vaccine effectiveness, extra QL adverted, for other vaccine  
-# For both vaccines QL-> Area between model and 1, up to when model reaches one (LE)
-# QL with transformation 0.3-0.7 (QL 22-11-2017 file) (vs. transformation 0.25-0.75 as per Sept 2017 CEA JCVI)
-# PSA
-
-
 #########################################################################################################################
 # Cost-effectiveness analysis of herpes zoster vaccination
 #########################################################################################################################
@@ -37,8 +17,8 @@ rand_table <- function(df, n_iter) {
 
 set.seed(11667)
 
-IC_status<- "IC"
-vaccine<-"shingrix"
+IC_status<- "NIC"
+vaccine<-"zostavax_aj"
 N_Iter <- 500
 
 ### discount rate costs
@@ -47,61 +27,48 @@ discount_rate_costs <- 0.035
 discount_rate_effects <- 0.035
 
 ### vaccine coverage
-vaccine_coverage <- 0.483 
+## PHE report 0.483 in 2016/17, 0.549 in 2015/16, 0.59 in 2014/15, 0.618 in 2013/14
+vaccine_coverage <- 0.735 
 ### cost per vaccine dose
-vaccine_cost_per_dose <- 75
+vaccine_cost_per_dose <- 55
 ### admin cost per vaccine dose (item of service fee for 2018/19, https://www.nhsemployers.org/-/media/Employers/Documents/Primary-care-contracts/V-and-I/201819-Vaccination-and-immunisation-guidance-and-audit-requirements.PDF?la=en&hash=B3DFFE1BE23C5826841A87704FF305964A481A42)
 admin_cost_per_dose <- 10
 ### number of doses
-number_courses <- 2
+number_courses <- 1
 
 
 ##########################
 #### Data
 ### Demography
-load(folder_data("Population_IC_Ons_2015.rdata"))
+load(folder_data("Population_IC_AJ_2015.rdata"))
 
 ### Incidence HZ 
-load(folder_data("Epi_HZ_IC.rdata"))
-load(folder_data("P_PHN_IC_CPRD.rdata"))
+load(folder_data("Epi_HZ_AJ.rdata"))
 
 ### Hospitalisation
-load(folder_data("R_Hospitalisation_HZ_IC.rdata"))
+load(folder_data("R_Hospitalisation_HZ_AJ.rdata"))
 
 ### QALY loss HZ
-load(folder_data("QOL_LE.rdata"))
-QL_death0 = read_csv(folder_data("QL_death0.csv"))
+load(folder_data("QOL_AJ.rdata"))
 
 ### Cost 
-load(folder_data("Cost_GP_Gauthier.rdata"))
-load(folder_data("Cost_Hospitalisation_IC.rdata"))
+load(folder_data("Cost_GP_AJ.rdata"))
+load(folder_data("Cost_Hospitalisation_AJ.rdata"))
 
 ### Vaccine efficacy
-load(folder_data("VE_Shingrix_IC.rdata"))
+load(folder_data("VE_Zostavax_NIC_AJ.rdata"))
 
 
 ### Shared properties
 sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>% 
   left_join(Pop) %>% 
-  left_join(rand_table(Incidence_HZ, N_Iter)) %>% 
-  left_join(rand_table(Incidence_HZ_GP_only, N_Iter)) %>% 
-  left_join(rand_table(Mortality_HZ, N_Iter)) %>% 
-  left_join(rand_table(P_PHN, N_Iter)) %>% 
-  left_join(rand_table(Rate_Hospitalisation_HZ, N_Iter)) %>% 
-  left_join(rand_table(QOL, N_Iter))  %>% 
-  left_join(rand_table(Cost_Hospitalisation_HZ, N_Iter)) %>% 
-  left_join(rand_table(Cost_GP, N_Iter)) %>%
-  left_join(QL_death0) %>% 
-  mutate(
-    p_death_hz = Death_HZ,
-    p_hospitalised_hz = 1 - exp(-Hospitalisation_rate_HZ),
-    #QL_death0 = QOL * LE,
-    QL_y2_d = QL_y2 / (1 + discount_rate_effects),
-    QL_HZ = QL_y1 + QL_y2,
-    QL_HZ_d = QL_y1 + QL_y2_d,
-    QL_o3m_pre_vac_d = QL_y1_o3m + QL_y2_d
-  ) %>% 
-  group_by(ID) %>% 
+  left_join(Incidence_HZ) %>% 
+  left_join(Mortality_HZ) %>% 
+  left_join(P_PHN) %>% 
+  left_join(Rate_Hospitalisation_HZ) %>% 
+  left_join(QOL)  %>% 
+  left_join(Cost_Hospitalisation_HZ) %>% 
+  left_join(Cost_GP_per_HZ) %>% 
   arrange(ID, age)
 
 
@@ -110,7 +77,7 @@ sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>%
 results <- list()
 
 
-for (vaccination_age in 18:95){
+for (vaccination_age in 60:95){
   print(vaccination_age)
   scenario <- sprintf("CEA_%s_%s_%s", vaccine, IC_status, vaccination_age)
   scenario <- glue::as_glue(scenario)
@@ -119,7 +86,7 @@ for (vaccination_age in 18:95){
   #### cohort size
   # population in England at vaccination age * vaccine_coverage
   cohort_size <- Pop %>% filter(age == vaccination_age) %>% pull(Pop) * vaccine_coverage
-
+  
   ## Attach VE
   sims <- sims0 %>% 
     mutate(Scenario = scenario) %>% 
@@ -144,8 +111,8 @@ for (vaccination_age in 18:95){
       p_HZ_alive = p_HZ * p_survival,
       p_HZ_GP_only_alive = p_HZ_GP_only * p_survival,
       p_HZ_post_vac = p_HZ_alive * (1 - VE),  # Probability pre-vaccination * (1- VE)
-      p_deaths_HZ_post_vac = p_death_hz * (1 - VE), # Probability pre-vaccination * (1- VE)
-      p_hospitalisation = p_hospitalised_hz,
+      p_deaths_HZ_post_vac = p_deaths_HZ * (1 - VE), # Probability pre-vaccination * (1- VE)
+      p_hospitalisation = p_HZ_alive * Hospitalisation_rate_HZ,
       p_hospitalisation_post_vac = p_hospitalisation * (1 - VE)
     ) %>% 
     #### QALY loss HZ
@@ -153,17 +120,11 @@ for (vaccination_age in 18:95){
       discount_ql = 1 / ((1 + discount_rate_effects)^(age - vaccination_age)),
       QL_HZ_pre_vac = p_HZ_alive * QL_HZ_d,
       QL_HZ_pre_vac_d = QL_HZ_pre_vac * discount_ql, # QALY loss HZ in the cohort
-      QL_o3m_pre_vac_d = QL_y1_o3m + QL_y2_d,
-      QL_o3m_post_vac_d = QL_o3m_pre_vac_d * (1 - VE_PHN_w_HZ),
-      QL_o3m_post_vac_with_VE_d = p_HZ_post_vac * QL_o3m_post_vac_d,
-      QL_o3m_post_vac_no_VE_d = p_HZ_post_vac * QL_o3m_pre_vac_d,
-      additional_QL_o3m_d = QL_o3m_post_vac_no_VE_d - QL_o3m_post_vac_with_VE_d,
+      additional_QL_o3m_d = additional_QL_HZ_6m,
       QL_HZ_post_vac = p_HZ_post_vac * QL_HZ_d - additional_QL_o3m_d,
       QL_HZ_post_vac_d = QL_HZ_post_vac * discount_ql,
-      QL_death_pre_vac = p_death_hz * QL_death0,
-      QL_death_pre_vac_d = QL_death_pre_vac * discount_ql,
-      QL_death_post_vac = p_deaths_HZ_post_vac * QL_death0,
-      QL_death_post_vac_d = QL_death_post_vac * discount_ql
+      QL_death_pre_vac_d = 0,
+      QL_death_post_vac_d = 0
     ) %>%
     mutate(
       discount_cost = 1 / ((1+discount_rate_costs)^(age - vaccination_age)),
@@ -172,20 +133,20 @@ for (vaccination_age in 18:95){
       Cost_hospitalisation_d = Cost_hospitalisation * discount_cost,
       # Costs for hospitalisations due to HZ in the cohort
       Cost_hospitalisation_post_vac = p_hospitalisation_post_vac* Hospitalisation_costs_pp_HZ_inf,
-      Cost_hospitalisation_post_vac_d = Cost_hospitalisation_post_vac  * discount_cost,
-      p_PHN_GP = p_HZ_GP_only_alive * p_phn,
-      p_non_PHN_HZ_GP = p_HZ_GP_only_alive * (1 - p_phn),
+      Cost_hospitalisation_post_vac_d = Cost_hospitalisation_post_vac * discount_cost,
+      p_PHN_GP = p_HZ_GP_only_alive * p_PHN,
+      p_non_PHN_HZ_GP = p_HZ_GP_only_alive * (1 - p_PHN),
       # Costs for GP due to HZ in the cohort
       Cost_GP = (p_PHN_GP * GP_cost_pp_PHN_inf) + (p_non_PHN_HZ_GP * GP_cost_pp_non_PHN_HZ_inf),
       Cost_GP_d = Cost_GP * discount_cost,
       # ensure VE_PHN_w_HZ only applies to zostavax
-      p_PHN_post_vac = (p_HZ_GP_only_alive * (1 - VE))*(1 - VE_PHN_w_HZ) * p_phn, #different to p_PHN_AJ
-      p_non_PHN_HZ_post_vac = (p_HZ_GP_only_alive*(1 - VE)) * (1-((1 - VE_PHN_w_HZ) * p_phn)),
+      p_PHN_post_vac = (p_HZ_GP_only_alive * (1 - VE))*(1 - VE_PHN_w_HZ) * p_PHN, #different to p_PHN_AJ
+      p_non_PHN_HZ_post_vac = (p_HZ_GP_only_alive*(1 - VE)) * (1-((1 - VE_PHN_w_HZ) * p_PHN)),
       # Costs for GP due to HZ in the cohort
       Cost_GP_post_vac = (p_PHN_post_vac * GP_cost_pp_PHN_inf) + (p_non_PHN_HZ_post_vac * GP_cost_pp_non_PHN_HZ_inf),
       Cost_GP_post_vac_d = Cost_GP_post_vac * discount_cost
     ) 
-
+  
   
   tab <- sims %>% 
     group_by(ID, Scenario) %>% 
@@ -209,10 +170,10 @@ for (vaccination_age in 18:95){
       ICER = total_net_cost / total_QALYs_gained_d
     ) %>% 
     ungroup()
-
+  
   results[[scenario]] <- tab
   write_csv(tab, file = folder_temp(scenario + ".csv"))
-
+  
   # BoD<-data.frame(Scenario=c("No vaccination", "vaccination"),
   #                 N_HZ_cases=c(p_HZ_alive,HZ_post_vac),
   #                 N_hospitalisations=c(Hospitalisation, Hospitalisation_post_vac),
@@ -221,14 +182,13 @@ for (vaccination_age in 18:95){
   #                 QL_undiscounted=c(QL_HZ,QL_HZ_post_vac),
   #                 Cost_intervention=c(0,results_df$total_costs_intervention[1]))
   # 
-
+  
 }
 
 
 results <- bind_rows(results)
 
 write_csv(results, file = folder_temp(sprintf("CEA_%s_%s.csv", vaccine, IC_status)))
-
 save(results, file = folder_temp(sprintf("CEA_%s_%s.rdata", vaccine, IC_status)))
 
 
@@ -253,26 +213,3 @@ summ <- results %>%
   arrange(Index, vaccination_age)
 
 write_csv(summ, file = folder_tab(sprintf("Summary_CEA_%s_%s.csv", vaccine, IC_status)))
-
-
-results %>% 
-  extract(Scenario, "VacAge", "CEA_\\S+_\\S+_(\\d+)", convert = T) %>% 
-  ggplot() +
-  geom_point(aes(x = VacAge, y= total_net_cost))
-
-
-results %>% 
-  extract(Scenario, "VacAge", "CEA_\\S+_\\S+_(\\d+)", convert = T) %>% 
-  ggplot() +
-  geom_point(aes(x = VacAge, y= total_QALYs_gained_d))
-
-
-results %>% 
-  extract(Scenario, "VacAge", "CEA_\\S+_\\S+_(\\d+)", convert = T) %>% 
-  ggplot() +
-  geom_point(aes(x = VacAge, y= ICER))
-
-
-
-
-

@@ -18,6 +18,11 @@ Cost_GP_per_HZ <- read_csv(folder_raw("AJ_p_PHN.csv")) %>%
 save(Cost_GP_per_HZ, file = folder_data("Cost_GP_AJ.rdata"))
 
 
+Cost_Hospitalisation_HZ <- read_csv(folder_raw("hospital_costs_HZ_old_AJ_model.csv")) %>% 
+  rename(age = Age, Hospitalisation_costs_pp_HZ_inf = hospital_costs)
+
+save(Cost_Hospitalisation_HZ, file = folder_data("Cost_Hospitalisation_AJ.rdata"))
+
 
 ### costs of hospitalisation per HZ case
 ## from AJ's model (based on average length of stay per age group)

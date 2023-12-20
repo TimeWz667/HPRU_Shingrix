@@ -37,7 +37,7 @@ rand_table <- function(df, n_iter) {
 
 set.seed(11667)
 
-IC_status<- "IC"
+IC_status<- "NIC"
 vaccine<-"shingrix"
 N_Iter <- 500
 
@@ -59,25 +59,24 @@ number_courses <- 2
 ##########################
 #### Data
 ### Demography
-load(folder_data("Population_IC_Ons_2015.rdata"))
+load(folder_data("Population_NIC_Ons_2015.rdata"))
 
 ### Incidence HZ 
-load(folder_data("Epi_HZ_IC.rdata"))
-load(folder_data("P_PHN_IC_CPRD.rdata"))
+load(folder_data("Epi_HZ_NIC.rdata"))
+load(folder_data("P_PHN_NIC_CPRD.rdata"))
 
 ### Hospitalisation
-load(folder_data("R_Hospitalisation_HZ_IC.rdata"))
+load(folder_data("R_Hospitalisation_HZ_NIC.rdata"))
 
 ### QALY loss HZ
 load(folder_data("QOL_LE.rdata"))
-QL_death0 = read_csv(folder_data("QL_death0.csv"))
 
 ### Cost 
 load(folder_data("Cost_GP_Gauthier.rdata"))
-load(folder_data("Cost_Hospitalisation_IC.rdata"))
+load(folder_data("Cost_Hospitalisation_NIC.rdata"))
 
 ### Vaccine efficacy
-load(folder_data("VE_Shingrix_IC.rdata"))
+load(folder_data("VE_Shingrix_NIC.rdata"))
 
 
 ### Shared properties
@@ -90,12 +89,11 @@ sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>%
   left_join(rand_table(Rate_Hospitalisation_HZ, N_Iter)) %>% 
   left_join(rand_table(QOL, N_Iter))  %>% 
   left_join(rand_table(Cost_Hospitalisation_HZ, N_Iter)) %>% 
-  left_join(rand_table(Cost_GP, N_Iter)) %>%
-  left_join(QL_death0) %>% 
+  left_join(rand_table(Cost_GP, N_Iter)) %>% 
   mutate(
     p_death_hz = Death_HZ,
     p_hospitalised_hz = 1 - exp(-Hospitalisation_rate_HZ),
-    #QL_death0 = QOL * LE,
+    QL_death0 = QOL * LE,
     QL_y2_d = QL_y2 / (1 + discount_rate_effects),
     QL_HZ = QL_y1 + QL_y2,
     QL_HZ_d = QL_y1 + QL_y2_d,
@@ -103,6 +101,7 @@ sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>%
   ) %>% 
   group_by(ID) %>% 
   arrange(ID, age)
+
 
 
 ### start loop
@@ -119,7 +118,7 @@ for (vaccination_age in 18:95){
   #### cohort size
   # population in England at vaccination age * vaccine_coverage
   cohort_size <- Pop %>% filter(age == vaccination_age) %>% pull(Pop) * vaccine_coverage
-
+  
   ## Attach VE
   sims <- sims0 %>% 
     mutate(Scenario = scenario) %>% 
@@ -185,7 +184,7 @@ for (vaccination_age in 18:95){
       Cost_GP_post_vac = (p_PHN_post_vac * GP_cost_pp_PHN_inf) + (p_non_PHN_HZ_post_vac * GP_cost_pp_non_PHN_HZ_inf),
       Cost_GP_post_vac_d = Cost_GP_post_vac * discount_cost
     ) 
-
+  
   
   tab <- sims %>% 
     group_by(ID, Scenario) %>% 
@@ -209,10 +208,10 @@ for (vaccination_age in 18:95){
       ICER = total_net_cost / total_QALYs_gained_d
     ) %>% 
     ungroup()
-
+  
   results[[scenario]] <- tab
   write_csv(tab, file = folder_temp(scenario + ".csv"))
-
+  
   # BoD<-data.frame(Scenario=c("No vaccination", "vaccination"),
   #                 N_HZ_cases=c(p_HZ_alive,HZ_post_vac),
   #                 N_hospitalisations=c(Hospitalisation, Hospitalisation_post_vac),
@@ -221,7 +220,7 @@ for (vaccination_age in 18:95){
   #                 QL_undiscounted=c(QL_HZ,QL_HZ_post_vac),
   #                 Cost_intervention=c(0,results_df$total_costs_intervention[1]))
   # 
-
+  
 }
 
 
@@ -253,26 +252,3 @@ summ <- results %>%
   arrange(Index, vaccination_age)
 
 write_csv(summ, file = folder_tab(sprintf("Summary_CEA_%s_%s.csv", vaccine, IC_status)))
-
-
-results %>% 
-  extract(Scenario, "VacAge", "CEA_\\S+_\\S+_(\\d+)", convert = T) %>% 
-  ggplot() +
-  geom_point(aes(x = VacAge, y= total_net_cost))
-
-
-results %>% 
-  extract(Scenario, "VacAge", "CEA_\\S+_\\S+_(\\d+)", convert = T) %>% 
-  ggplot() +
-  geom_point(aes(x = VacAge, y= total_QALYs_gained_d))
-
-
-results %>% 
-  extract(Scenario, "VacAge", "CEA_\\S+_\\S+_(\\d+)", convert = T) %>% 
-  ggplot() +
-  geom_point(aes(x = VacAge, y= ICER))
-
-
-
-
-
