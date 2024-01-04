@@ -71,6 +71,21 @@ QL <- crossing(age = 0:100, Key = 1:1000) %>%
   )
 
 
+QOL <- tibble(
+  age = 18:100,
+  QOL=c(rep(0.929, length(18:24)),
+        rep(0.919, length(25:34)),
+        rep(0.893, length(35:44)),
+        rep(0.855, length(45:54)),
+        rep(0.810,  length(55:64)),
+        rep(0.773, length(65:74)),
+        rep(0.703, length(75:100)))
+) %>% 
+  full_join(tibble(age = 0:100)) %>% 
+  arrange(age) %>% 
+  fill(QOL, .direction = "updown")
+
+
 calc_ql_death <- function(pop, dis=0.035) {
   
   # #Szende A, Janssen B, Cabases J. Self-reported population health: an international perspective based on EQ-5D. Dordrecht: Springer; 2014. TTO value set England. p30
@@ -88,11 +103,11 @@ calc_ql_death <- function(pop, dis=0.035) {
     arrange(age) %>% 
     fill(QOL, .direction = "updown")
   
-  pop %>% left_join(crossing(va = 0:100, age = 0:100)) %>% 
+  pop %>% left_join(crossing(va = 0:100, age = 0:100), by = "age", relationship = "many-to-many") %>% 
     arrange(va) %>% 
     group_by(va) %>% 
     filter(age >= va) %>%
-    left_join(QOL %>% select(va = age, QOL)) %>% 
+    left_join(QOL %>% select(va = age, QOL), by = "va") %>% 
     mutate(
       p_surv = cumprod(1 - Background_mortality),
       p_surv_d = p_surv * (1 + dis) ^ - (age - va),
@@ -104,7 +119,8 @@ calc_ql_death <- function(pop, dis=0.035) {
       LE_d = sum(p_surv_d),
       QL_death0 = sum(ql),
       QL_death0_d = sum(ql_d)
-    ) %>% 
+    ) %>%
+    rename(age = va) %>% 
     left_join(QOL)
 } 
 
