@@ -1,0 +1,80 @@
+---
+title: "Coverage of Shingle vaccine (Zostavax) 2014 to 2023"
+author: "Chu-Chang Ku"
+date: "2024-01-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+theme_set(theme_bw())
+```
+
+## Data
+
+Data are publicly available from Shingles vaccine coverage report: England
+[Link](https://www.gov.uk/government/publications/herpes-zoster-shingles-immunisation-programme-2022-to-2023-evaluation-reports/shingles-vaccine-coverage-england-report-for-quarter-1-of-the-financial-year-2022-to-2023#:~:text=cumulative%20shingles%20vaccine%20coverage%20for,71%20year%20olds%20(37.7%25))
+
+```{r include=FALSE, echo=FALSE}
+load(file = here::here("data", "fit_coverage.csv"))
+
+dat <- read_csv(here::here("data", "Coverage.csv")) %>% 
+  mutate(
+    Cov_2018 = ifelse(Cov_2018 == "Not eligible", NA, Cov_2018),
+    Cov_2018 = as.numeric(Cov_2018)
+  ) %>% 
+  pivot_longer(-Age, 
+               names_pattern = "Cov_(\\d+)", names_to = "Year") %>% 
+  mutate(value = value / 100) %>% 
+  mutate(
+    VacT = Age - 71,
+    Cohort = as.numeric(Year) - VacT
+  ) %>% 
+  filter(Cohort >= 2014) %>% 
+  mutate(Cohort = as.character(Cohort))
+
+```
+
+
+## Model
+
+$$K_t = 1 - (1 - p_{ini})(1 - p_{catch})^t$$
+Notations
+
+- $K_t$: coverage at year $t$
+- $p_{ini}$: vaccine uptake at the first eligible year
+- $p_{catch}$: additional vaccine uptake for the second eligible and onward
+
+
+## Model fits
+
+```{r echo=FALSE}
+
+pars <- cbind(coef(pred1$fit), confint(pred1$fit))
+pars <- (1 - exp(pars[, c(1, 3, 2)])) * 100
+p_ini <- pars[1, ]
+p_catch <- pars[2, ]
+```
+
+### Annual uptake
+
+- $p_{ini}$: `r sprintf("%.1f%% (%.1f%% - %.1f%%)", p_ini[1], p_ini[2], p_ini[3])`
+- $p_{catch}$: `r sprintf("%.1f%% (%.1f%% - %.1f%%)", p_catch[1], p_catch[2], p_catch[3])`
+
+
+### Fitness
+
+```{r echo=FALSE}
+pred1$pred %>% 
+  ggplot() +
+  geom_ribbon(aes(x = Age, ymin = Coverage_l, ymax = Coverage_u), alpha = 0.2) +
+  geom_line(aes(x = Age, y = Coverage)) +
+  geom_point(data = dat, aes(x = Age, y = value)) +
+  scale_y_continuous("Coverage, %", labels = scales::percent) + 
+  scale_x_continuous("Age", breaks = seq(70, 80, 2)) +
+  facet_wrap(.~Cohort, labeller = "label_both") +
+  labs(subtitle = "Coverage by cohort", caption = "* Year indicates when a cohort's age turning to 70yr")
+```
+
