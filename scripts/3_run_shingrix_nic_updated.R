@@ -20,7 +20,7 @@ rand_table <- function(df, n_iter) {
 
 set.seed(11667)
 
-IC_status<- "IC"
+IC_status<- "NIC"
 vaccine<-"shingrix"
 N_Iter <- 500
 
@@ -44,12 +44,12 @@ cost_vac_pp <- (cost_vac_per_dose + cost_admin_per_dose) * number_courses
 
 ##########################
 #### Data
-load(folder_data("Population_IC_Ons_2015.rdata"))
-load(folder_data("Epi_IC.rdata"))
+load(folder_data("Population_NIC_Ons_2015.rdata"))
+load(folder_data("Epi_NIC.rdata"))
 load(folder_data("QOL_LE.rdata"))
 load(folder_data("Cost_GP_Gauthier.rdata"))
-load(folder_data("Cost_Hospitalisation_IC.rdata"))
-load(folder_data("VE_Shingrix_IC.rdata"))
+load(folder_data("Cost_Hospitalisation_NIC.rdata"))
+load(folder_data("VE_Shingrix_NIC.rdata"))
 
 
 ### Shared properties
@@ -112,7 +112,7 @@ for (vaccination_age in 18:95){
   
   results[[scenario]] <- tab
   write_csv(tab, file = folder_temp(scenario + ".csv"))
-
+  
 }
 
 

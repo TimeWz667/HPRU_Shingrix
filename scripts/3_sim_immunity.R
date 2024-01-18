@@ -143,10 +143,6 @@ save(sims_Stay, sims_Plan, sims_IcOnly, sims_PlanAndOlder, file = here::here("ou
 # save(sims, file = here::here("outputs", "temp", "sims_coverage.rdata"))
 
 
-
-
-
-
 vis <- function(sims) {
   list(
     Coverage= sims %>% 
@@ -175,9 +171,6 @@ vis_Stay = vis(sims_Stay)
 vis_Plan = vis(sims_Plan)
 vis_IcOnly = vis(sims_IcOnly)
 vis_PlanAndOlder = vis(sims_PlanAndOlder)
-
-  
-  
 
 
 ### Visualisation
@@ -295,9 +288,5 @@ ds %>%
   geom_line(aes(x = Age, y = Inc, colour = "2015")) +
   geom_line(aes(x = Age, y = Pr, colour = "2023")) +
   geom_line(aes(x = Age, y = Inc * (1 - Protection), colour = "2015 + protection")) 
-
-
-
-
 
 
