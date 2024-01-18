@@ -1,5 +1,4 @@
-## Update function while using old data
-
+## Update function with dynamic modelling
 #########################################################################################################################
 # Cost-effectiveness analysis of herpes zoster vaccination
 #########################################################################################################################
@@ -42,9 +41,7 @@ number_courses <- 2
 #### Data
 ### Demography
 load(folder_data("Population_IC_Ons_2015.rdata"))
-load(folder_data("Epi_HZ_IC.rdata"))
-load(folder_data("P_PHN_IC_CPRD.rdata"))
-load(folder_data("R_Hospitalisation_HZ_IC.rdata"))
+load(folder_data("Epi_IC.rdata"))
 load(folder_data("QOL_LE.rdata"))
 load(folder_data("Cost_GP_Gauthier.rdata"))
 load(folder_data("Cost_Hospitalisation_IC.rdata"))
@@ -54,18 +51,13 @@ load(folder_data("VE_Shingrix_IC.rdata"))
 ### Shared properties
 sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>% 
   left_join(Pop) %>% 
-  left_join(rand_table(Incidence_HZ, N_Iter)) %>% 
-  left_join(rand_table(Incidence_HZ_GP_only, N_Iter)) %>% 
-  left_join(rand_table(Mortality_HZ, N_Iter)) %>% 
-  left_join(rand_table(P_PHN, N_Iter)) %>% 
-  left_join(rand_table(Rate_Hospitalisation_HZ, N_Iter)) %>% 
+  left_join(rand_table(Epi_HZ, N_Iter) %>% rename(age = Age)) %>% 
   left_join(rand_table(QL, N_Iter))  %>% 
   left_join(rand_table(Cost_Hospitalisation_HZ, N_Iter)) %>% 
   left_join(rand_table(Cost_GP, N_Iter)) %>%
   # left_join(QL_death0) %>% 
+  rename(r_mor_bg = Background_mortality, Age = age) %>% 
   mutate(
-    p_death_hz = Death_HZ,
-    p_hospitalised_hz = 1 - exp(-Hospitalisation_rate_HZ),
     #QL_death0 = QOL * LE,
     QL_y2_d = QL_y2 / (1 + discount_rate_effects),
     QL_HZ = QL_y1 + QL_y2,
@@ -73,7 +65,7 @@ sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>%
     QL_o3m_pre_vac_d = QL_y1_o3m + QL_y2_d
   ) %>% 
   group_by(ID) %>% 
-  arrange(ID, age)
+  arrange(ID, Age)
 
 
 ### start loop
@@ -81,10 +73,52 @@ sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>%
 results <- list()
 
 
+calc_ce <- function(df, n0) {
+  df %>% 
+    mutate(
+      N_Alive = p_survival * n0,
+      N_Start = c(n0, N_Alive[-length(N_Alive)]),
+      N_HZ_All = N_Start * p_hz,
+      N_HZ_GP = N_Start * p_hz_gp,
+      N_HZ_Hosp = N_Start * p_hz_hosp,
+      N_PHN_All = N_Start * p_hz * p_phn,
+      N_PHN_GP = N_Start * p_hz_gp * p_phn,
+      N_PHN_Hosp = N_Start * p_hz_hosp * p_phn,
+      N_Death = N_Start - N_Alive,
+      N_DeathBg = N_Start * p_death_bg,
+      N_DeathHZ = N_Death - N_DeathBg,
+      # N_Death = ifelse(Age == 100, 0, N_Death),
+      # N_DeathBg = ifelse(Age == 100, 0, N_DeathBg),
+      # N_DeathHZ = ifelse(Age == 100, 0, N_DeathHZ),
+      dis_ql = 1 / ((1 + discount_rate_effects)^(Age - vaccination_age)),
+      dis_cost = 1 / ((1 + discount_rate_costs)^(Age - vaccination_age)),
+      Q_Life = N_Alive * QOL,
+      Q_HZ = - N_HZ_All * QL_HZ,
+      Q_All = Q_Life + Q_HZ,
+      Q_Life_d = Q_Life * dis_ql,
+      Q_HZ_d = - N_HZ_All * QL_HZ_d * dis_ql,
+      Q_All_d = Q_Life_d + Q_HZ_d,
+      C_Hosp = N_HZ_Hosp * Hospitalisation_costs_pp_HZ_inf,
+      C_GP_NonPHN = (N_HZ_GP - N_PHN_GP) * GP_cost_pp_non_PHN_HZ_inf,
+      C_GP_PHN = N_PHN_GP * GP_cost_pp_PHN_inf,
+      C_GP = C_GP_NonPHN + C_GP_PHN,
+      C_Vac = c((vaccine_cost_per_dose + admin_cost_per_dose) * number_courses, rep(0, n() - 1)) * N_Vac,
+      C_All = C_Hosp + C_GP + C_Vac,
+      C_Hosp_d = C_Hosp * dis_cost,
+      C_GP_NonPHN_d = C_GP_NonPHN * dis_cost,
+      C_GP_PHN_d = C_GP_PHN * dis_cost,
+      C_GP_d = C_GP * dis_cost,
+      C_All_d = C_Hosp_d + C_GP_d + C_Vac
+    ) %>% 
+    select(ID, Age, starts_with(c("N_", "Q_", "C_")))
+  
+}
+
+
 for (vaccination_age in 18:95){
-  print(vaccination_age)
   scenario <- sprintf("CEA_24_%s_%s_%s", vaccine, IC_status, vaccination_age)
   scenario <- glue::as_glue(scenario)
+  print(scenario)
   
   ##########################
   #### cohort size
@@ -95,209 +129,118 @@ for (vaccination_age in 18:95){
   sims_baseline <- sims0 %>% 
     mutate(Scenario = scenario) %>% 
     left_join(bind_rows(lapply(1:N_Iter, function(i) {
-      sample_ve(VE, vaccination_age = vaccination_age) %>% mutate(ID = i)
+      sample_ve(VE, vaccination_age = vaccination_age) %>% mutate(ID = i) %>% rename(Age = age)
     }))) %>% 
-    filter(age >= vaccination_age)
+    filter(Age >= vaccination_age)
+  
   
   sims_soc <- sims_baseline %>% 
-    filter(ID == 1) %>% 
+    group_by(ID) %>% 
     mutate(
-      p_HZ_all = p_HZ,
-      p_HZ_gp = p_HZ_GP_only,
-      p_HZ_hosp = p_hospitalised_hz,
-      p_PHN = p_HZ_gp * p_phn,
-      p_deaths_HZ = p_death_hz,
-      p_survival = case_when(
-        age < vaccination_age ~ 1,
-        T ~ 1 - Background_mortality + p_deaths_HZ
-      ),
-      p_survival = cumprod(p_survival),
-      N_Alive = p_survival * cohort_size,
-      N_Start = c(cohort_size, N_Alive[-length(N_Alive)]),
-      N_HZ_All = N_Start * p_HZ_all,
-      N_HZ_GP = N_Start * p_HZ_all,
-      N_HZ_Hosp = N_Start * p_HZ_all,
-      N_HZ_PHN = N_Start * p_PHN,
-      N_HZ_Deaths = N_Start * p_deaths_HZ
+      N_Vac = 0,
+      p_hz = pexp(1, r_inc_hz),
+      p_hz_gp = pexp(1, r_inc_hz_gp),
+      p_hz_hosp = pexp(1, r_hosp_hz),
+      r_death = r_mor_bg + r_mor_hz,
+      # p_death_bg = pexp(1, r_mor_bg),
+      # p_death_hz = pexp(1, r_mor_hz),
+      # p_death = p_death_bg + p_death_hz,
+      # Competing risk approach
+      p_death = pexp(1, r_death),
+      p_death = c(p_death[1:(n() - 1)], 1),
+      p_death_bg = p_death * r_mor_bg / r_death,
+      p_death_hz = p_death - p_death_bg,
+      p_survival = cumprod(1 - p_death)
     ) %>% 
-    select(age, starts_with("N_"))
+    calc_ce(cohort_size)  %>% 
+    summarise_all(sum) %>% 
+    select(-Age) %>% 
+    ungroup()
+  
   
   sims_alt <- sims_baseline %>% 
-    filter(ID == 1) %>% 
+    group_by(ID) %>% 
     mutate(
-      p_HZ_all = p_HZ * (1 - VE),
-      p_HZ_gp = p_HZ_GP_only * (1 - VE),
-      p_HZ_hosp = p_hospitalised_hz * (1 - VE),
-      p_PHN = p_HZ_gp * p_phn * (1 - VE),
-      p_deaths_HZ = p_death_hz * (1 - VE),
-      p_survival = case_when(
-        age < vaccination_age ~ 1,
-        T ~ 1 - Background_mortality + p_deaths_HZ
-      ),
-      p_survival = cumprod(p_survival),
-      N_Alive = p_survival * cohort_size,
-      N_Start = c(cohort_size, N_Alive[-length(N_Alive)]),
-      N_HZ_All = N_Start * p_HZ_all,
-      N_HZ_GP = N_Start * p_HZ_all,
-      N_HZ_Hosp = N_Start * p_HZ_all,
-      N_HZ_PHN = N_Start * p_PHN,
-      N_HZ_Deaths = N_Start * p_deaths_HZ
+      N_Vac = c(cohort_size, rep(0, n() - 1)),
+      p_hz = pexp(1, r_inc_hz * (1 - VE)),
+      p_hz_gp = pexp(1, r_inc_hz_gp * (1 - VE)),
+      p_hz_hosp = pexp(1, r_hosp_hz * (1 - VE)),
+      r_death = r_mor_bg + r_mor_hz * (1 - VE),
+      # p_death_bg = pexp(1, r_mor_bg),
+      # p_death_hz = pexp(1, r_mor_hz * (1 - VE)),
+      # p_death = p_death_bg + p_death_hz,
+      # Competing risk approach
+      p_death = pexp(1, r_death),
+      p_death = c(p_death[1:(n() - 1)], 1),
+      p_death_bg = p_death * r_mor_bg / r_death,
+      p_death_hz = p_death - p_death_bg,
+      p_survival = cumprod(1 - p_death)
     ) %>% 
-    select(age, starts_with("N_"))
-    
+    calc_ce(cohort_size)  %>% 
+    summarise_all(sum) %>% 
+    select(-Age) %>% 
+    ungroup()
   
-  sims <- sims0 %>% 
-    mutate(Scenario = scenario) %>% 
-    left_join(bind_rows(lapply(1:N_Iter, function(i) {
-      sample_ve(VE, vaccination_age = vaccination_age) %>% mutate(ID = i)
-    }))) %>% 
+  
+  sims <- bind_rows(
+    sims_soc %>% mutate(Group = "SOC"),
+    sims_alt %>% mutate(Group = "Vac")
+  ) %>% 
+    pivot_longer(-c(ID, Group), names_to = "Stat") %>% 
+    pivot_wider(names_from = Group) %>% 
     mutate(
-      VE_PHN_w_HZ = 0
+      Diff = Vac - SOC
     ) %>% 
-    filter(age >= vaccination_age) %>% 
-    #### Survival_probability_HZ
-    mutate(
-      age_vaccination = vaccination_age,
-      p_survival = case_when(
-        age <= vaccination_age ~ 1,
-        T ~ 1 - Background_mortality
-      ),
-      p_survival = cumprod(p_survival)
-    ) %>% 
-    #### function for calculating probabilities
-    mutate(
-      p_HZ_alive = p_HZ * p_survival,
-      p_HZ_GP_only_alive = p_HZ_GP_only * p_survival,
-      p_HZ_post_vac = p_HZ_alive * (1 - VE),  # Probability pre-vaccination * (1- VE)
-      p_deaths_HZ_post_vac = p_death_hz * (1 - VE), # Probability pre-vaccination * (1- VE)
-      p_hospitalisation = p_hospitalised_hz,
-      p_hospitalisation_post_vac = p_hospitalisation * (1 - VE)
-    ) %>% 
-    #### QALY loss HZ
-    mutate(
-      discount_ql = 1 / ((1 + discount_rate_effects)^(age - vaccination_age)),
-      QL_HZ_pre_vac = p_HZ_alive * QL_HZ_d,
-      QL_HZ_pre_vac_d = QL_HZ_pre_vac * discount_ql, # QALY loss HZ in the cohort
-      QL_o3m_pre_vac_d = QL_y1_o3m + QL_y2_d,
-      QL_o3m_post_vac_d = QL_o3m_pre_vac_d * (1 - VE_PHN_w_HZ),
-      QL_o3m_post_vac_with_VE_d = p_HZ_post_vac * QL_o3m_post_vac_d,
-      QL_o3m_post_vac_no_VE_d = p_HZ_post_vac * QL_o3m_pre_vac_d,
-      additional_QL_o3m_d = QL_o3m_post_vac_no_VE_d - QL_o3m_post_vac_with_VE_d,
-      QL_HZ_post_vac = p_HZ_post_vac * QL_HZ_d - additional_QL_o3m_d,
-      QL_HZ_post_vac_d = QL_HZ_post_vac * discount_ql,
-      QL_death_pre_vac = p_death_hz * QL_death0,
-      QL_death_pre_vac_d = QL_death_pre_vac * discount_ql,
-      QL_death_post_vac = p_deaths_HZ_post_vac * QL_death0,
-      QL_death_post_vac_d = QL_death_post_vac * discount_ql
-    ) %>%
-    mutate(
-      discount_cost = 1 / ((1+discount_rate_costs)^(age - vaccination_age)),
-      # Costs for hospitalisations due to HZ in the cohort
-      Cost_hospitalisation = p_hospitalisation * Hospitalisation_costs_pp_HZ_inf,
-      Cost_hospitalisation_d = Cost_hospitalisation * discount_cost,
-      # Costs for hospitalisations due to HZ in the cohort
-      Cost_hospitalisation_post_vac = p_hospitalisation_post_vac* Hospitalisation_costs_pp_HZ_inf,
-      Cost_hospitalisation_post_vac_d = Cost_hospitalisation_post_vac  * discount_cost,
-      p_PHN_GP = p_HZ_GP_only_alive * p_phn,
-      p_non_PHN_HZ_GP = p_HZ_GP_only_alive * (1 - p_phn),
-      # Costs for GP due to HZ in the cohort
-      Cost_GP = (p_PHN_GP * GP_cost_pp_PHN_inf) + (p_non_PHN_HZ_GP * GP_cost_pp_non_PHN_HZ_inf),
-      Cost_GP_d = Cost_GP * discount_cost,
-      # ensure VE_PHN_w_HZ only applies to zostavax
-      p_PHN_post_vac = (p_HZ_GP_only_alive * (1 - VE))*(1 - VE_PHN_w_HZ) * p_phn, #different to p_PHN_AJ
-      p_non_PHN_HZ_post_vac = (p_HZ_GP_only_alive*(1 - VE)) * (1-((1 - VE_PHN_w_HZ) * p_phn)),
-      # Costs for GP due to HZ in the cohort
-      Cost_GP_post_vac = (p_PHN_post_vac * GP_cost_pp_PHN_inf) + (p_non_PHN_HZ_post_vac * GP_cost_pp_non_PHN_HZ_inf),
-      Cost_GP_post_vac_d = Cost_GP_post_vac * discount_cost
-    ) 
+    pivot_longer(-c(ID, Stat), names_to = "Group")
+  
+  sims <- bind_rows(
+    sims, 
+    sims %>% 
+      filter(Stat %in% c("Q_All", "C_All") & Group == "Diff") %>% 
+      pivot_wider(names_from = Stat) %>% 
+      mutate(
+        Stat = "ICER",
+        value = C_All / Q_All,
+      ) %>% 
+      select(ID, Group, Stat, value),
+    sims %>% 
+      filter(Stat %in% c("Q_All_d", "C_All_d") & Group == "Diff") %>% 
+      pivot_wider(names_from = Stat) %>% 
+      mutate(
+        Stat = "ICER_d",
+        value = C_All_d / Q_All_d,
+      ) %>% 
+      select(ID, Group, Stat, value)
+  )
   
   
   tab <- sims %>% 
-    group_by(ID, Scenario) %>% 
-    summarise(
-      total_QL_no_vac_d = sum(QL_HZ_pre_vac_d + QL_death_pre_vac_d) * cohort_size,
-      total_QL_post_vac_d = sum(QL_HZ_post_vac_d + QL_death_post_vac_d) * cohort_size,
-      total_QG_HZ_d = sum(QL_HZ_pre_vac_d - QL_HZ_post_vac_d),
-      total_QG_death_HZ_d = sum(QL_death_pre_vac_d - QL_death_post_vac_d),
-      total_C_no_vac_d = sum(Cost_hospitalisation_d + Cost_GP_d) * cohort_size,
-      total_C_post_vac_d = sum(Cost_hospitalisation_post_vac_d + Cost_GP_post_vac_d) * cohort_size,
-      total_CS_hospital_d = sum(Cost_hospitalisation_d - Cost_hospitalisation_post_vac_d),
-      total_CS_GP_d = sum(Cost_GP_d- Cost_GP_post_vac_d)
+    select(-ID) %>% 
+    group_by(Stat, Group) %>% 
+    summarise_all(
+      list(
+        Mean = function(x) mean(x, na.rm = T),
+        STD = function(x) sd(x, na.rm = T),
+        Q025 = function(x) quantile(x, 0.025, na.rm = T),
+        Q25 = function(x) quantile(x, 0.25, na.rm = T),
+        Q5 = function(x) quantile(x, 0.5, na.rm = T),
+        Q75 = function(x) quantile(x, 0.75, na.rm = T),
+        Q975 = function(x) quantile(x, 0.975, na.rm = T)
+      )
     ) %>% 
     mutate(
-      cohort_size = cohort_size,
-      total_QALYs_gained_d = (total_QG_HZ_d + total_QG_death_HZ_d) * cohort_size,
-      total_CS_d = total_CS_hospital_d + total_CS_GP_d,
-      total_saved_costs_d = total_CS_d * cohort_size,
-      total_costs_intervention = cohort_size*((vaccine_cost_per_dose + admin_cost_per_dose)*number_courses),
-      total_net_cost = total_costs_intervention - total_saved_costs_d,
-      ICER = total_net_cost / total_QALYs_gained_d
-    ) %>% 
-    ungroup()
+      Scenario = scenario
+    )
   
   results[[scenario]] <- tab
   write_csv(tab, file = folder_temp(scenario + ".csv"))
-  
-  # BoD<-data.frame(Scenario=c("No vaccination", "vaccination"),
-  #                 N_HZ_cases=c(p_HZ_alive,HZ_post_vac),
-  #                 N_hospitalisations=c(Hospitalisation, Hospitalisation_post_vac),
-  #                 GP_costs_undiscounted=c(Cost_GP, Cost_GP_post_vac),
-  #                 Hospitalisation_cost_undiscounted=c(Cost_hospitalisation,Cost_hospitalisation_post_vac),
-  #                 QL_undiscounted=c(QL_HZ,QL_HZ_post_vac),
-  #                 Cost_intervention=c(0,results_df$total_costs_intervention[1]))
-  # 
-  
+
 }
 
 
 results <- bind_rows(results)
 
-write_csv(results, file = folder_temp(sprintf("CEA_%s_%s.csv", vaccine, IC_status)))
+write_csv(results, file = folder_temp(sprintf("CEA_dy_%s_%s.csv", vaccine, IC_status)))
 
-save(results, file = folder_temp(sprintf("CEA_%s_%s.rdata", vaccine, IC_status)))
-
-
-
-### Summarise results
-
-summ <- results %>% 
-  select(Scenario, total_QALYs_gained_d, total_saved_costs_d, total_costs_intervention, total_net_cost, ICER) %>% 
-  pivot_longer(-Scenario, names_to = "Index") %>% 
-  group_by(Scenario, Index) %>%
-  summarise(
-    mean = mean(value, na.rm = T),
-    sd = sd(value, na.rm = T),
-    q025 = quantile(value, 0.025, na.rm = T),
-    q250 = quantile(value, 0.25, na.rm = T),
-    q500 = quantile(value, 0.5, na.rm = T),
-    q750 = quantile(value, 0.75, na.rm = T),
-    q975 = quantile(value, 0.975, na.rm = T),
-  ) %>% 
-  ungroup() %>% 
-  extract(Scenario, "Vaccination_Age", "_(\\d+)", convert = T, remove = F) %>% 
-  arrange(Index, vaccination_age)
-
-write_csv(summ, file = folder_tab(sprintf("Summary_CEA_%s_%s.csv", vaccine, IC_status)))
-
-
-results %>% 
-  extract(Scenario, "VacAge", "CEA_\\S+_\\S+_(\\d+)", convert = T) %>% 
-  ggplot() +
-  geom_point(aes(x = VacAge, y= total_net_cost))
-
-
-results %>% 
-  extract(Scenario, "VacAge", "CEA_\\S+_\\S+_(\\d+)", convert = T) %>% 
-  ggplot() +
-  geom_point(aes(x = VacAge, y= total_QALYs_gained_d))
-
-
-results %>% 
-  extract(Scenario, "VacAge", "CEA_\\S+_\\S+_(\\d+)", convert = T) %>% 
-  ggplot() +
-  geom_point(aes(x = VacAge, y= ICER))
-
-
-
-
+save(results, file = folder_temp(sprintf("CEA_dy_%s_%s.rdata", vaccine, IC_status)))
 

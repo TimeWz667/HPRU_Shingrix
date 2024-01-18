@@ -58,19 +58,6 @@ QL_y1_o3m <- read_csv(folder_raw("13-09-2018 QL with LE ph simps 1000 bootstrap 
   mutate(age = as.numeric(gsub("age_", "", age)))
 
 
-QL <- crossing(age = 0:100, Key = 1:1000) %>% 
-  left_join(QL_y1) %>%
-  left_join(QL_y2) %>% 
-  left_join(QL_y1_o3m) %>% 
-  arrange(Key, age) %>%
-  group_by(Key) %>% 
-  fill(QL_y1, QL_y2, QL_y1_o3m, .direction = "updown") %>% 
-  ungroup() %>% 
-  mutate(
-    QL_HZ = QL_y1 + QL_y2
-  )
-
-
 QOL <- tibble(
   age = 18:100,
   QOL=c(rep(0.929, length(18:24)),
@@ -83,7 +70,25 @@ QOL <- tibble(
 ) %>% 
   full_join(tibble(age = 0:100)) %>% 
   arrange(age) %>% 
+  mutate(
+    QOL = ifelse(is.na(QOL), 1, QOL)
+  )
   fill(QOL, .direction = "updown")
+
+
+QL <- crossing(age = 0:100, Key = 1:1000) %>% 
+  left_join(QL_y1) %>%
+  left_join(QL_y2) %>% 
+  left_join(QL_y1_o3m) %>% 
+  arrange(Key, age) %>%
+  group_by(Key) %>% 
+  fill(QL_y1, QL_y2, QL_y1_o3m, .direction = "updown") %>% 
+  ungroup() %>% 
+  left_join(QOL) %>% 
+  mutate(
+    QL_HZ = QL_y1 + QL_y2
+  ) %>% 
+  relocate(Key, age, QOL)
 
 
 calc_ql_death <- function(pop, dis=0.035) {
