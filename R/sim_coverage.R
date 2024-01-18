@@ -1,4 +1,9 @@
-simulate_protection <- function(pars, year_birth = 1944, year0 = 2014, year1 = 2035, ic = FALSE) {
+simulate_protection <- function(p_initial, p_catchup, year_birth = 1944, 
+                                year0 = 2014, year1 = 2040, ic = FALSE,
+                                al_ic = 50, ah_ic = 80,
+                                year_step1 = 2023, al_step1 = 65, ah_step1 = 80,
+                                year_step2 = 2028, al_step2 = 60, ah_step2 = 80,
+                                year_step3 = 2033) {
   require(tidyverse)
   year <- year0
   age <- year0 - year_birth
@@ -20,43 +25,43 @@ simulate_protection <- function(pars, year_birth = 1944, year0 = 2014, year1 = 2
     
     p_vac <- case_when(
       year < 2014 ~ 0,
-      year < 2023 ~ case_when( # Previous programme with Zostavax
+      year < year_step1 ~ case_when( # Previous programme with Zostavax
         age < 70 ~ 0,
-        age == 70 ~ pars$p_initial,
-        age < 80 ~ pars$p_catchup,
+        age == 70 ~ p_initial,
+        age < 80 ~ p_catchup,
         T ~ 0
       ),
       ic ~ case_when( # Expanded programme with Shingrix for IC
-        age < 50 ~ 0,
-        age == 50 ~ pars$p_initial,
-        age < 80 ~ pars$p_catchup,
+        age < al_ic ~ 0,
+        age == al_ic ~ p_initial,
+        age < ah_ic ~ p_catchup,
         T ~ 0
       ),
-      year < 2028 ~ case_when( # Stage 1 of expansion
-        age < 65 ~ 0,
-        age == 65 ~ pars$p_initial,
-        age == 70 ~ pars$p_initial,
-        age < 80 ~ pars$p_catchup,
+      year < year_step2 ~ case_when( # Stage 1 of expansion
+        age < al_step1 ~ 0,
+        age == al_step1 ~ p_initial,
+        age == 70 ~ p_initial,
+        age < ah_step1 ~ p_catchup,
         T ~ 0
       ),
-      year < 2033 ~ case_when( # Stage 2 of expansion
-        age < 60 ~ 0,
-        age == 60 ~ pars$p_initial,
-        age == 65 ~ pars$p_initial,
-        age < 80 ~ pars$p_catchup,
+      year < year_step3 ~ case_when( # Stage 2 of expansion
+        age < al_step2 ~ 0,
+        age == al_step2 ~ p_initial,
+        age == al_step1 ~ p_initial,
+        age < ah_step2 ~ p_catchup,
         T ~ 0
       ),
       T ~ case_when( # Onward
-        age < 60 ~ 0,
-        age == 60 ~ pars$p_initial,
-        age < 80 ~ pars$p_catchup,
+        age < al_step2 ~ 0,
+        age == al_step2 ~ p_initial,
+        age < ah_step2 ~ p_catchup,
         T ~ 0
       )
     )
     
     type_vac <- case_when(
       year < 2014 ~ "None",
-      year < 2023 ~ "Zostavax",
+      year < year_step1 ~ "Zostavax",
       T ~ "Shingrix"
     )
     
