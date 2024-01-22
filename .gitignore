@@ -36,7 +36,8 @@ vignettes/*.pdf
 .DS_Store
 
 data/raw/
+data/raw_*/
 outputs/temp/
 note.md
 
-data/raw_*/
+
