@@ -57,7 +57,7 @@ ss <- bind_rows(
 )
 
 ss %>% 
-  mutate(value = ICER ) %>% 
+  mutate(value = ICER) %>% 
   ggplot() +
   geom_density(aes(x = value, fill = Version), alpha = 0.2) 
 
