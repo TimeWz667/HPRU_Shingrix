@@ -16,5 +16,4 @@ PrIC <- raw %>%
 
 PrIC 
 
-save(PrIC, file = here::here("data", "processed_demography", "PrIC_GDPR.rdata"))
-
+save(PrIC, file = here::here("data", "processed_demography", "PrIC_CPRD.rdata"))
