@@ -2,7 +2,7 @@ library(tidyverse)
 
 
 folder_raw <- function(x) here::here("data", "raw", x)
-folder_data <- function(x) here::here("data", x)
+folder_data <- function(x) here::here("data", "processed_epi", x)
 
 
 
@@ -164,16 +164,6 @@ Mortality_HZ <- read_csv(folder_raw("01-01-2019 HZ HES mortality incidence prima
 
 save(Incidence_HZ, Incidence_HZ_GP_only, Mortality_HZ, file = folder_data("Epi_HZ_IC.rdata"))
 
-
-
-
-
-### hospitalisation rate for HZ
-## from AJs model (based on first diagnoses per age group), from AJ's model (THIS IS THE PROPORTION OF HZ CASES HOSPITALISED AT FIRST DIAGNOSIS)
-Rate_Hospitalisation_HZ <- read_csv(folder_raw("hospitalisation_rates_old_AJ_model.csv")) %>% 
-  rename(age = Age, Hospitalisation_rate_HZ = Hospitalisation_rate)
-
-save(Rate_Hospitalisation_HZ, file = folder_data("R_Hospitalisation_HZ_AJ.rdata"))
 
 
 ## Hospitalisation rate Peter Hobbelen analysis 2004-05 to 2012-13

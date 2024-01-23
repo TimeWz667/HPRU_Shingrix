@@ -2,35 +2,13 @@ library(tidyverse)
 
 
 folder_raw <- function(x) here::here("data", "raw", x)
-folder_data <- function(x) here::here("data", x)
+folder_data <- function(x) here::here("data", "processed_vaccine", x)
 
 
 ## VE sampler
 sample_ve <- function(obj_ve, vaccination_age = 70, vid = NA, ...) {
   UseMethod("sample_ve")
 }
-
-
-#### AJ zostavax ----
-VE <- read_csv(folder_raw("VE_old_AJ_model.csv")) %>% 
-  full_join(tibble(age = 0:100), by = "age") %>% 
-  arrange(age) %>% 
-  fill(VE, .direction = "updown")
-
-VE <- list(src = VE)
-class(VE) <- "ve_aj"
-
-
-sample_ve.ve_aj <- function(obj_ve, vaccination_age = 70, ...) {
-  obj_ve$src
-}
-
-
-save(VE, sample_ve, sample_ve.ve_aj, file = folder_data("VE_Zostavax_NIC_AJ.rdata"))
-save(VE, sample_ve, sample_ve.ve_aj, file = folder_data("VE_Zostavax_IC_AJ.rdata"))
-
-
-
 
 
 ### VE HZ NIC -----
@@ -161,64 +139,4 @@ class(VE) <- "ve_mcmc_ic"
 
 
 save(VE, sample_ve, sample_ve.ve_mcmc_ic, file = folder_data("VE_Shingrix_IC.rdata"))
-
-
-
-## Not run
-library(tidyverse)
-
-theme_set(theme_bw() + theme(text = element_text(family = "sans")))
-
-
-folder_data <- function(x) here::here("data", x)
-
-
-tab <- bind_rows(local({
-  load(folder_data("VE_Shingrix_IC.rdata")) 
-  bind_rows(lapply(1:500, function(i) {
-    sample_ve(VE) %>% 
-      mutate(
-        Key = i,
-        Vaccine = "Shingrix",
-        Gp = "IC"
-      )
-  }))
-}), local({
-  load(folder_data("VE_Shingrix_NIC.rdata")) 
-  bind_rows(lapply(1:500, function(i) {
-    sample_ve(VE) %>% 
-      mutate(
-        Key = i,
-        Vaccine = "Shingrix",
-        Gp = "NIC"
-      )
-  }))
-}), local({
-  load(folder_data("VE_Zostavax_NIC.rdata")) 
-  bind_rows(lapply(1:500, function(i) {
-    sample_ve(VE) %>% 
-      mutate(
-        Key = i,
-        Vaccine = "Zostavax",
-        Gp = "NIC"
-      )
-  }))
-})
-)
-
-
-tab %>% 
-  filter(age > 70) %>% 
-  group_by(age, Vaccine, Gp) %>% 
-  summarise(
-    M = median(VE),
-    L = quantile(VE, 0.025),
-    U = quantile(VE, 0.975)
-  ) %>% 
-  ggplot() + 
-  geom_ribbon(aes(ymin = L, ymax = U, x = age, fill = Gp), alpha = 0.3) +
-  geom_line(aes(x = age, y = M, colour = Gp)) +
-  scale_y_continuous("VE %", labels = scales::percent) +
-  expand_limits(y = 1) + 
-  facet_grid(. ~ Vaccine)
 

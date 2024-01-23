@@ -50,4 +50,10 @@ Hospitalisation_HZ <- read_csv(folder_raw("hospitalisation_rates_old_AJ_model.cs
   rename(r_hospitalisation_hz = Hospitalisation_rate)
 
 
-save(Incidence_HZ, Mortality_HZ, P_PHN, Hospitalisation_HZ, file = folder_data("Epi_AJ.rdata"))
+Epi_HZ <- Incidence_HZ %>% 
+  full_join(Mortality_HZ) %>% 
+  full_join(P_PHN) %>% 
+  full_join(Hospitalisation_HZ)
+
+
+save(Incidence_HZ, Mortality_HZ, P_PHN, Hospitalisation_HZ, Epi_HZ, file = folder_data("Epi_AJ.rdata"))
