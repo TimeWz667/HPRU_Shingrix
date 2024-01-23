@@ -34,7 +34,7 @@ Incidence_HZ <- local({
 # AJ's old mortality
 Mortality_HZ <- read_csv(folder_raw("CFR_HZ_old_AJ_model.csv")) %>% 
   rename(r_death_hz = CFR) %>% 
-  mutate(p_deaths_HZ = 0)
+  mutate(p_death_hz = 0)
 
 
 P_PHN <- read_csv(folder_raw("AJ_p_PHN.csv")) %>% 
@@ -56,4 +56,4 @@ Epi_HZ <- Incidence_HZ %>%
   full_join(Hospitalisation_HZ)
 
 
-save(Incidence_HZ, Mortality_HZ, P_PHN, Hospitalisation_HZ, Epi_HZ, file = folder_data("Epi_AJ.rdata"))
+save(Incidence_HZ, Mortality_HZ, P_PHN, Hospitalisation_HZ, Epi_HZ, file = folder_data("Epi_HZ_AJ.rdata"))
