@@ -23,7 +23,7 @@
 #########################################################################################################################
 
 library(tidyverse)
-folder_data <- function(x) here::here("data", x)
+
 folder_tab <- function(x) here::here("outputs", "tabs", x)
 folder_temp <- function(x) here::here("outputs", "temp", x)
 
@@ -59,24 +59,21 @@ number_courses <- 2
 ##########################
 #### Data
 ### Demography
-load(folder_data("Population_NIC_Ons_2015.rdata"))
+load(here::here("data", "processed_demography", "Population_NIC_Ons_2015.rdata"))
 
-### Incidence HZ 
-load(folder_data("Epi_HZ_NIC.rdata"))
-load(folder_data("P_PHN_NIC_CPRD.rdata"))
-
-### Hospitalisation
-load(folder_data("R_Hospitalisation_HZ_NIC.rdata"))
+### HZ Epidemiology 
+load(here::here("data", "processed_epi", "Epi_HZ_NIC_CPRD.rdata"))
 
 ### QALY loss HZ
-load(folder_data("QOL_LE.rdata"))
+load(here::here("data", "processed_ce", "QOL_LE.rdata"))
+QL_death0 = read_csv(here::here("data", "processed_ce", "QL_death0.csv"))
 
 ### Cost 
-load(folder_data("Cost_GP_Gauthier.rdata"))
-load(folder_data("Cost_Hospitalisation_NIC.rdata"))
+load(here::here("data", "processed_ce", "Cost_GP_Gauthier.rdata"))
+load(here::here("data", "processed_ce", "Cost_Hospitalisation_NIC.rdata"))
 
 ### Vaccine efficacy
-load(folder_data("VE_Shingrix_NIC.rdata"))
+load(here::here("data", "processed_vaccine", "VE_Shingrix_NIC.rdata"))
 
 
 ### Shared properties
@@ -86,13 +83,14 @@ sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>%
   left_join(rand_table(Incidence_HZ_GP_only, N_Iter)) %>% 
   left_join(rand_table(Mortality_HZ, N_Iter)) %>% 
   left_join(rand_table(P_PHN, N_Iter)) %>% 
-  left_join(rand_table(Rate_Hospitalisation_HZ, N_Iter)) %>% 
-  left_join(rand_table(QOL, N_Iter))  %>% 
+  left_join(rand_table(Hospitalisation_HZ, N_Iter)) %>% 
+  left_join(rand_table(QL, N_Iter))  %>% 
   left_join(rand_table(Cost_Hospitalisation_HZ, N_Iter)) %>% 
-  left_join(rand_table(Cost_GP, N_Iter)) %>% 
+  left_join(rand_table(Cost_GP, N_Iter)) %>%
+  left_join(QL_death0) %>% 
   mutate(
     p_death_hz = Death_HZ,
-    p_hospitalised_hz = 1 - exp(-Hospitalisation_rate_HZ),
+    p_hospitalised_hz = 1 - exp(-r_hospitalisation_hz),
     QL_death0 = QOL * LE,
     QL_y2_d = QL_y2 / (1 + discount_rate_effects),
     QL_HZ = QL_y1 + QL_y2,
@@ -167,23 +165,23 @@ for (vaccination_age in 18:95){
     mutate(
       discount_cost = 1 / ((1+discount_rate_costs)^(age - vaccination_age)),
       # Costs for hospitalisations due to HZ in the cohort
-      Cost_hospitalisation = p_hospitalisation * Hospitalisation_costs_pp_HZ_inf,
+      Cost_hospitalisation = p_hospitalisation * cost_Hospitalisation_pp_inf,
       Cost_hospitalisation_d = Cost_hospitalisation * discount_cost,
       # Costs for hospitalisations due to HZ in the cohort
-      Cost_hospitalisation_post_vac = p_hospitalisation_post_vac* Hospitalisation_costs_pp_HZ_inf,
+      Cost_hospitalisation_post_vac = p_hospitalisation_post_vac * cost_Hospitalisation_pp_inf,
       Cost_hospitalisation_post_vac_d = Cost_hospitalisation_post_vac  * discount_cost,
       p_PHN_GP = p_HZ_GP_only_alive * p_phn,
       p_non_PHN_HZ_GP = p_HZ_GP_only_alive * (1 - p_phn),
       # Costs for GP due to HZ in the cohort
-      Cost_GP = (p_PHN_GP * GP_cost_pp_PHN_inf) + (p_non_PHN_HZ_GP * GP_cost_pp_non_PHN_HZ_inf),
+      Cost_GP = (p_PHN_GP * cost_GP_pp_PHN_inf) + (p_non_PHN_HZ_GP * cost_gp_pp_non_PHN_HZ),
       Cost_GP_d = Cost_GP * discount_cost,
       # ensure VE_PHN_w_HZ only applies to zostavax
       p_PHN_post_vac = (p_HZ_GP_only_alive * (1 - VE))*(1 - VE_PHN_w_HZ) * p_phn, #different to p_PHN_AJ
       p_non_PHN_HZ_post_vac = (p_HZ_GP_only_alive*(1 - VE)) * (1-((1 - VE_PHN_w_HZ) * p_phn)),
       # Costs for GP due to HZ in the cohort
-      Cost_GP_post_vac = (p_PHN_post_vac * GP_cost_pp_PHN_inf) + (p_non_PHN_HZ_post_vac * GP_cost_pp_non_PHN_HZ_inf),
+      Cost_GP_post_vac = (p_PHN_post_vac * cost_GP_pp_PHN_inf) + (p_non_PHN_HZ_post_vac * cost_gp_pp_non_PHN_HZ),
       Cost_GP_post_vac_d = Cost_GP_post_vac * discount_cost
-    ) 
+    )  
   
   
   tab <- sims %>% 

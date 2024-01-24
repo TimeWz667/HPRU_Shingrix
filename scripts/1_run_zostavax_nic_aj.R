@@ -3,7 +3,7 @@
 #########################################################################################################################
 
 library(tidyverse)
-folder_data <- function(x) here::here("data", x)
+
 folder_tab <- function(x) here::here("outputs", "tabs", x)
 folder_temp <- function(x) here::here("outputs", "temp", x)
 
@@ -40,36 +40,33 @@ number_courses <- 1
 ##########################
 #### Data
 ### Demography
-load(folder_data("Population_IC_AJ_2015.rdata"))
+load(here::here("data", "processed_demography", "Population_IC_AJ_2015.rdata"))
 
 ### Incidence HZ 
-load(folder_data("Epi_HZ_AJ.rdata"))
-
-### Hospitalisation
-load(folder_data("R_Hospitalisation_HZ_AJ.rdata"))
+load(here::here("data", "processed_epi", "Epi_HZ_AJ.rdata"))
 
 ### QALY loss HZ
-load(folder_data("QOL_AJ.rdata"))
+load(here::here("data", "processed_ce", "QOL_AJ.rdata"))
 
 ### Cost 
-load(folder_data("Cost_GP_AJ.rdata"))
-load(folder_data("Cost_Hospitalisation_AJ.rdata"))
+load(here::here("data", "processed_ce", "Cost_GP_AJ.rdata"))
+load(here::here("data", "processed_ce", "Cost_Hospitalisation_AJ.rdata"))
 
 ### Vaccine efficacy
-load(folder_data("VE_Zostavax_NIC_AJ.rdata"))
+load(here::here("data", "processed_vaccine", "VE_Zostavax_NIC_AJ.rdata"))
 
 
 ### Shared properties
-sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>% 
-  left_join(Pop) %>% 
+sims0 <- crossing(ID = 1:N_Iter, Age = 0:100) %>% 
+  left_join(Pop %>% rename(Age = age)) %>% 
   left_join(Incidence_HZ) %>% 
   left_join(Mortality_HZ) %>% 
   left_join(P_PHN) %>% 
-  left_join(Rate_Hospitalisation_HZ) %>% 
-  left_join(QOL)  %>% 
-  left_join(Cost_Hospitalisation_HZ) %>% 
-  left_join(Cost_GP_per_HZ) %>% 
-  arrange(ID, age)
+  left_join(Hospitalisation_HZ) %>% 
+  left_join(QOL %>% rename(Age = age))  %>% 
+  left_join(Cost_Hospitalisation_HZ %>% rename(Age = age)) %>% 
+  left_join(Cost_GP_per_HZ %>% rename(Age = age)) %>% 
+  arrange(ID, Age)
 
 
 ### start loop
@@ -111,8 +108,8 @@ for (vaccination_age in 60:95){
       p_HZ_alive = p_HZ * p_survival,
       p_HZ_GP_only_alive = p_HZ_GP_only * p_survival,
       p_HZ_post_vac = p_HZ_alive * (1 - VE),  # Probability pre-vaccination * (1- VE)
-      p_deaths_HZ_post_vac = p_deaths_HZ * (1 - VE), # Probability pre-vaccination * (1- VE)
-      p_hospitalisation = p_HZ_alive * Hospitalisation_rate_HZ,
+      p_deaths_HZ_post_vac = p_death_hz * (1 - VE), # Probability pre-vaccination * (1- VE)
+      p_hospitalisation = p_HZ_alive * r_hospitalisation_hz,
       p_hospitalisation_post_vac = p_hospitalisation * (1 - VE)
     ) %>% 
     #### QALY loss HZ

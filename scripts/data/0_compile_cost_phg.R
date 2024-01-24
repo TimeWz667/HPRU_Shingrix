@@ -42,7 +42,7 @@ save(Cost_Hospitalisation_HZ, file = folder_data("Cost_Hospitalisation_NIC.rdata
 Cost_Hospitalisation_HZ <- read_csv(folder_raw("Cost HZ hospitalisation IC sim_coef_agelm_rr_100000.csv"))[-1] %>% 
   rename(beta_age = age) %>% 
   mutate(Key = 1:n()) %>% 
-  filter(Key == sample(Key, 1000)) %>% 
+  filter(Key %in% sample(Key, 1000)) %>% 
   mutate(Key = 1:n()) %>% 
   crossing(tibble(age = 0:100)) %>% 
   arrange(Key, age) %>% 
@@ -91,7 +91,7 @@ Cost_GP <- tibble(Key = 1:1e5) %>%
     cost_GP_pp_non_PHN_HZ_inf = cost_gp_pp_non_PHN_HZ * (index_2016_17 / index_2005_06),
     cost_GP_pp_PHN_inf = cost_GP_pp_PHN * (index_2016_17 / index_2005_06)
   ) %>% 
-  select(Key, starts_with("GP_cost"))
+  select(Key, starts_with("cost_GP"))
 
 
 save(Cost_GP, file = folder_data("Cost_GP_Gauthier.rdata"))

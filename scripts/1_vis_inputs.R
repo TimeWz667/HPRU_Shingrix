@@ -4,7 +4,6 @@ library(tidybayes)
 theme_set(theme_bw())
 
 
-folder_data <- function(x) here::here("data", x)
 folder_outputs <- function(x) here::here("outputs", "figs", x)
 
 set.seed(11667)
@@ -15,7 +14,7 @@ N_Iter <- 1000
 
 ## Population / Background Mortality -----
 
-load(folder_data("Population_IC_Ons_2015.rdata"))
+load(here::here("data", "processed_demography", "Population_IC_Ons_2015.rdata"))
 
 
 g <- Pop %>% 
@@ -41,7 +40,7 @@ g
 ggsave(g, filename = folder_outputs("Inputs_DeathBg_IC_Ons_2015.png"), width = 6, height = 4)
 
 
-load(folder_data("Population_NIC_Ons_2015.rdata"))
+load(here::here("data", "processed_demography", "Population_NIC_Ons_2015.rdata"))
 tag <- "NIC, ONS, 2015"
 
 g <- Pop %>% 
@@ -69,8 +68,8 @@ ggsave(g, filename = folder_outputs("Inputs_DeathBg_NIC_Ons_2015.png"), width = 
 
 ## Epidemiology -----
 local({
-  load(folder_data("Epi_HZ_IC.rdata"))
-  load(folder_data("P_PHN_IC_CPRD.rdata"))
+  load(here::here("data", "processed_epi", "Epi_HZ_IC.rdata"))
+
   tag <- "IC CPRD 16/04/2019"
   
   
@@ -130,8 +129,7 @@ local({
 
 
 local({
-  load(folder_data("Epi_HZ_NIC.rdata"))
-  load(folder_data("P_PHN_NIC_CPRD.rdata"))
+  load(here::here("data", "processed_epi", "Epi_HZ_NIC.rdata"))
   tag <- "NIC CPRD 16/04/2019"
   
   
