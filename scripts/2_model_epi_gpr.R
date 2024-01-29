@@ -4,8 +4,9 @@ library(GauPro)
 library(tidybayes)
 
 
-epi <- read_xlsx(here::here("data", "raw", "Zoster_Burden_Results_Nov19_Trimmed.xlsx"), 1)
+epi_zh <- read_xlsx(here::here("data", "raw", "Zoster_Burden_Results_Nov19_Trimmed.xlsx"), 1)
 epi_gp <- read_xlsx(here::here("data", "raw", "Zoster_Burden_Results_Nov19_Trimmed.xlsx"), 2)
+epi_phn <- read_xlsx(here::here("data", "raw", "Zoster_Burden_Results_Nov19_Trimmed.xlsx"), 3)
 
 
 epi <- epi %>% 
