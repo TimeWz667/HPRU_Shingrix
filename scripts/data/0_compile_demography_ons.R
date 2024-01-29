@@ -37,6 +37,25 @@ demo_pre_as <- bind_rows(lapply(2012:2020, function(yr) {
     Location = ifelse(Location == "ENGLAND", "England", "UK")
   )
 
+demo_pre_as_old <- demo_pre_as %>% 
+  filter(Age == 90) %>% 
+  select(- Age) %>% 
+  full_join(crossing(Year = 2012:2020, Age = 90:100), relationship = "many-to-many") %>% 
+  group_by(Location, Year, Sex) %>% 
+  mutate(
+    k = 100 - Age,
+    k = k / sum(k),
+    N = N * k
+  ) %>% 
+  ungroup() %>% 
+  select(Location, Year, Age, Sex, N)
+
+
+demo_pre_as <- bind_rows(
+  demo_pre_as %>% filter(Age != 90),
+  demo_pre_as_old
+)
+
 
 demo_pre <- bind_rows(lapply(2012:2020, function(yr) {
   raw_pre <- read_xlsx(here::here("data", "raw_demography", "PopulationByAge.xlsx"), sheet = as.character(yr))
@@ -57,6 +76,25 @@ demo_pre <- bind_rows(lapply(2012:2020, function(yr) {
   mutate(
     Location = ifelse(Location == "ENGLAND", "England", "UK")
   )
+
+demo_pre_old <- demo_pre %>% 
+  filter(Age == 90) %>% 
+  select(- Age) %>% 
+  full_join(crossing(Year = 2012:2020, Age = 90:100), relationship = "many-to-many") %>% 
+  group_by(Location, Year) %>% 
+  mutate(
+    k = 100 - Age,
+    k = k / sum(k),
+    N = N * k
+  ) %>% 
+  ungroup() %>% 
+  select(Location, Year, Age, N)
+
+
+demo_pre <- bind_rows(
+  demo_pre %>% filter(Age != 90),
+  demo_pre_old
+)
 
 
 rat <- demo_pre %>% 
