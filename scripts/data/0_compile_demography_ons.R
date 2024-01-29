@@ -89,8 +89,8 @@ demo_ons <- mor_proj %>%
   inner_join(
     bind_rows(
       demo_pre_as %>% mutate(Type = "History"),
-      demo_proj_as %>% mutate(Location = "UK", Type = "Projection"),
-      demo_proj_as %>% mutate(Location = "England", N = round(N * rat), Type = "Projection")
+      demo_proj_as %>% filter(Year > 2020) %>% mutate(Location = "UK", Type = "Projection"),
+      demo_proj_as %>% filter(Year > 2020) %>% mutate(Location = "England", N = round(N * rat), Type = "Projection")
     )
   ) %>% 
   group_by(Location, Year, Age, Type) %>% 
