@@ -10,7 +10,7 @@ pars_demo <- lapply(c(England = "England", UK = "UK"), function(loc) {
     select(Year0 = Year, Age0 = Age, dr = mortality, N0 = N)
   
   demo_to <- demo_ons %>% 
-    filter(Location != loc) %>% 
+    filter(Location == loc) %>% 
     select(Year1 = Year, Age1 = Age, N1 = N) %>% 
     mutate(
       Year0 = Year1 - 1,
@@ -29,7 +29,7 @@ pars_demo <- lapply(c(England = "England", UK = "UK"), function(loc) {
       ) %>% 
       select(Year = Year0, Age = Age0, r_death = dr, r_immigration),
     Birth = demo_ons %>% 
-      filter(Location != loc) %>%
+      filter(Location == loc) %>%
       filter(Age == 0) %>% 
       select(Year, N_Birth = N) %>% 
       mutate(
@@ -39,80 +39,60 @@ pars_demo <- lapply(c(England = "England", UK = "UK"), function(loc) {
 })
 
 
-
-pars <- pars_demo$England
-
+save(pars_demo, file = here::here("pars", "pars_demo.rdata"))
 
 
-year0 <- 2015
 
 
 # initialise
+theme_set(theme_bw())
 
-simulate_demo <- function(year0 = 2015, year1 = 2040, pars) {
-  ys <- list()
-  
-  sim_0 <- pars$N %>% filter(Year == year0)
-  
-  for (yr in year0:year1) {
-    sim_t <- sim_0 %>% 
-      left_join(pars$DeathIm, by = c("Year", "Age")) %>%
-      mutate(
-        Death = r_death * N,
-        Im = r_immigration * N,
-        N = N - Death + Im
-      ) %>% 
-      select(Year, Age, N, Death, Im)
-    
-    sim_1 <- sim_t %>% 
-      mutate(
-        N = N - Death + Im,
-        Year = yr + 1, 
-        Age = Age + 1
-      ) %>% 
-      select(Year, Age, N) %>% 
-      filter(Age <= 100)
-    
-    sim_0 <-  bind_rows(
-      tibble(Year = yr + 1, Age = 0, 
-             N = pars$Birth %>% filter(Year == yr) %>% pull(N_Birth)),
-      sim_1
-    )
-    
-    ys[[length(ys) + 1]] <- sim_t
-  }
-  ys <- bind_rows(ys)  
-  
-}
+source(here::here("models", "m_dy_population.R"))
 
 
-
-ys_eng <- simulate_demo(pars = pars)
-
-ys_eng %>% 
-  filter(Age > 98)
+ys_eng <- simulate_demo(pars = pars_demo$England)
 
 
-ys_eng %>% 
+dat_sel <- demo_ons %>% 
+  filter(Location == "England") %>% 
+  filter(Year %in% c(2015, 2020, 2025, 2030)) %>% 
   mutate(
-    AgeGrp <- case_wh
-  )
-
-  
-  
-  
-
+    AgeGrp = cut(Age, seq(0, 100, 10), right = F)
+  ) %>% 
+  filter(!is.na(AgeGrp)) %>% 
+  group_by(Year, AgeGrp) %>% 
+  summarise(N = sum(N))
 
 
+ys_eng %>% 
+  filter(Year %in% c(2015, 2020, 2025, 2030)) %>% 
+  mutate(
+    AgeGrp = cut(Age, seq(0, 100, 10), right = F)
+  ) %>% 
+  filter(!is.na(AgeGrp)) %>% 
+  group_by(Year, AgeGrp) %>% 
+  summarise(N = sum(N)) %>% 
+  ggplot() +
+  geom_bar(aes(x = N, y = AgeGrp), stat = "identity", alpha = 0.3) +
+  geom_point(data = dat_sel, aes(x = N, y = AgeGrp)) +
+  scale_x_continuous("Population Million", labels = scales::number_format(scale = 1e-6)) +
+  facet_wrap(.~Year) +
+  expand_limits(x = 10e6)
 
 
+dat_sel <- demo_ons %>% 
+  filter(Location == "England") %>% 
+  group_by(Year) %>% 
+  summarise(N = sum(N)) %>% 
+  filter(Year %in% seq(2015, 2040, 5))
 
 
-
-
-
-
-
-
-
+ys_eng %>% 
+  group_by(Year) %>% 
+  summarise(N = sum(N)) %>% 
+  ungroup() %>% 
+  ggplot() +
+  geom_line(aes(x = Year, y = N)) +
+  geom_point(data = dat_sel, aes(x = Year, y = N)) +
+  expand_limits(y = 0)
 
