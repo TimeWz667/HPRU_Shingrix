@@ -92,6 +92,8 @@ Epi_HZ <- bind_rows(sims0, sims1)
 
 save(Epi_HZ, file = here::here("data", "processed_epi", "Epi_HZ_CPRD_GPR.rdata"))
 
+pars_epi <- Epi_HZ
+save(pars_epi, file = here::here("pars", "pars_epi_GPR.rdata"))
 
 
 ### Check inputs
