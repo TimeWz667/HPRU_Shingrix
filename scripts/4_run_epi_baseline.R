@@ -45,180 +45,270 @@ pars_ves <- local({
 })
 
 
-
-pars <- c(pars_demo$England, list(
-  Epi = pars_epi %>% filter(Key == k) %>% select(-Key),
-  Uptake = pars_uptake,
-  VE = pars_ves
-))
-
-
-
-
 scenario_soc <- function(df, p0, yr) find_eligible_default(df, p0, min(yr, 2022))
 scenario_p65 <- function(df, p0, yr) find_eligible_default(df, p0, min(yr, 2027))
 scenario_full <- find_eligible_default
 
+scenario_2028_90 <- function(df, p0, yr) {
+  if (yr < 2028) {
+    df <- find_eligible_default(df, p0, yr)
+  } else {
+    df <- find_eligible_default(df, p0, yr, cap = 90)
+  }
+  return(df)
+}
 
-yss <- bind_rows(
-  sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_soc) %>% mutate(Scenario = "SOC"),
-  sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_p65) %>% mutate(Scenario = "To 65 yr"),
-  sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_full) %>% mutate(Scenario = "Full")
-)
-
-
-
-
-
-ys <- sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_full)
-
-
-ys %>% 
-  filter(Age >= 70) %>% 
-  group_by(Year, Age) %>% 
-  summarise(
-    Coverage = weighted.mean((Vaccine != "None"), w = N)
-  ) %>% 
-  mutate(Cohort = Year - Age + 70) %>% 
-  filter(Coverage > 0) %>% 
-  ggplot() +
-  geom_line(aes(x = Age, y = Coverage, colour = as.character(Cohort))) 
+scenario_2033_90 <- function(df, p0, yr) {
+  if (yr < 2033) {
+    df <- find_eligible_default(df, p0, yr)
+  } else {
+    df <- find_eligible_default(df, p0, yr, cap = 90)
+  }
+  return(df)
+}
 
 
-ys %>% 
+yss_soc <- list()
+yss_p1 <- list()
+yss_p2 <- list()
+yss_p1_90 <- list()
+yss_p2_90 <- list()
+
+
+keys <- pars_epi %>% pull(Key) %>% unique()
+
+for(k in keys[1:50]) {
+  print(k)
+  
+  pars <- c(pars_demo$England, list(
+    Epi = pars_epi %>% filter(Key == k) %>% select(-Key),
+    Uptake = pars_uptake,
+    VE = pars_ves
+  ))
+  
+  yss_soc[[length(yss_soc) + 1]] <- sim_dy_hz_vac(pars, year1 = 2040, 
+                                                  rule_eligible = scenario_soc) %>% mutate(Scenario = "SOC", Key = k)
+  yss_p1[[length(yss_p1) + 1]] <- sim_dy_hz_vac(pars, year1 = 2040, 
+                                                rule_eligible = scenario_p65) %>% mutate(Scenario = "To 65 yr", Key = k)
+  yss_p2[[length(yss_p2) + 1]] <- sim_dy_hz_vac(pars, year1 = 2040, 
+                                                rule_eligible = scenario_full) %>% mutate(Scenario = "Full", Key = k)
+  yss_p1_90[[length(yss_p1_90) + 1]] <- sim_dy_hz_vac(pars, year1 = 2040, 
+                                                      rule_eligible = scenario_2028_90) %>% mutate(Scenario = "To 90 yr at 2028", Key = k)
+  yss_p2_90[[length(yss_p2_90) + 1]] <- sim_dy_hz_vac(pars, year1 = 2040, 
+                                                      rule_eligible = scenario_2033_90) %>% mutate(Scenario = "To 90 yr at 2033", Key = k)
+}
+
+
+save(yss_soc, file = here::here("outputs", "temp", "yss_soc.rdata"))
+save(yss_p1, file = here::here("outputs", "temp", "yss_p1.rdata"))
+save(yss_p2, file = here::here("outputs", "temp", "yss_p2.rdata"))
+save(yss_p1_90, file = here::here("outputs", "temp", "yss_p1_90.rdata"))
+save(yss_p2_90, file = here::here("outputs", "temp", "yss_p2_90.rdata"))
+
+
+
+yss <- bind_rows(c(yss_soc, yss_p1, yss_p2, yss_p1_90, yss_p2_90))
+
+
+g_cov <- yss %>% 
   filter(Age >= 50) %>% 
-  mutate(
-    AgeGrp = cut(Age, seq(0, 100, 5), right = F)
-  )  %>% 
-  filter(!is.na(AgeGrp)) %>% 
-  group_by(Year, AgeGrp) %>% 
+  group_by(Year, Scenario) %>% 
   summarise(
     Coverage = weighted.mean((Vaccine != "None"), w = N)
   ) %>% 
-  filter(Year %in% seq(2018, 2040, 5)) %>% 
   ggplot() +
-  geom_bar(aes(x = AgeGrp, y = Coverage, fill = as.character(Year)), stat = "identity", position = "dodge", width = 0.8, alpha = 0.8) +
-  scale_y_continuous("Coverage, %", labels = scales::percent) +
-  # facet_wrap(.~Year) +
-  expand_limits(y = 0:1)
-
-
-ys %>% 
-  filter(Age >= 50) %>% 
-  mutate(
-    AgeGrp = cut(Age, seq(0, 100, 5), right = F)
-  )  %>% 
-  filter(!is.na(AgeGrp)) %>% 
-  group_by(Year, AgeGrp) %>% 
-  summarise(
-    Coverage = weighted.mean((Vaccine != "None"), w = N)
-  ) %>% 
-  filter(Year %in% seq(2018, 2040, 5)) %>% 
-  ggplot() +
-  geom_bar(aes(x = AgeGrp, y = Coverage, fill = as.character(Year)), stat = "identity", position = "dodge", width = 0.8, alpha = 0.8) +
-  scale_y_continuous("Coverage, %", labels = scales::percent) +
-  # facet_wrap(.~Year) +
-  expand_limits(y = 0:1)
-
-
-ys %>% 
-  filter(Age >= 50 & Age <= 100) %>% 
-  group_by(Year, Age) %>% 
-  summarise(
-    Coverage = weighted.mean((Vaccine != "None"), w = N)
-  ) %>% 
-  filter(Year %in% seq(2018, 2040, 5)) %>% 
-  mutate(
-    AgeGrp = cut(Age, c(50, 60, 65, 70, 80, 90, 100), right = F)
-  ) %>% 
-  filter(!is.na(AgeGrp)) %>% 
-  ggplot() +
-  geom_bar(aes(x = Age, y = Coverage, fill = AgeGrp), stat = "identity", width = 1) +
-  #geom_line(aes(x = Age, y = Coverage, colour = as.character(Year))) +
-  scale_y_continuous("Coverage, %", labels = scales::percent) +
-  facet_wrap(.~Year) +
-  expand_limits(y = 0:1)
-
-
-
-
-
-ys %>% 
-  group_by(Year) %>% 
-  summarise(
-    Incidence = sum(HZ) / sum(N)
-  ) %>% 
-  ggplot() +
-  geom_line(aes(x = Year, y = Incidence)) +
-  geom_vline(xintercept = c(2023, 2028, 2033) - 1, linetype = 2) +
-  geom_text(x = 2023 - 1, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
-  geom_text(x = 2028 - 1, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
-  geom_text(x = 2033 - 1, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) + 
-  scale_y_continuous("Incidence, per 100k", labels = scales::number_format(scale = 1e5)) +
+  geom_line(aes(x = Year + 1, y = Coverage, colour = Scenario)) +
+  geom_vline(xintercept = c(2023, 2028, 2033), linetype = 2) +
+  geom_text(x = 2023, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2028, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2033, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) + 
+  scale_y_continuous("Coverage, 50+, %", labels = scales::percent) +
   expand_limits(y = 0)
 
 
-
-
-yss %>% 
+g_trend <- yss %>% 
+  filter(Age >= 50) %>% 
   group_by(Year, Scenario) %>% 
   summarise(
     Incidence = sum(HZ) / sum(N)
   ) %>% 
   ggplot() +
-  geom_line(aes(x = Year, y = Incidence, colour = Scenario)) +
-  geom_vline(xintercept = c(2023, 2028, 2033) - 1, linetype = 2) +
-  geom_text(x = 2023 - 1, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
-  geom_text(x = 2028 - 1, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
-  geom_text(x = 2033 - 1, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) + 
-  scale_y_continuous("Incidence, per 100k", labels = scales::number_format(scale = 1e5)) +
+  geom_line(aes(x = Year + 1, y = Incidence, colour = Scenario)) +
+  geom_vline(xintercept = c(2023, 2028, 2033), linetype = 2) +
+  geom_text(x = 2023, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2028, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2033, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) + 
+  scale_y_continuous("Incidence, 50+, per 100k", labels = scales::number_format(scale = 1e5)) +
+  expand_limits(y = 0)
+
+ggsave(g_cov, filename = here::here("outputs", "figs", "g_epi_coverage.png"), width = 6.5, height = 4)
+ggsave(g_trend, filename = here::here("outputs", "figs", "g_epi_trend.png"), width = 6.5, height = 4)
+
+
+
+stats <- yss %>% 
+  filter(Age >= 50) %>% 
+  mutate(NewUptake = ifelse(is.na(NewUptake), 0, NewUptake)) %>% 
+  group_by(Year, Age, Scenario) %>% 
+  summarise(
+    across(c(N, starts_with("HZ"), NewUptake), mean)
+  )
+
+stats %>% 
+  group_by(Year, Scenario) %>% 
+  summarise(
+    Incidence = sum(HZ) / sum(N)
+  ) %>% 
+  ggplot() +
+  geom_line(aes(x = Year + 1, y = Incidence, colour = Scenario)) +
+  geom_vline(xintercept = c(2023, 2028, 2033), linetype = 2) +
+  geom_text(x = 2023, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2028, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2033, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) + 
+  scale_y_continuous("Incidence, 50+, per 100k", labels = scales::number_format(scale = 1e5)) +
   expand_limits(y = 0)
 
 
+avt <- stats %>% 
+  group_by(Year, Scenario) %>% 
+  summarise(
+    Cases = sum(HZ)
+  ) %>% 
+  arrange(Year) %>%
+  group_by(Scenario) %>% 
+  mutate(
+    CumCases = cumsum(Cases)
+  ) %>% 
+  ungroup()
+
+g_avt_n <- avt %>% 
+  left_join(avt %>% filter(Scenario == "SOC") %>% select(Year, CumCases0 = CumCases), by = "Year") %>% 
+  ggplot() +
+  geom_line(aes(x = Year, y = CumCases0 - CumCases, colour = Scenario)) +
+  scale_y_continuous("Cases averted, million", labels = scales::number_format(scale = 1e-6))
 
 
+g_avt_p <- avt %>% 
+  left_join(avt %>% filter(Scenario == "SOC") %>% select(Year, CumCases0 = CumCases), by = "Year") %>% 
+  ggplot() +
+  geom_line(aes(x = Year, y = 1 - CumCases / CumCases0, colour = Scenario)) +
+  scale_y_continuous("Cases averted, %", labels = scales::percent)
 
-keys <- pars_epi %>% pull(Key) %>% unique()
+
+ggsave(g_avt_n, filename = here::here("outputs", "figs", "g_epi_avt_n.png"), width = 6.5, height = 4)
+ggsave(g_avt_p, filename = here::here("outputs", "figs", "g_epi_avt_p.png"), width = 6.5, height = 4)
 
 
-results <- lapply(keys[1:30], function(k) {
-  pars <- c(pars_demo$England, list(
-    Epi = pars_epi %>% filter(Key == k) %>% select(-Key),
-    Uptake = pars_uptake
-  ))
-  
-  ys <- sim_dy_hz(pars, 2013, 2040)
-  stats <- ys %>%
-    group_by(Year) %>%
-    filter(Age <= 99) %>% 
-    summarise(
-      across(starts_with(c("Dea", "HZ")), function(x) sum(x, na.rm = T) / sum(N))
-    ) %>% 
-    mutate(Key = k)
-  
-  list(Ys = ys, Stats = stats)
-})
 
 
 load(here::here("data", "processed_ce", "Cost_Hospitalisation_NIC.rdata"))
+load(here::here("data", "processed_ce", "Cost_GP_Gauthier.rdata"))
 load(here::here("data", "processed_ce", "QOL_LE.rdata"))
 
 
+pars_ce <- QL %>% 
+  select(- Key) %>%
+  group_by(age) %>% 
+  summarise(across(everything(), mean)) %>% 
+  left_join(Cost_Hospitalisation_HZ %>% select(- Key)) %>% 
+  bind_cols(Cost_GP %>% select(- Key) %>% summarise(across(everything(), mean))) %>% 
+  rename(Age = age)
 
 
-summary_hz <- bind_rows(lapply(results, function(x) x$Stats))
+
+### discount rate costs
+discount_rate_costs <- 0.035
+### discount rate effects
+discount_rate_effects <- 0.035
+
+### vaccine coverage
+vaccine_coverage <- 0.483 
+### cost per vaccine dose
+cost_vac_per_dose <- 75
+### admin cost per vaccine dose (item of service fee for 2018/19, https://www.nhsemployers.org/-/media/Employers/Documents/Primary-care-contracts/V-and-I/201819-Vaccination-and-immunisation-guidance-and-audit-requirements.PDF?la=en&hash=B3DFFE1BE23C5826841A87704FF305964A481A42)
+cost_admin_per_dose <- 10
+### number of doses
+number_courses <- 2
+
+### Vaccine cost per vaccination
+cost_vac_pp <- (cost_vac_per_dose + cost_admin_per_dose) * number_courses
+
+stats_ce <- stats %>% 
+  left_join(pars_ce) %>% 
+  filter(Year >= 2022) %>% 
+  mutate(
+    dis_ql = 1 / ((1 + discount_rate_effects)^ (Year - 2023)),
+    dis_cost = 1 / ((1 + discount_rate_costs)^ (Year - 2023)),
+    QL_y2_d = QL_y2 / (1 + discount_rate_effects),
+    QL_HZ = QL_y1 + QL_y2,
+    QL_HZ_d = QL_y1 + QL_y2_d,
+    Q_Life = N * QOL,
+    Q_HZ = - HZ * QL_HZ,
+    Q_All = Q_Life + Q_HZ,
+    Q_Life_d = Q_Life * dis_ql,
+    Q_HZ_d = - HZ * QL_HZ_d * dis_ql,
+    Q_All_d = Q_Life_d + Q_HZ_d,
+    C_Hosp = HZ_Hosp * cost_Hospitalisation_pp_inf,
+    C_GP_NonPHN = (HZ_GP - HZ_PHN_GP) * cost_GP_pp_non_PHN_HZ_inf,
+    C_GP_PHN = HZ_PHN_GP * cost_GP_pp_PHN_inf,
+    C_GP = C_GP_NonPHN + C_GP_PHN,
+    C_Vac = cost_vac_pp * NewUptake,
+    C_Vac_d = C_Vac * dis_ql,
+    C_All = C_Hosp + C_GP + C_Vac,
+    C_Hosp_d = C_Hosp * dis_cost,
+    C_GP_NonPHN_d = C_GP_NonPHN * dis_cost,
+    C_GP_PHN_d = C_GP_PHN * dis_cost,
+    C_GP_d = C_GP * dis_cost,
+    C_All_d = C_Hosp_d + C_GP_d + C_Vac_d
+  )
 
 
-
-
-
-ys %>% 
-  group_by(Year) %>%
-  filter(Age <= 99) %>% 
-  summarise(across(starts_with("HZ"), function(x) sum(x, na.rm = T) / sum(N))) %>% 
-  pivot_longer(-Year) %>% 
+g_q_all <- stats_ce %>% 
+  group_by(Year, Scenario) %>% 
+  summarise(
+    Q_All_d = sum(Q_All_d)
+  ) %>% 
   ggplot() +
-  geom_line(aes(x = Year, y = value, colour = name))
-  
+  geom_line(aes(x = Year + 1, y = Q_All_d, colour = Scenario)) +
+  scale_y_continuous("QALY, million, discounted", labels = scales::number_format(scale = 1e-6)) +
+  geom_vline(xintercept = c(2023, 2028, 2033), linetype = 2) +
+  geom_text(x = 2023, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2028, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2033, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) +
+  expand_limits(y = 0)
+
+g_c_all <- stats_ce %>% 
+  group_by(Year, Scenario) %>% 
+  summarise(
+    C_All_d = sum(C_All_d)
+  ) %>% 
+  ggplot() +
+  geom_line(aes(x = Year + 1, y = C_All_d, colour = Scenario)) +
+  scale_y_continuous("Medical + Vaccine costs, million GBP, discounted", labels = scales::number_format(scale = 1e-6)) +
+  geom_vline(xintercept = c(2023, 2028, 2033), linetype = 2) +
+  geom_text(x = 2023, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2028, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2033, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) +
+  expand_limits(y = 0)
+
+
+g_c_vac <- stats_ce %>% 
+  group_by(Year, Scenario) %>% 
+  summarise(
+    C_Vac_d = sum(C_Vac_d)
+  ) %>% 
+  ggplot() +
+  geom_line(aes(x = Year + 1, y = C_Vac_d, colour = Scenario)) +
+  scale_y_continuous("Vaccine costs, million GBP, discounted", labels = scales::number_format(scale = 1e-6)) +
+  geom_vline(xintercept = c(2023, 2028, 2033), linetype = 2) +
+  geom_text(x = 2023, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2028, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2033, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) +
+  expand_limits(y = c(0, 1e8))
+
+ggsave(g_c_vac, filename = here::here("outputs", "figs", "g_epi_c_vac.png"), width = 6.5, height = 4)
+ggsave(g_c_all, filename = here::here("outputs", "figs", "g_epi_c_all.png"), width = 6.5, height = 4)
+ggsave(g_q_all, filename = here::here("outputs", "figs", "g_epi_q_all.png"), width = 6.5, height = 4)
+
 
 

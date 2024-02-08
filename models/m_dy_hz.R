@@ -11,11 +11,11 @@ sim_death_im <- function(df, p0) {
 }
 
 
-sim_bir_ageing <- function(df, p0, yr) {
+sim_bir_ageing <- function(df, p0, yr, hz = F) {
   # Ageing
   sim_1 <- df %>% 
     mutate(
-      N = N - Death + Im,
+      N = N - Death + Im - ifelse(hz, HZ_Death, 0),
       Year = yr + 1, 
       Age = Age + 1
     ) %>% 
@@ -118,7 +118,7 @@ sim_ve <- function(df, ve = NULL) {
 
 
 
-find_eligible_default <- function(df, p0, yr) {
+find_eligible_default <- function(df, p0, yr, cap = 80) {
   if (yr < 2023) {
     df <- df %>% mutate(uptake = case_when(
       Vaccine != "None" ~ 0,
@@ -133,7 +133,7 @@ find_eligible_default <- function(df, p0, yr) {
       Age < 65 ~ 0,
       Age == 65 ~ p0$p_initial,
       Age == 70 ~ p0$p_initial,
-      Age <= 80 ~ p0$p_catchup,
+      Age <= cap ~ p0$p_catchup,
       T ~ 0
     ))
   } else if (yr < 2033) {
@@ -142,7 +142,7 @@ find_eligible_default <- function(df, p0, yr) {
       Age < 60 ~ 0,
       Age == 60 ~ p0$p_initial,
       Age == 65 ~ p0$p_initial,
-      Age <= 80 ~ p0$p_catchup,
+      Age <= cap ~ p0$p_catchup,
       T ~ 0
     ))
   } else {
@@ -150,7 +150,7 @@ find_eligible_default <- function(df, p0, yr) {
       Vaccine != "None" ~ 0,
       Age < 60 ~ 0,
       Age == 60 ~ p0$p_initial,
-      Age <= 80 ~ p0$p_catchup,
+      Age <= cap ~ p0$p_catchup,
       T ~ 0
     ))
   }
@@ -176,7 +176,7 @@ sim_dy_hz_vac <- function(pars, year0 = 2013, year1 = 2040, rule_eligible = find
       sim_death_im(pars$DeathIm) %>% 
       sim_hz(pars$Epi)
     
-    sim_0 <- sim_bir_ageing(sim_t, pars$Birth, yr)
+    sim_0 <- sim_bir_ageing(sim_t, pars$Birth, yr, hz = (yr < 2023))
     
     ys[[length(ys) + 1]] <- sim_t
   }
