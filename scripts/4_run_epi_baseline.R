@@ -6,47 +6,11 @@ theme_set(theme_bw())
 source(here::here("models", "m_dy_hz.R"))
 
 
-load(here::here("pars", "pars_demo.rdata"))
-
-
-pars_epi <- local({
-  p_mor_hz <- local({
-    load(here::here("data", "processed_epi", "Epi_HZ_NIC_CPRD_bind.rdata"))
-    
-    Epi_HZ %>% 
-      group_by(Age) %>% 
-      summarise(p_mor_hz = mean(r_mor_hz) / mean(r_inc_hz))
-  })
-  
-  load(here::here("pars", "pars_epi_gpr.rdata"))
-  
-  
-  pars_epi %>% 
-    filter(IC == 0) %>% 
-    left_join(p_mor_hz) %>% 
-    select(-IC) %>% 
-    arrange(Key, Age)
-})
-
-
-pars_uptake <- local({
-  load(here::here("data", "fitted_coverage.rdata"))
-  
-  pred1$pars
-})
-
-
-pars_ves <- local({
-  load(here::here("pars", "ves.rdata"))
-  
-  ves %>% 
-    filter(!IC) %>% 
-    select(Age, AgeVac, Vaccine = TypeVac, Protection = VE)
-})
-
-
+## Eligibility functions -----
 scenario_soc <- function(df, p0, yr) find_eligible_default(df, p0, min(yr, 2022))
+
 scenario_p65 <- function(df, p0, yr) find_eligible_default(df, p0, min(yr, 2027))
+
 scenario_full <- find_eligible_default
 
 scenario_2028_90 <- function(df, p0, yr) {
@@ -68,6 +32,44 @@ scenario_2033_90 <- function(df, p0, yr) {
 }
 
 
+## Loading parameters -----
+load(here::here("pars", "pars_demo.rdata"))
+
+
+pars_epi <- local({
+  p_mor_hz <- local({
+    load(here::here("data", "processed_epi", "Epi_HZ_NIC_CPRD_bind.rdata"))
+    
+    Epi_HZ %>% 
+      group_by(Age) %>% 
+      summarise(p_mor_hz = mean(r_mor_hz) / mean(r_inc_hz))
+  })
+  load(here::here("pars", "pars_epi_gpr.rdata"))
+  
+  pars_epi %>% 
+    filter(IC == 0) %>% 
+    left_join(p_mor_hz) %>% 
+    select(-IC) %>% 
+    arrange(Key, Age)
+})
+
+
+pars_uptake <- local({
+  load(here::here("data", "fitted_coverage.rdata"))
+  pred1$pars
+})
+
+
+pars_ves <- local({
+  load(here::here("pars", "ves.rdata"))
+  
+  ves %>% 
+    filter(!IC) %>% 
+    select(Age, AgeVac, Vaccine = TypeVac, Protection = VE)
+})
+
+
+## Simulation -----
 yss_soc <- list()
 yss_p1 <- list()
 yss_p2 <- list()
@@ -104,6 +106,7 @@ save(yss_p1, file = here::here("outputs", "temp", "yss_p1.rdata"))
 save(yss_p2, file = here::here("outputs", "temp", "yss_p2.rdata"))
 save(yss_p1_90, file = here::here("outputs", "temp", "yss_p1_90.rdata"))
 save(yss_p2_90, file = here::here("outputs", "temp", "yss_p2_90.rdata"))
+
 
 
 
