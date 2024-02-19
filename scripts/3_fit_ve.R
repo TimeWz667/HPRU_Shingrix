@@ -25,9 +25,6 @@ dat_ve %>%
 
 
 
-dat_ve
-
-
 fit_loglin <- lm(log(M) ~ Yr, data = dat_ve %>% filter(!Realworld))
 fit_step2<- lm(log(M) ~ Yr + (Yr >= 9), data = dat_ve %>% filter(!Realworld))
 

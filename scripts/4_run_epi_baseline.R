@@ -198,9 +198,6 @@ g_avt_p <- avt %>%
   scale_y_continuous("Cases averted, %", labels = scales::percent)
 
 
-ggsave(g_avt_n, filename = here::here("outputs", "figs", "g_epi_avt_n.png"), width = 6.5, height = 4)
-ggsave(g_avt_p, filename = here::here("outputs", "figs", "g_epi_avt_p.png"), width = 6.5, height = 4)
-
 
 
 
@@ -309,6 +306,8 @@ g_c_vac <- stats_ce %>%
   geom_text(x = 2033, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) +
   expand_limits(y = c(0, 1e8))
 
+ggsave(g_avt_n, filename = here::here("outputs", "figs", "g_epi_avt_n.png"), width = 6.5, height = 4)
+ggsave(g_avt_p, filename = here::here("outputs", "figs", "g_epi_avt_p.png"), width = 6.5, height = 4)
 ggsave(g_c_vac, filename = here::here("outputs", "figs", "g_epi_c_vac.png"), width = 6.5, height = 4)
 ggsave(g_c_all, filename = here::here("outputs", "figs", "g_epi_c_all.png"), width = 6.5, height = 4)
 ggsave(g_q_all, filename = here::here("outputs", "figs", "g_epi_q_all.png"), width = 6.5, height = 4)
