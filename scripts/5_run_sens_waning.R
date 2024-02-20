@@ -251,15 +251,15 @@ g_dq
 g_icer
 
 
-ggsave(g_trend, filename = here::here("results", "figs", "g_sens_trend.png"), width = 7, height = 5)
-ggsave(g_avt_n, filename = here::here("results", "figs", "g_sens_avtn.png"), width = 7, height = 5)
-ggsave(g_avt_p, filename = here::here("results", "figs", "g_sens_avtp.png"), width = 7, height = 5)
-ggsave(g_q_all, filename = here::here("results", "figs", "g_sens_q_all.png"), width = 7, height = 5)
-ggsave(g_c_all, filename = here::here("results", "figs", "g_sens_c_all.png"), width = 7, height = 5)
-ggsave(g_c_med, filename = here::here("results", "figs", "g_sens_c_med.png"), width = 7, height = 5)
+ggsave(g_trend, filename = here::here("outputs", "figs", "g_sens_waning_trend.png"), width = 7, height = 5)
+ggsave(g_avt_n, filename = here::here("outputs", "figs", "g_sens_waning_avtn.png"), width = 7, height = 5)
+ggsave(g_avt_p, filename = here::here("outputs", "figs", "g_sens_waning_avtp.png"), width = 7, height = 5)
+ggsave(g_q_all, filename = here::here("outputs", "figs", "g_sens_waning_q_all.png"), width = 7, height = 5)
+ggsave(g_c_all, filename = here::here("outputs", "figs", "g_sens_waning_c_all.png"), width = 7, height = 5)
+ggsave(g_c_med, filename = here::here("outputs", "figs", "g_sens_waning_c_med.png"), width = 7, height = 5)
 
-ggsave(g_dc, filename = here::here("results", "figs", "g_sens_dc.png"), width = 7, height = 5)
-ggsave(g_dq, filename = here::here("results", "figs", "g_sens_dq.png"), width = 7, height = 5)
-ggsave(g_icer, filename = here::here("results", "figs", "g_sens_icer.png"), width = 7, height = 5)
+ggsave(g_dc, filename = here::here("outputs", "figs", "g_sens_waning_dc.png"), width = 7, height = 5)
+ggsave(g_dq, filename = here::here("outputs", "figs", "g_sens_waning_dq.png"), width = 7, height = 5)
+ggsave(g_icer, filename = here::here("outputs", "figs", "g_sens_waning_icer.png"), width = 7, height = 5)
 
 

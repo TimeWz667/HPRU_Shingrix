@@ -59,7 +59,7 @@ scenario_soc <- function(df, p0, yr) find_eligible_default(df, p0, min(yr, 2022)
 scenario_p65 <- function(df, p0, yr) find_eligible_default(df, p0, min(yr, 2027))
 scenario_full <- find_eligible_default
 
-scenario_2028_85 <- function(df, p0, yr) {
+scenario_2028_95 <- function(df, p0, yr) {
   if (yr < 2028) {
     df <- find_eligible_default(df, p0, yr)
   } else {
@@ -68,7 +68,7 @@ scenario_2028_85 <- function(df, p0, yr) {
   return(df)
 }
 
-scenario_2033_85 <- function(df, p0, yr) {
+scenario_2033_95 <- function(df, p0, yr) {
   if (yr < 2033) {
     df <- find_eligible_default(df, p0, yr)
   } else {
@@ -201,8 +201,6 @@ ys %>%
   scale_y_continuous("Coverage, %", labels = scales::percent) +
   facet_wrap(.~Year) +
   expand_limits(y = 0:1)
-
-
 
 
 
