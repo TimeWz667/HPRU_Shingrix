@@ -1,20 +1,28 @@
 data {
   int<lower=0> N;
-  int[N] y;
-  real[N] yr;
+  int y[N];
+  int n[N];
+  real yr[N];
 }
 
-// The parameters accepted by the model. Our model
-// accepts two parameters 'mu' and 'sigma'.
 parameters {
-  real mu;
-  real<lower=0> sigma;
+  real<lower=0, upper=1> p0;
+  real<lower=0> alpha;
+  real<lower=0> beta;
 }
 
-// The model to be estimated. We model the output
-// 'y' to be normally distributed with mean 'mu'
-// and standard deviation 'sigma'.
+transformed parameters {
+  real<lower=0, upper=1> prob[N];
+  
+  for (i in 1:N) {
+    prob[i] = p0 * (1 - gamma_cdf(yr[i], alpha, beta));
+  }
+  
+}
+
 model {
-  y ~ normal(mu, sigma);
+  for (i in 1:N) {
+    target += binomial_lpmf(y[i] | n[i], prob[i]);
+  }
 }
 

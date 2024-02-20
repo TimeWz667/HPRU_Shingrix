@@ -40,4 +40,5 @@ data/raw_*/
 outputs/temp/
 note.md
 
+models/*.rds
 
