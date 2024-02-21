@@ -11,6 +11,16 @@ sim_death_im <- function(df, p0) {
 }
 
 
+sim_death <- function(df, p0) {
+  df %>%
+    left_join(p0, by = c("Year", "Age")) %>%
+    mutate(
+      Death = r_death * N,
+    ) %>% 
+    select(-c(r_death, r_immigration ))
+}
+
+
 sim_bir_ageing <- function(df, p0, yr, hz = F) {
   # Ageing
   sim_1 <- df %>% 
@@ -29,6 +39,8 @@ sim_bir_ageing <- function(df, p0, yr, hz = F) {
     sim_1
   )
 }
+
+
 
 
 sim_hz <- function(df, p0) {
@@ -184,13 +196,13 @@ sim_dy_hz_vac <- function(pars, year0 = 2013, year1 = 2040, rule_eligible = find
 
 
 
-summarise_dy_hz <- function(yss, pars_ce, cost_vac, soc = "SOC", age0 = 50) {
+summarise_dy_hz <- function(yss, pars_ce, cost_vac, soc = "SOC", age0 = 50, year0 = 2023) {
   yss_collapse <- yss %>% 
     left_join(pars_ce) %>% 
     left_join(cost_vac) %>% 
     mutate(
-      dis_ql = 1 / ((1 + discount_rate_effects) ^ (Year - 2023)),
-      dis_cost = 1 / ((1 + discount_rate_costs) ^ (Year - 2023)),
+      dis_ql = 1 / ((1 + discount_rate_effects) ^ (Year - year0)),
+      dis_cost = 1 / ((1 + discount_rate_costs) ^ (Year - year0)),
       QL_y2_d = QL_y2 / (1 + discount_rate_effects),
       QL_HZ = QL_y1 + QL_y2,
       QL_HZ_d = QL_y1 + QL_y2_d,
@@ -265,6 +277,114 @@ summarise_dy_hz <- function(yss, pars_ce, cost_vac, soc = "SOC", age0 = 50) {
 }
 
 
+sim_cohort_hz_vac <- function(pars, age0 = 70, year = 2024, coverage = 0.483, vaccine = "Shingrix") {
+  ys <- list()
+  
+  size <- pars$N %>% filter(Year == year0) %>% 
+    filter(Age == age0) %>% pull(N) * coverage
+  
+  pop0 <- tibble(Age = age0:100) %>% 
+    mutate(
+      Year = year - age0 + Age,
+      AgeVac = age0, Vaccine = vaccine,
+      N = size,
+      NewUptake = ifelse(Age == age0, N, 0)
+    ) %>% 
+    left_join(pars$DeathIm %>% select(Year, Age, r_death), by = c("Age", "Year")) %>% 
+    left_join(pars$VE, by = c("Age", "AgeVac", "Vaccine")) %>% 
+    left_join(pars$Epi, by = "Age")
+  
+  pop_vac <- pop0 %>% mutate(
+    r_hz = r_hz * (1 - Protection),
+    p_survival = 1 - p_mor_hz * r_hz - r_death,
+    p_survival = cumprod(p_survival),
+    p_survival = c(1, p_survival[-n()]),
+    N = N * p_survival,
+    HZ = r_hz * N,
+    HZ_GP = p_gp * HZ,
+    HZ_Hosp = HZ - HZ_GP,
+    HZ_PHN = p_phn * HZ,
+    HZ_PHN_GP = p_gp * HZ_PHN,
+    HZ_Death = p_mor_hz * HZ,
+    Arm = "Vac"
+  )
+  
+  pop_soc <- pop0 %>% mutate(
+    p_survival = 1 - p_mor_hz * r_hz - r_death,
+    p_survival = cumprod(p_survival),
+    p_survival = c(1, p_survival[-n()]),
+    N = N * p_survival,
+    HZ = r_hz * N,
+    HZ_GP = p_gp * HZ,
+    HZ_Hosp = HZ - HZ_GP,
+    HZ_PHN = p_phn * HZ,
+    HZ_PHN_GP = p_gp * HZ_PHN,
+    HZ_Death = p_mor_hz * HZ,
+    Vaccine = "None",
+    Arm = "SOC"
+  )
+  
+  bind_rows(pop_vac, pop_soc) %>% select(-starts_with(c("p_", "r_")))
+}
 
 
+summarise_cohort_hz <- function(yss, pars_ce, cost_vac) {
+  year0 <- min(yss$Year)
+  
+  yss_collapse <- yss %>% 
+    left_join(pars_ce, by = "Age") %>% 
+    left_join(cost_vac, by = "Vaccine") %>% 
+    mutate(
+      dis_ql = 1 / ((1 + discount_rate_effects) ^ (Year - year0)),
+      dis_cost = 1 / ((1 + discount_rate_costs) ^ (Year - year0)),
+      QL_y2_d = QL_y2 / (1 + discount_rate_effects),
+      QL_HZ = QL_y1 + QL_y2,
+      QL_HZ_d = QL_y1 + QL_y2_d,
+      Q_Life = N * QOL,
+      Q_HZ = - HZ * QL_HZ,
+      Q_All = Q_Life + Q_HZ,
+      Q_Life_d = Q_Life * dis_ql,
+      Q_HZ_d = - HZ * QL_HZ_d * dis_ql,
+      Q_All_d = Q_Life_d + Q_HZ_d,
+      C_Hosp = HZ_Hosp * cost_Hospitalisation_pp_inf,
+      C_GP_NonPHN = (HZ_GP - HZ_PHN_GP) * cost_GP_pp_non_PHN_HZ_inf,
+      C_GP_PHN = HZ_PHN_GP * cost_GP_pp_PHN_inf,
+      C_GP = C_GP_NonPHN + C_GP_PHN,
+      C_Vac = cost_vac_pp * NewUptake,
+      C_Vac_d = C_Vac * dis_ql,
+      C_All = C_Hosp + C_GP + C_Vac,
+      C_Hosp_d = C_Hosp * dis_cost,
+      C_GP_NonPHN_d = C_GP_NonPHN * dis_cost,
+      C_GP_PHN_d = C_GP_PHN * dis_cost,
+      C_GP_d = C_GP * dis_cost,
+      C_Med_d = C_Hosp_d + C_GP_d,
+      C_All_d = C_Med_d + C_Vac_d,
+      across(starts_with(c("C_", "Q_")), function(x) ifelse(is.na(x), 0, x))
+    )
+  
+  stats <- yss_collapse %>% 
+    select(-Age) %>% 
+    group_by(AgeVac, Vaccine, Arm, Key) %>% 
+    summarise(across(c(starts_with(c("HZ", "Q_", "C_")), NewUptake), function(x) sum(x, na.rm = T))) %>% 
+    group_by(AgeVac, Vaccine, Arm) %>% 
+    select(-Key) %>% 
+    summarise_all(mean) %>% 
+    ungroup()
+  
+  
+  ce <- yss_collapse %>%
+    select(AgeVac, Arm, Key, Q_Life_d, Q_HZ_d, Q_All_d, C_Vac_d, C_Med_d, C_All_d) %>% 
+    group_by(AgeVac, Arm, Key) %>% 
+    summarise_all(sum) %>% 
+    pivot_longer(c(Q_Life_d, Q_HZ_d, Q_All_d, C_Vac_d, C_Med_d, C_All_d), names_to = "Variable") %>% 
+    pivot_wider(names_from = Arm) %>% 
+    mutate(Diff = Vac - SOC) 
+  
+
+  list(
+    Yss = yss %>% filter(Age >= age0),
+    Stats = stats,
+    CE = ce
+  ) 
+}
 

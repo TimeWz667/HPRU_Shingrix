@@ -67,7 +67,6 @@ sim_cases <- function(sims0, n0, age_vac, cost_vac_pp, discounting_e, discountin
     select(-Age) %>% 
     ungroup()
   
-  
   sims_alt <- sims0 %>% 
     group_by(ID) %>% 
     mutate(
