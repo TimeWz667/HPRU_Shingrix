@@ -60,13 +60,13 @@ pars_ve <- local({
 
 ## Simulation -----
 keys <- pars_epi %>% pull(Key) %>% unique()
-
+keys <- keys[1:10]
 
 yss <- list()
 
-pb <- txtProgressBar(min = 1, max = 500, style = 3,  width = 50, char = "=") 
+pb <- txtProgressBar(min = 1, max = max(keys), style = 3,  width = 50, char = "=") 
 
-for(k in keys[1:3]) {
+for(k in keys) {
   pars <- c(pars_demo$England, list(
     Epi = pars_epi %>% filter(Key == k) %>% select(-Key),
     VE = pars_ve
@@ -75,7 +75,7 @@ for(k in keys[1:3]) {
   for (age0 in 50:90) {
     for (age1 in (age0 + 1): 95) {
       yss[[length(yss) + 1]] <- sim_cohort_hz_revac(pars, age0 = age0, age1 = age1, year = 2024) %>% 
-        mutate(Key = k, Age0 = age0, Age1 = age1)
+        mutate(Key = k, Scenario = glue::as_glue("ReVac_") + age0 + ":" + age1)
     }
   }
   
@@ -83,18 +83,60 @@ for(k in keys[1:3]) {
 }
 
 yss <- bind_rows(yss)
-results <- summarise_cohort_hz(yss, pars_ce, cost_vac)
+
+results <- summarise_cohort_hz(yss, pars_ce, cost_vac, dis_effects = discount_rate_effects, dis_costs = discount_rate_costs)
 
 
-
-results$CE %>% 
-  filter(Variable %in% c("Q_All_d", "C_All_d")) %>% 
-  select(AgeVac, Key, Variable, Diff) %>% 
-  pivot_wider(names_from = Variable, values_from = Diff) %>% 
-  mutate(ICER = C_All_d / Q_All_d) %>% 
+g_icer <- results$CE %>% 
+  group_by(Scenario, Arm) %>% 
+  summarise_all(mean) %>% 
+  extract(Scenario, c("Age0", "Age1"), "ReVac_(\\d+):(\\d+)", remove = F, convert = T) %>% 
+  filter(Age0 %in% c(60, 65, 70, 75)) %>% 
+  filter(Arm != "SOC") %>% 
   ggplot() +
-  geom_point(aes(x = AgeVac, y = ICER))
+  geom_line(aes(x = Age1, y = ICER, colour = Arm)) +
+  geom_vline(aes(xintercept = Age0), linetype = 2) +
+  geom_text(aes(x = Age0, y = 0), label = "First RZV", angle = 90, hjust = 0, vjust = 1.2) +
+  scale_x_continuous("Age for RZV revaccination") +
+  facet_grid(.~Age0) +
+  expand_limits(y = 0)
+
+g_e <- results$CE %>% 
+  group_by(Scenario, Arm) %>% 
+  summarise_all(mean) %>% 
+  extract(Scenario, c("Age0", "Age1"), "ReVac_(\\d+):(\\d+)", remove = F, convert = T) %>% 
+  filter(Age0 %in% c(60, 65, 70, 75)) %>% 
+  filter(Arm != "SOC") %>% 
+  ggplot() +
+  geom_line(aes(x = Age1, y = dE, colour = Arm)) +
+  geom_vline(aes(xintercept = Age0), linetype = 2) +
+  geom_text(aes(x = Age0, y = 0), label = "First RZV", angle = 90, hjust = 0, vjust = 1.2) +
+  scale_x_continuous("Age for RZV revaccination") +
+  scale_y_continuous("QALY gained") +
+  facet_grid(.~Age0) +
+  expand_limits(y = 0)
+
+g_e
 
 
+g_c <- results$CE %>% 
+  group_by(Scenario, Arm) %>% 
+  summarise_all(mean) %>% 
+  extract(Scenario, c("Age0", "Age1"), "ReVac_(\\d+):(\\d+)", remove = F, convert = T) %>% 
+  filter(Age0 %in% c(60, 65, 70, 75)) %>% 
+  filter(Arm != "SOC") %>% 
+  ggplot() +
+  geom_line(aes(x = Age1, y = dC, colour = Arm)) +
+  geom_vline(aes(xintercept = Age0), linetype = 2) +
+  geom_text(aes(x = Age0, y = 0), label = "First RZV", angle = 90, hjust = 0, vjust = 1.2) +
+  scale_x_continuous("Age for RZV revaccination") +
+  scale_y_continuous("Incremental cost, million GBP", 
+                     labels = scales::number_format(scale = 1e-6)) +
+  facet_grid(.~Age0) +
+  expand_limits(y = 0)
 
+g_c
 
+ggsave(g_e, filename = here::here("outputs", "figs", "g_revac_de.png"), width = 8, height = 5)
+ggsave(g_c, filename = here::here("outputs", "figs", "g_revac_dc.png"), width = 8, height = 5)
+ggsave(g_icer, filename = here::here("outputs", "figs", "g_revac_icer.png"), width = 8, height = 5)
