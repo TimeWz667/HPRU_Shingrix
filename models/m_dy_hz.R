@@ -17,7 +17,7 @@ sim_death <- function(df, p0) {
     mutate(
       Death = r_death * N,
     ) %>% 
-    select(-c(r_death, r_immigration ))
+    select(-c(r_death, r_immigration))
 }
 
 
