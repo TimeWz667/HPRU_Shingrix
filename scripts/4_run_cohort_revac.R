@@ -66,15 +66,17 @@ yss <- list()
 
 pb <- txtProgressBar(min = 1, max = 500, style = 3,  width = 50, char = "=") 
 
-for(k in keys[1:100]) {
+for(k in keys[1:3]) {
   pars <- c(pars_demo$England, list(
     Epi = pars_epi %>% filter(Key == k) %>% select(-Key),
     VE = pars_ve
   ))
   
-  for (age0 in 50:95) {
-    yss[[length(yss) + 1]] <- sim_cohort_hz_vac(pars, age0 = age0, year = 2024) %>% 
-      mutate(Key = k)
+  for (age0 in 50:90) {
+    for (age1 in (age0 + 1): 95) {
+      yss[[length(yss) + 1]] <- sim_cohort_hz_revac(pars, age0 = age0, age1 = age1, year = 2024) %>% 
+        mutate(Key = k, Age0 = age0, Age1 = age1)
+    }
   }
   
   setTxtProgressBar(pb, k)
@@ -84,6 +86,7 @@ yss <- bind_rows(yss)
 results <- summarise_cohort_hz(yss, pars_ce, cost_vac)
 
 
+
 results$CE %>% 
   filter(Variable %in% c("Q_All_d", "C_All_d")) %>% 
   select(AgeVac, Key, Variable, Diff) %>% 
@@ -91,3 +94,7 @@ results$CE %>%
   mutate(ICER = C_All_d / Q_All_d) %>% 
   ggplot() +
   geom_point(aes(x = AgeVac, y = ICER))
+
+
+
+

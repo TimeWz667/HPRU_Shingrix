@@ -328,6 +328,70 @@ sim_cohort_hz_vac <- function(pars, age0 = 70, year = 2024, coverage = 0.483, va
 }
 
 
+sim_cohort_hz_revac <- function(pars, age0 = 70, age1 = 75, year = 2024, coverage = 0.483, vaccine = "Shingrix") {
+  ys <- list()
+  
+  fn <- function(df) {
+    df %>% mutate(
+      Protection = ifelse(is.na(Protection), 0, Protection),
+      r_hz = r_hz * (1 - Protection),
+      p_survival = 1 - p_mor_hz * r_hz - r_death,
+      p_survival = cumprod(p_survival),
+      p_survival = c(1, p_survival[-n()]),
+      N = N * p_survival,
+      NewUptake = N * NewUptake,
+      HZ = r_hz * N,
+      HZ_GP = p_gp * HZ,
+      HZ_Hosp = HZ - HZ_GP,
+      HZ_PHN = p_phn * HZ,
+      HZ_PHN_GP = p_gp * HZ_PHN,
+      HZ_Death = p_mor_hz * HZ,
+    )
+  }
+  
+  size <- pars$N %>% filter(Year == year) %>% 
+    filter(Age == age0) %>% pull(N) * coverage
+  
+  pop0 <- tibble(Age = age0:100) %>% 
+    mutate(
+      Year = year - age0 + Age,
+      N = size
+    ) %>% 
+    left_join(pars$DeathIm %>% select(Year, Age, r_death), by = c("Age", "Year")) %>% 
+    left_join(pars$Epi, by = "Age")
+  
+  pop_soc <- pop0 %>% mutate(
+    Vaccine = "None",
+    AgeVac = NA, 
+    NewUptake = 0,
+    Arm = "SOC"
+  ) %>% 
+    left_join(pars$VE, by = c("Age", "AgeVac", "Vaccine")) %>% 
+    fn()
+  
+  pop_vac <- pop0 %>% mutate(
+    Vaccine = vaccine,
+    AgeVac = age0,
+    NewUptake = ifelse(Age == age0, 1, 0),
+    Arm = "Vac"
+  ) %>% 
+    left_join(pars$VE, by = c("Age", "AgeVac", "Vaccine")) %>%  
+    fn()
+  
+  pop_revac <- pop0 %>% mutate(
+    Vaccine = vaccine,
+    AgeVac = ifelse(Age < age1, age0, age1),
+    NewUptake = ifelse(Age %in% c(age0, age1), 1, 0),
+    Arm = "ReVac"
+  ) %>% 
+    left_join(pars$VE, by = c("Age", "AgeVac", "Vaccine")) %>% 
+    fn()
+  
+  bind_rows(pop_soc, pop_vac, pop_revac) %>% select(-starts_with(c("p_", "r_")))
+}
+
+
+
 summarise_cohort_hz <- function(yss, pars_ce, cost_vac) {
   year0 <- min(yss$Year)
   
@@ -382,7 +446,7 @@ summarise_cohort_hz <- function(yss, pars_ce, cost_vac) {
   
 
   list(
-    Yss = yss %>% filter(Age >= age0),
+    Yss = yss,
     Stats = stats,
     CE = ce
   ) 
