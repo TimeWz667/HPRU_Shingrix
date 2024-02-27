@@ -149,25 +149,6 @@ find_eligible_default <- function(df, p0, yr, cap = 80) {
 }
 
 
-# sim_dy_hz <- function(pars, year0 = 2013, year1 = 2040) {
-#   ys <- list()
-#   
-#   sim_0 <- pars$N %>% filter(Year == year0) %>% 
-#     mutate(Vaccine = "None", Protection = 0, VaccineYear = NA)
-#   
-#   for (yr in year0:year1) {
-#     sim_t <- sim_0 %>% 
-#       sim_death_im(pars$DeathIm) %>% 
-#       sim_hz(pars$Epi)
-#     
-#     sim_0 <- sim_bir_ageing(sim_t, pars$Birth, yr)
-#     
-#     ys[[length(ys) + 1]] <- sim_t
-#   }
-#   ys <- bind_rows(ys) 
-# }
-
-
 sim_dy_hz_vac <- function(pars, year0 = 2013, year1 = 2040, rule_eligible = find_eligible_default) {
   ys <- list()
   
@@ -277,7 +258,7 @@ summarise_dy_hz <- function(yss, pars_ce, cost_vac, soc = "SOC", age0 = 50, year
 }
 
 
-sim_cohort_hz_vac <- function(pars, age0 = 70, year = 2024, coverage = 0.483, vaccine = "Shingrix") {
+sim_cohort_hz_vac <- function(pars, age0 = 70, year0 = 2024, coverage = 0.483, vaccine = "Shingrix") {
   ys <- list()
   
   size <- pars$N %>% filter(Year == year0) %>% 
@@ -285,7 +266,7 @@ sim_cohort_hz_vac <- function(pars, age0 = 70, year = 2024, coverage = 0.483, va
   
   pop0 <- tibble(Age = age0:100) %>% 
     mutate(
-      Year = year - age0 + Age,
+      Year = year0 - age0 + Age,
       AgeVac = age0, Vaccine = vaccine,
       N = size,
       NewUptake = ifelse(Age == age0, N, 0)
@@ -328,7 +309,7 @@ sim_cohort_hz_vac <- function(pars, age0 = 70, year = 2024, coverage = 0.483, va
 }
 
 
-sim_cohort_hz_revac <- function(pars, age0 = 70, age1 = 75, year = 2024, coverage = 0.483, vaccine = "Shingrix") {
+sim_cohort_hz_revac <- function(pars, age0 = 70, age1 = 75, year0 = 2024, coverage = 0.483, vaccine = "Shingrix") {
   ys <- list()
   
   fn <- function(df) {
@@ -349,12 +330,12 @@ sim_cohort_hz_revac <- function(pars, age0 = 70, age1 = 75, year = 2024, coverag
     )
   }
   
-  size <- pars$N %>% filter(Year == year) %>% 
+  size <- pars$N %>% filter(Year == year0) %>% 
     filter(Age == age0) %>% pull(N) * coverage
   
   pop0 <- tibble(Age = age0:100) %>% 
     mutate(
-      Year = year - age0 + Age,
+      Year = year0 - age0 + Age,
       N = size
     ) %>% 
     left_join(pars$DeathIm %>% select(Year, Age, r_death), by = c("Age", "Year")) %>% 

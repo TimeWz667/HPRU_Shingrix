@@ -60,20 +60,20 @@ pars_ve <- local({
 
 ## Simulation -----
 keys <- pars_epi %>% pull(Key) %>% unique()
-
+keys <- keys[1:100]
 
 yss <- list()
 
-pb <- txtProgressBar(min = 1, max = 500, style = 3,  width = 50, char = "=") 
+pb <- txtProgressBar(min = 1, max = length(keys), style = 3,  width = 50, char = "=") 
 
-for(k in keys[1:100]) {
+for(k in keys) {
   pars <- c(pars_demo$England, list(
     Epi = pars_epi %>% filter(Key == k) %>% select(-Key),
     VE = pars_ve
   ))
   
   for (age0 in 50:95) {
-    yss[[length(yss) + 1]] <- sim_cohort_hz_vac(pars, age0 = age0, year = 2024) %>% 
+    yss[[length(yss) + 1]] <- sim_cohort_hz_vac(pars, age0 = age0, year0 = 2024) %>% 
       mutate(Key = k)
   }
   
@@ -84,10 +84,29 @@ yss <- bind_rows(yss)
 results <- summarise_cohort_hz(yss, pars_ce, cost_vac)
 
 
+
 results$CE %>% 
   filter(Variable %in% c("Q_All_d", "C_All_d")) %>% 
   select(AgeVac, Key, Variable, Diff) %>% 
   pivot_wider(names_from = Variable, values_from = Diff) %>% 
   mutate(ICER = C_All_d / Q_All_d) %>% 
   ggplot() +
-  geom_point(aes(x = AgeVac, y = ICER))
+  geom_point(aes(x = AgeVac, y = ICER)) +
+  expand_limits(y = 0)
+
+
+
+results$CE %>% 
+  filter(Variable %in% c("Q_All_d", "C_All_d")) %>% 
+  select(AgeVac, Key, Variable, Diff) %>% 
+  pivot_wider(names_from = Variable, values_from = Diff) %>% 
+  mutate(INB = Q_All_d * 30000 - C_All_d) %>% 
+  ggplot() +
+  stat_interval(aes(x = AgeVac, y = INB)) +
+  geom_hline(aes(yintercept = 0)) +
+  scale_colour_brewer() +
+  expand_limits(y = 0)
+
+
+
+
