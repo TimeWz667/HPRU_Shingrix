@@ -321,7 +321,7 @@ sim_cohort_hz_vac <- function(pars, age0 = 70, year0 = 2024, coverage = 0.483, v
 }
 
 
-sim_cohort_hz_revac <- function(pars, age0 = 70, age1 = 75, year0 = 2024, coverage = 0.483, vaccine = "Shingrix") {
+sim_cohort_hz_revac <- function(pars, age0 = 70, age1 = NA, year0 = 2024, coverage = 0.483, vaccine = "Shingrix") {
   ys <- list()
   
   fn <- function(df) {

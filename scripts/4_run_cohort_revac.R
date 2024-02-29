@@ -19,11 +19,11 @@ cost_vac <- read_csv(here::here("data", "processed_ce", "Cost_Vac.csv"))
 
 pars_ce <- QL %>% 
   select(- Key) %>%
-  group_by(age) %>% 
+  group_by(Age) %>% 
   summarise(across(everything(), mean)) %>% 
   left_join(Cost_Hospitalisation_HZ %>% select(- Key)) %>% 
-  bind_cols(Cost_GP %>% select(- Key) %>% summarise(across(everything(), mean))) %>% 
-  rename(Age = age)
+  bind_cols(Cost_GP %>% select(- Key) %>% summarise(across(everything(), mean)))
+
 
 ### discount rate costs
 discount_rate_costs <- 0.035
@@ -54,7 +54,7 @@ pars_epi <- local({
 pars_ve <- local({
   load(here::here("pars", "ves_ce.rdata"))
   
-  ve_nic %>% filter(Type == "Real") %>% select(Age, AgeVac, Vaccine = TypeVac, Protection = VE)
+  ve_nic %>% filter(Type != "Real") %>% select(Age, AgeVac, Vaccine = TypeVac, Protection = VE)
 })
 
 
@@ -101,6 +101,21 @@ g_icer <- results$CE %>%
   facet_grid(.~Age0) +
   expand_limits(y = 0)
 
+g_icer
+
+
+results$CE %>% 
+  group_by(Scenario, Arm) %>% 
+  summarise_all(mean) %>% 
+  extract(Scenario, c("Age0", "Age1"), "ReVac_(\\d+):(\\d+)", remove = F, convert = T) %>% 
+  filter(Arm == "Vac") %>% 
+  ggplot() +
+  geom_line(aes(x = Age0, y = ICER)) +
+  scale_x_continuous("Age for RZV vaccination") +
+  expand_limits(y = 0) +
+  labs(subtitle = "Trial-based VE")
+
+
 g_e <- results$CE %>% 
   group_by(Scenario, Arm) %>% 
   summarise_all(mean) %>% 
@@ -134,6 +149,8 @@ g_c <- results$CE %>%
                      labels = scales::number_format(scale = 1e-6)) +
   facet_grid(.~Age0) +
   expand_limits(y = 0)
+
+
 
 g_c
 
