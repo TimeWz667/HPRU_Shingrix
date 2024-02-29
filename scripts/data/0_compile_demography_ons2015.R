@@ -8,30 +8,29 @@ folder_data <- function(x) here::here("data", "processed_demography", x)
 # ONS 
 Pop_2015 <- read_csv(file=folder_raw("midyearestimates2015 ONS population England.csv")) %>% 
   filter(Age != "All ages") %>% 
-  rename(age = Age) %>% 
   mutate(
     Pop = as.numeric(gsub(",", "", Pop)),
-    age = as.numeric(age)
+    Age = as.numeric(Age)
   )
 
 
 # ONS mid-year estimate population England 2015 by sex
 Pop_male_female <- read_csv(file = folder_raw("Pop_england_estimates_mid_2015_male_females.csv")) %>% 
-  select(age, males = `ENGLAND males`, females = `ENGLAND females`)
+  select(Age = age, males = `ENGLAND males`, females = `ENGLAND females`)
 
 Background_mortality <- read_csv(file = folder_raw("Background_mortality_rates_2014_2016_projections_ONS.csv")) %>% 
-  select(age, dr_males = `Male mortality rate`, dr_females = `Female mortality rate`) %>% 
+  select(Age = age, dr_males = `Male mortality rate`, dr_females = `Female mortality rate`) %>% 
   left_join(Pop_male_female) %>% 
   mutate(
     total = males + females,
     p_females = females / total,
     p_males = males / total,
     Background_mortality = dr_males * p_males + dr_females * p_females,
-    Background_mortality = ifelse(age >= 100, 1, Background_mortality),
+    Background_mortality = ifelse(Age >= 100, 1, Background_mortality),
     Survival = cumprod(1 - Background_mortality),
     LE = rev(cumsum(rev(Survival)))
   ) %>% 
-  select(age, Background_mortality, LE)
+  select(Age, Background_mortality, LE)
 
 Pop <- Pop_2015 %>% full_join(Background_mortality)
 save(Pop, file = folder_data("Population_NIC_Ons_2015.rdata"))

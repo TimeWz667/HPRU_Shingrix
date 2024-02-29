@@ -4,7 +4,7 @@
 #########################################################################################################################
 
 library(tidyverse)
-folder_data <- function(x) here::here("data", x)
+
 folder_tab <- function(x) here::here("outputs", "tabs", x)
 folder_temp <- function(x) here::here("outputs", "temp", x)
 
@@ -44,23 +44,27 @@ cost_vac_pp <- (cost_vac_per_dose + cost_admin_per_dose) * number_courses
 
 ##########################
 #### Data
-load(folder_data("Population_IC_Ons_2015.rdata"))
-load(folder_data("Epi_IC.rdata"))
-load(folder_data("QOL_LE.rdata"))
-load(folder_data("Cost_GP_Gauthier.rdata"))
-load(folder_data("Cost_Hospitalisation_IC.rdata"))
-load(folder_data("VE_Shingrix_IC.rdata"))
+load(here::here("data", "processed_demography", "Population_IC_Ons_2015.rdata"))
+load(here::here("data", "processed_epi", "Epi_HZ_IC_CPRD.rdata"))
+load(here::here("data", "processed_ce", "QOL_LE.rdata"))
+load(here::here("data", "processed_ce", "Cost_GP_Gauthier.rdata"))
+load(here::here("data", "processed_ce", "Cost_Hospitalisation_IC.rdata"))
+load(here::here("data", "processed_vaccine", "VE_Shingrix_IC.rdata"))
 
 
 ### Shared properties
-sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>% 
-  left_join(Pop) %>% 
-  left_join(rand_table(Epi_HZ, N_Iter) %>% rename(age = Age)) %>% 
+sims0 <- crossing(ID = 1:N_Iter, Age = 0:100) %>% 
+  left_join(Pop %>% rename(Age = age)) %>% 
+  left_join(rand_table(Incidence_HZ, N_Iter)) %>% 
+  left_join(rand_table(Incidence_HZ_GP_only, N_Iter)) %>% 
+  left_join(rand_table(Mortality_HZ, N_Iter)) %>% 
+  left_join(rand_table(Hospitalisation_HZ, N_Iter)) %>% 
+  left_join(rand_table(P_PHN, N_Iter)) %>% 
   left_join(rand_table(QL, N_Iter))  %>% 
   left_join(rand_table(Cost_Hospitalisation_HZ, N_Iter)) %>% 
   left_join(rand_table(Cost_GP, N_Iter)) %>%
   # left_join(QL_death0) %>% 
-  rename(r_mor_bg = Background_mortality, Age = age) %>% 
+  rename(r_mor_bg = Background_mortality) %>% 
   group_by(ID) %>% 
   arrange(ID, Age)
 
@@ -81,6 +85,7 @@ for (vaccination_age in 18:95){
   
   ## Attach VE
   sims_baseline <- sims0 %>% 
+    rename(r_inc_hz = Incidence_HZ, r_inc_hz_gp = Incidence_HZ_GP_only, r_hosp_hz= r_hospitalisation_hz, r_mor_hz = Death_HZ) %>% 
     left_join(bind_rows(lapply(1:N_Iter, function(i) {
       sample_ve(VE, vaccination_age = vaccination_age) %>% mutate(ID = i) %>% rename(Age = age)
     }))) %>% 

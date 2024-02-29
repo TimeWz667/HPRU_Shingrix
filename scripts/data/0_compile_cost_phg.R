@@ -29,7 +29,7 @@ Cost_Hospitalisation_HZ <- read_csv(folder_raw("Cost HZ hospitalisation sim_coef
   ) %>% 
   group_by(Key) %>% 
   fill(Hospitalisation_costs_pp_HZ, .direction = "updown") %>% 
-  select(Key, age, Hospitalisation_costs_pp_HZ) %>% 
+  select(Key, Age = age, Hospitalisation_costs_pp_HZ) %>% 
   ungroup() %>% 
   mutate(
     cost_Hospitalisation_pp_inf = Hospitalisation_costs_pp_HZ * (index_2016_17 / index_2012_13)
@@ -52,7 +52,7 @@ Cost_Hospitalisation_HZ <- read_csv(folder_raw("Cost HZ hospitalisation IC sim_c
   ) %>% 
   group_by(Key) %>% 
   fill(Hospitalisation_costs_pp_HZ, .direction = "updown") %>% 
-  select(Key, age, Hospitalisation_costs_pp_HZ) %>% 
+  select(Key, Age = age, Hospitalisation_costs_pp_HZ) %>% 
   ungroup() %>% 
   mutate(
     cost_Hospitalisation_pp_inf = Hospitalisation_costs_pp_HZ * (index_2016_17 / index_2012_13)

@@ -6,15 +6,15 @@ source(here::here("R", "sim_coverage.R"))
 
 
 ## Inputs loading
-load(here::here("data", "fit_coverage.csv"))
+load(here::here("data", "fitted_coverage.rdata"))
 load(here::here("pars", "ves.rdata"))
 
 ves <- ves %>% mutate(IC = ifelse(IC, "IC", "NonIC"))
 
 
 pop <- local({
-  load(here::here("data", "Population_ONS.rdata"))
-  load(here::here("data", "hz_burden_22.rdata"))
+  load(here::here("data", "processed_demography", "Population_ONS.rdata"))
+  load(here::here("data", "processed_epi", "Epi_HZ_CPRD_23Nov19.rdata"))
   
   pr_ic <- dat_burden %>% 
     select(Age, IC = Immunocompromised, N) %>% 

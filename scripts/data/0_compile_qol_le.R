@@ -9,24 +9,24 @@ folder_data <- function(x) here::here("data", "processed_ce", x)
 
 QL_y1 <- read_csv(folder_raw("11-07-2018 QL with LE ph simps 1000 bootstrap runs y1.csv"))[-1] %>% 
   mutate(Key = 1:n()) %>% 
-  pivot_longer(- Key, values_to = "QL_y1", names_to = "age") %>% 
-  mutate(age = as.numeric(gsub("age_", "", age)))
+  pivot_longer(- Key, values_to = "QL_y1", names_to = "Age") %>% 
+  mutate(Age = as.numeric(gsub("age_", "", Age)))
 
 
 QL_y2 <- read_csv(folder_raw("11-07-2018 QL with LE ph simps 1000 bootstrap runs y2.csv"))[-1] %>% 
   mutate(Key = 1:n()) %>% 
-  pivot_longer(- Key, values_to = "QL_y2", names_to = "age") %>% 
-  mutate(age = as.numeric(gsub("age_", "", age)))
+  pivot_longer(- Key, values_to = "QL_y2", names_to = "Age") %>% 
+  mutate(Age = as.numeric(gsub("age_", "", Age)))
 
 
 QL_y1_o3m <- read_csv(folder_raw("13-09-2018 QL with LE ph simps 1000 bootstrap runs y1 over 3m.csv"))[-1] %>% 
   mutate(Key = 1:n()) %>% 
-  pivot_longer(- Key, values_to = "QL_y1_o3m", names_to = "age") %>% 
-  mutate(age = as.numeric(gsub("age_", "", age)))
+  pivot_longer(- Key, values_to = "QL_y1_o3m", names_to = "Age") %>% 
+  mutate(Age = as.numeric(gsub("age_", "", Age)))
 
 
 QOL <- tibble(
-  age = 18:100,
+  Age = 18:100,
   QOL=c(rep(0.929, length(18:24)),
         rep(0.919, length(25:34)),
         rep(0.893, length(35:44)),
@@ -35,19 +35,19 @@ QOL <- tibble(
         rep(0.773, length(65:74)),
         rep(0.703, length(75:100)))
 ) %>% 
-  full_join(tibble(age = 0:100)) %>% 
-  arrange(age) %>% 
+  full_join(tibble(Age = 0:100)) %>% 
+  arrange(Age) %>% 
   mutate(
     QOL = ifelse(is.na(QOL), 1, QOL)
-  )
+  ) %>% 
   fill(QOL, .direction = "updown")
 
 
-QL <- crossing(age = 0:100, Key = 1:1000) %>% 
+QL <- crossing(Age = 0:100, Key = 1:1000) %>% 
   left_join(QL_y1) %>%
   left_join(QL_y2) %>% 
   left_join(QL_y1_o3m) %>% 
-  arrange(Key, age) %>%
+  arrange(Key, Age) %>%
   group_by(Key) %>% 
   fill(QL_y1, QL_y2, QL_y1_o3m, .direction = "updown") %>% 
   ungroup() %>% 
@@ -55,14 +55,14 @@ QL <- crossing(age = 0:100, Key = 1:1000) %>%
   mutate(
     QL_HZ = QL_y1 + QL_y2
   ) %>% 
-  relocate(Key, age, QOL)
+  relocate(Key, Age, QOL)
 
 
 calc_ql_death <- function(pop, dis=0.035) {
   
   # #Szende A, Janssen B, Cabases J. Self-reported population health: an international perspective based on EQ-5D. Dordrecht: Springer; 2014. TTO value set England. p30
   QOL <- tibble(
-    age = 18:100,
+    Age = 18:100,
     QOL=c(rep(0.929, length(18:24)),
           rep(0.919, length(25:34)),
           rep(0.893, length(35:44)),
@@ -71,18 +71,18 @@ calc_ql_death <- function(pop, dis=0.035) {
           rep(0.773, length(65:74)),
           rep(0.703, length(75:100)))
     ) %>% 
-    full_join(tibble(age = 0:100)) %>% 
-    arrange(age) %>% 
+    full_join(tibble(Age = 0:100)) %>% 
+    arrange(Age) %>% 
     fill(QOL, .direction = "updown")
   
-  pop %>% left_join(crossing(va = 0:100, age = 0:100), by = "age", relationship = "many-to-many") %>% 
+  pop %>% left_join(crossing(va = 0:100, Age = 0:100), by = "Age", relationship = "many-to-many") %>% 
     arrange(va) %>% 
     group_by(va) %>% 
-    filter(age >= va) %>%
-    left_join(QOL %>% select(va = age, QOL), by = "va") %>% 
+    filter(Age >= va) %>%
+    left_join(QOL %>% select(va = Age, QOL), by = "va") %>% 
     mutate(
       p_surv = cumprod(1 - mortality),
-      p_surv_d = p_surv * (1 + dis) ^ - (age - va),
+      p_surv_d = p_surv * (1 + dis) ^ - (Age - va),
       ql = p_surv * QOL,
       ql_d = p_surv_d * QOL
     ) %>% 

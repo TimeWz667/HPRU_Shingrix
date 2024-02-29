@@ -64,7 +64,7 @@ dat_sel <- demo_ons %>%
   summarise(N = sum(N))
 
 
-ys_eng %>% 
+g_pop_py <- ys_eng %>% 
   filter(Year %in% c(2015, 2020, 2025, 2030)) %>% 
   mutate(
     AgeGrp = cut(Age, seq(0, 100, 10), right = F)
@@ -78,6 +78,7 @@ ys_eng %>%
   scale_x_continuous("Population Million", labels = scales::number_format(scale = 1e-6)) +
   facet_wrap(.~Year) +
   expand_limits(x = 10e6)
+g_pop_py
 
 
 dat_sel <- demo_ons %>% 
@@ -87,7 +88,7 @@ dat_sel <- demo_ons %>%
   filter(Year %in% seq(2015, 2040, 5))
 
 
-ys_eng %>% 
+g_pop_n <- ys_eng %>% 
   group_by(Year) %>% 
   summarise(N = sum(N)) %>% 
   ungroup() %>% 
@@ -95,4 +96,9 @@ ys_eng %>%
   geom_line(aes(x = Year, y = N)) +
   geom_point(data = dat_sel, aes(x = Year, y = N)) +
   expand_limits(y = 0)
+g_pop_n
+
+
+ggsave(g_pop_py, filename = here::here("outputs", "figs", "processed", "g_pop_all_pu.png"), width = 6, height = 4)
+ggsave(g_pop_n, filename = here::here("outputs", "figs", "processed", "g_pop_all_n.png"), width = 6, height = 4)
 

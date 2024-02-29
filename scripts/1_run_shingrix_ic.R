@@ -77,7 +77,7 @@ load(here::here("data", "processed_vaccine", "VE_Shingrix_IC.rdata"))
 
 
 ### Shared properties
-sims0 <- crossing(ID = 1:N_Iter, age = 0:100) %>% 
+sims0 <- crossing(ID = 1:N_Iter, Age = 0:100) %>% 
   left_join(Pop) %>% 
   left_join(rand_table(Incidence_HZ, N_Iter)) %>% 
   left_join(rand_table(Incidence_HZ_GP_only, N_Iter)) %>% 
