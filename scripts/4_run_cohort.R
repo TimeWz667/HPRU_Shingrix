@@ -19,11 +19,10 @@ cost_vac <- read_csv(here::here("data", "processed_ce", "Cost_Vac.csv"))
 
 pars_ce <- QL %>% 
   select(- Key) %>%
-  group_by(age) %>% 
+  group_by(Age) %>% 
   summarise(across(everything(), mean)) %>% 
   left_join(Cost_Hospitalisation_HZ %>% select(- Key)) %>% 
-  bind_cols(Cost_GP %>% select(- Key) %>% summarise(across(everything(), mean))) %>% 
-  rename(Age = age)
+  bind_cols(Cost_GP %>% select(- Key) %>% summarise(across(everything(), mean)))
 
 ### discount rate costs
 discount_rate_costs <- 0.035
@@ -73,7 +72,7 @@ for(k in keys) {
   ))
   
   for (age0 in 50:95) {
-    yss[[length(yss) + 1]] <- sim_cohort_hz_vac(pars, age0 = age0, year = 2024)  %>% 
+    yss[[length(yss) + 1]] <- sim_cohort_hz_vac(pars, age0 = age0, year0 = 2024)  %>% 
       mutate(Key = k, Scenario = glue::as_glue("Vac_") + age0)
   }
   
@@ -87,16 +86,7 @@ results$Stats %>% write_csv(here::here("outputs", "tabs", "cohort_vac_stats.csv"
 results$CE %>% filter(Arm == "SOC") %>% write_csv(here::here("outputs", "tabs", "cohort_vac_ce.csv"))
 
 
-results$CE %>% 
-  filter(Variable %in% c("Q_All_d", "C_All_d")) %>% 
-  select(AgeVac, Key, Variable, Diff) %>% 
-  pivot_wider(names_from = Variable, values_from = Diff) %>% 
-  mutate(INB = Q_All_d * 30000 - C_All_d) %>% 
-  ggplot() +
-  stat_interval(aes(x = AgeVac, y = INB)) +
-  geom_hline(aes(yintercept = 0)) +
-  scale_colour_brewer() +
-  expand_limits(y = 0)
+
 
 g_icer <- results$CE %>% 
   group_by(Scenario, Arm) %>% 
@@ -111,6 +101,8 @@ g_icer <- results$CE %>%
   scale_x_continuous("Age for RZV revaccination") +
   facet_grid(.~Age0) +
   expand_limits(y = 0)
+
+g_icer
 
 g_e <- results$CE %>% 
   group_by(Scenario, Arm) %>% 

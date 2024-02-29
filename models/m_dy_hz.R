@@ -263,7 +263,7 @@ summarise_dy_hz <- function(yss, pars_ce, cost_vac, soc = "SOC",
 }
 
 
-sim_cohort_hz_vac <- function(pars, age0 = 70, year = 2024, coverage = 0.483, vaccine = "Shingrix") {
+sim_cohort_hz_vac <- function(pars, age0 = 70, year0 = 2024, coverage = 0.483, vaccine = "Shingrix") {
   fn <- function(df) {
     df %>% mutate(
       Protection = ifelse(is.na(Protection), 0, Protection),
@@ -284,7 +284,7 @@ sim_cohort_hz_vac <- function(pars, age0 = 70, year = 2024, coverage = 0.483, va
   
   ys <- list()
   
-  size <- pars$N %>% filter(Year == year) %>% 
+  size <- pars$N %>% filter(Year == year0) %>% 
     filter(Age == age0) %>% pull(N) * coverage
   
   pop0 <- tibble(Age = age0:100) %>% 
