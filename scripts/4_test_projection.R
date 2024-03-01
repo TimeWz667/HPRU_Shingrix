@@ -31,7 +31,6 @@ pars_epi <- local({
 
 pars_uptake <- local({
   load(here::here("data", "fitted_coverage.rdata"))
-  
   pred1$pars
 })
 
@@ -42,7 +41,18 @@ pars_ves <- local({
   ves %>% 
     filter(!IC) %>% 
     select(Age, AgeVac, Vaccine = TypeVac, Protection = VE)
+  
+  load(here::here("pars", "ves_ce.rdata"))
+  
+  bind_rows(
+    ves %>% 
+      filter(!IC) %>% 
+      filter(TypeVac != "Shingrix") %>% 
+      select(Age, AgeVac, Vaccine = TypeVac, Protection = VE),
+    ve_nic %>% filter(Type == "Real") %>% select(Age, AgeVac, Vaccine = TypeVac, Protection = VE)
+  )
 })
+
 
 k = 5
 
@@ -82,10 +92,13 @@ scenario_2033_95 <- function(df, p0, yr) {
 yss <- bind_rows(
   sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_soc) %>% mutate(Scenario = "SOC"),
   sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_p65) %>% mutate(Scenario = "To 65 yr"),
-  sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_full) %>% mutate(Scenario = "Full"),
-  sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_2028_85) %>% mutate(Scenario = "To 85 yr at 2028"),
-  sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_2033_85) %>% mutate(Scenario = "To 85 yr at 2033")
-)
+  sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_full) %>% mutate(Scenario = "Scheduled"),
+  sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_2028_95) %>% mutate(Scenario = "To 95 yr at 2028"),
+  sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_2033_95) %>% mutate(Scenario = "To 95 yr at 2033")
+) %>% 
+  mutate(
+    Scenario = factor(Scenario, levels = c("SOC", "To 65 yr", "Scheduled", "To 95 yr at 2028", "To 95 yr at 2033")),
+  )
 
 
 
@@ -127,7 +140,7 @@ yss %>%
   #group_by(Year) %>% 
   #mutate(Cases = Cases / sum(Cases)) %>% 
   ggplot() +
-  geom_bar(aes(x = AgeGrp, y = Cases, fill = as.character(Scenario)), stat = "identity", position = "dodge")
+  geom_bar(aes(x = AgeGrp, y = Cases, fill = Scenario), stat = "identity", position = "dodge")
 
 
 
