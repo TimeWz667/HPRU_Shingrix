@@ -4,7 +4,7 @@ theme_set(theme_bw())
 
 
 ### 
-# Age: 70 and 75
+# Age: 70
 # IC: Non-IC
 ###
 
