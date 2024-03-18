@@ -13,7 +13,7 @@ model <- stan_model(here::here("models", "coxian_gamma.stan"))
 
 
 
-dat_ve <- read_xlsx(here::here("data", "Shingrix VE.xlsx"), sheet = 1) %>% 
+dat_ve <- read_xlsx(here::here("data", "VE.xlsx"), sheet = 1) %>% 
   filter(Use) %>% 
   filter(Type == "HZ") %>% 
   mutate(

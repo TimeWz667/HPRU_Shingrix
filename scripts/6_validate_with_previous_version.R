@@ -35,6 +35,13 @@ cost_vac_pp <- 170
 load(here::here("data", "test_ver2021.rdata"))
 
 
+rand_table <- function(df, n_iter) {
+  tibble(ID = 1:n_iter, Key = sample(unique(df$Key), N_Iter, rep = T)) %>% 
+    left_join(df, relationship = "many-to-many") %>% 
+    select(- Key) %>% rename(Key = ID)
+}
+
+
 ## AC's version -----
 
 df_ac <- df_r %>% 
@@ -63,7 +70,7 @@ df_ac <- df_r %>%
     dN_All = 0,
     dN_HZ_All = N_HZ_All_alt - N_HZ_All_soc,
     dN_HZ_GP = N_HZ_GP_alt - N_HZ_GP_soc,
-    dN_HZ_Hosp = N_HZ_Hosp_alt - N_HZ_Hosp_soc,
+    dN_HZ_Hosp = N_HZ_Hosp_alt - N_HZ_Hosp_soc, 
     dN_Death = N_Death_alt - N_Death_soc,
     dN_PHN = -N_Alive * p_hz * p_phn * VE,
     dQ_HZ_d = dN_HZ_All * QL_HZ * dis_e,
@@ -81,7 +88,7 @@ df_ac <- df_r %>%
 
 
 res_ac <- df_ac %>% 
-  select(starts_with(c("dN_", "dQ_", "Q_", "dC_")),) %>% 
+  select(starts_with(c("dN_", "dQ_", "Q_", "dC_"))) %>% 
   summarise_all(sum) %>% 
   mutate(ICER = dC_All_d / dQ_All_d)
 
@@ -209,7 +216,7 @@ df_dr2023 <- local({
       N_HZ_Hosp_alt = N_Alive * p_hz_hosp * (1 - VE),
       N_PHN_All_alt = N_HZ_All_alt * p_phn,
       N_PHN_GP_alt = N_HZ_GP_alt * p_phn,
-      N_Death_alt = N_Alive * p_mor_hz,
+      N_Death_alt = N_Alive * p_mor_hz* (1 - VE),
       
       dN_All = N_All_alt - N_All_soc,
       dN_HZ_All = N_HZ_All_alt - N_HZ_All_soc,
@@ -242,6 +249,88 @@ res_dr2023 <- df_dr2023 %>%
 
 ## Remodel incidence and hospitalisation -----
 
+N_Iter <- max(df_dr2023$Key)
+
+df_epi <- local({
+  load(here::here("data", "processed_epi", "Epi_HZ_CPRD_GPR.rdata"))
+  
+  inc_hz <- Epi_HZ %>% filter(IC == 1) %>% 
+    rand_table(N_Iter) %>% mutate(
+    r_inc_hz_gp = r_hz * p_gp
+  ) %>% 
+    select(Key, Age, r_inc_hz = r_hz, r_inc_hz_gp)
+  
+  df_dr2023 %>% 
+    select(-r_inc_hz, -r_inc_hz_gp) %>% 
+    left_join(inc_hz) %>% 
+    mutate(
+      p_hz = pexp(1, r_inc_hz),
+      p_hz_gp = pexp(1, r_inc_hz_gp),
+      p_hz_hosp = p_hz - p_hz_gp,
+      
+      N_HZ_All_soc = N_Alive * p_hz,
+      N_HZ_GP_soc = N_Alive * p_hz_gp,
+      N_HZ_Hosp_soc = N_Alive * p_hz_hosp,
+      N_PHN_All_soc = N_HZ_All_soc * p_phn,
+      N_PHN_GP_soc = N_HZ_GP_soc * p_phn,
+      N_Death_soc = N_Alive * p_mor_hz,
+      
+      N_HZ_All_alt = N_Alive * p_hz * (1 - VE),
+      N_HZ_GP_alt = N_Alive * p_hz_gp * (1 - VE),
+      N_HZ_Hosp_alt = N_Alive * p_hz_hosp * (1 - VE),
+      N_PHN_All_alt = N_HZ_All_alt * p_phn,
+      N_PHN_GP_alt = N_HZ_GP_alt * p_phn,
+      N_Death_alt = N_Alive * p_mor_hz * (1 - VE),
+      
+      dN_All = N_All_alt - N_All_soc,
+      dN_HZ_All = N_HZ_All_alt - N_HZ_All_soc,
+      dN_HZ_GP = N_HZ_GP_alt - N_HZ_GP_soc,
+      dN_HZ_Hosp = N_HZ_Hosp_alt - N_HZ_Hosp_soc,
+      dN_Death = N_Death_alt - N_Death_soc,
+      dN_PHN = N_PHN_All_alt - N_PHN_All_soc,
+      dQ_HZ_d = dN_HZ_All * QL_HZ * dis_e,
+      dQ_Death_d = - dN_All * QOL * dis_e,
+      Q_Soc_d = (N_HZ_All_soc * QL_HZ + N_Death_soc * QL_death) * dis_e, 
+      Q_Alt_d = (N_HZ_All_alt * QL_HZ + N_Death_alt * QL_death) * dis_e,
+      dQ_All_d = - (dQ_Death_d + dQ_HZ_d),
+      C_GP_Soc_d = (N_PHN_GP_soc * cost_GP_pp_PHN_inf + (N_HZ_GP_soc - N_PHN_GP_soc) * cost_GP_pp_non_PHN_HZ_inf) * dis_c,
+      C_GP_Alt_d = (N_PHN_GP_alt * cost_GP_pp_PHN_inf + (N_HZ_GP_alt - N_PHN_GP_alt) * cost_GP_pp_non_PHN_HZ_inf) * dis_c,
+      dC_GP_d = - (C_GP_Soc_d - C_GP_Alt_d),
+      dC_Hosp_d = dN_HZ_Hosp * cost_Hospitalisation_pp_inf * dis_c,
+      dC_Intv_d = c(cohort_size * cost_vac_pp, rep(0, n() - 1)),
+      dC_All_d = dC_Intv_d + dC_GP_d + dC_Hosp_d
+    )
+  
+  
+})
+
+
+res_epi <- df_epi %>% 
+  select(starts_with(c("dN_", "dQ_", "Q_", "dC_"))) %>% 
+  summarise_all(sum) %>% 
+  mutate(ICER = dC_All_d / dQ_All_d)
+
+
+
+library(tidybayes)
+
+
+dat_aj <- read_csv(here::here("data", "raw", "Incidence_HZ_old_AJ_model.csv"))
+
+dat_kate <- local({
+  load(here::here("data", "processed_epi", "Epi_HZ_CPRD_23Nov19.rdata"))
+  
+  epi_hz %>% 
+    group_by(Age) %>% 
+    filter(IC == 1)
+})
+
+
+ggplot(df_epi) +
+  geom_point(aes(x = Age, y = r_inc_hz, group = Key, colour = "CK")) +
+  geom_line(data = df_ac, aes(x = Age, y = r_inc_hz, group = Key, colour = "AC"), alpha = 0.5) +
+  geom_point(data = dat_aj, aes(x = Age, y = Incidence, colour = "AJ")) +
+  geom_pointrange(data = dat_kate %>% filter(Age < 95), aes(x = Age, y = M, ymin = L, ymax = U, colour = "Kate"))
 
 
 
@@ -249,3 +338,7 @@ res_dr2023 <- df_dr2023 %>%
 
 
 ## Use real-world VE
+
+
+
+

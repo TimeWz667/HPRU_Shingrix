@@ -232,7 +232,6 @@ local({
 
 
 ## VE -----
-
 local({
   load(here::here("data", "processed_vaccine", "VE_Shingrix_IC.rdata"))
   
