@@ -42,3 +42,7 @@ note.md
 
 models/*.rds
 
+.local/
+.config/
+
+

@@ -1,0 +1,11 @@
+version:                "3"
+services:
+  shingrix_stan:
+      image: kosugitti/rstan-env:latest
+      volumes:
+        - ./:/home/rstudio
+      ports:
+        - 8787:8787
+      environment:
+        - PASSWORD=Lunar
+      container_name:   shingrix_stan
