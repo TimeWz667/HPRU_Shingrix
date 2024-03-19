@@ -170,7 +170,10 @@ sim_dy_hz_vac <- function(pars, year0 = 2013, year1 = 2040, rule_eligible = find
     ys[[length(ys) + 1]] <- sim_t
   }
   ys <- bind_rows(ys) %>% 
-    mutate(NewUptake = ifelse(is.na(NewUptake), 0, NewUptake))
+    mutate(
+      NewUptake = ifelse(is.na(NewUptake), 0, NewUptake),
+      Year = Year + 1  
+    )
   ys
 }
 

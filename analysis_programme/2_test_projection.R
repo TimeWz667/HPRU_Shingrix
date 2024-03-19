@@ -6,52 +6,8 @@ theme_set(theme_bw())
 source(here::here("models", "m_dy_hz.R"))
 
 
-load(here::here("pars", "pars_demo.rdata"))
 
-
-pars_epi <- local({
-  p_mor_hz <- local({
-    load(here::here("data", "processed_epi", "Epi_HZ_NIC_CPRD_bind.rdata"))
-    
-    Epi_HZ %>% 
-      group_by(Age) %>% 
-      summarise(p_mor_hz = mean(r_mor_hz) / mean(r_inc_hz))
-  })
-  
-  load(here::here("pars", "pars_epi_gpr.rdata"))
-  
-  
-  pars_epi %>% 
-    filter(IC == 0) %>% 
-    left_join(p_mor_hz) %>% 
-    select(-IC) %>% 
-    arrange(Key, Age)
-})
-
-
-pars_uptake <- local({
-  load(here::here("data", "fitted_coverage.rdata"))
-  pred1$pars
-})
-
-
-pars_ves <- local({
-  load(here::here("pars", "ves.rdata"))
-  
-  ves %>% 
-    filter(!IC) %>% 
-    select(Age, AgeVac, Vaccine = TypeVac, Protection = VE)
-  
-  load(here::here("pars", "ves_ce.rdata"))
-  
-  bind_rows(
-    ves %>% 
-      filter(!IC) %>% 
-      filter(TypeVac != "Shingrix") %>% 
-      select(Age, AgeVac, Vaccine = TypeVac, Protection = VE),
-    ve_nic %>% filter(Type == "Real") %>% select(Age, AgeVac, Vaccine = TypeVac, Protection = VE)
-  )
-})
+load(here::here("analysis_programme", "inputs", "pars_base.rdata"))
 
 
 k = 5
@@ -110,20 +66,12 @@ yss %>%
   ) %>% 
   ggplot() +
   geom_line(aes(x = Year, y = Incidence, colour = Scenario)) +
-  geom_vline(xintercept = c(2023, 2028, 2033) - 1, linetype = 2) +
-  geom_text(x = 2023 - 1, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
-  geom_text(x = 2028 - 1, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
-  geom_text(x = 2033 - 1, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) + 
+  geom_vline(xintercept = c(2023, 2028, 2033), linetype = 2) +
+  geom_text(x = 2023, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2028, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2033, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) + 
   scale_y_continuous("Incidence, per 100k", labels = scales::number_format(scale = 1e5)) +
   expand_limits(y = 0)
-
-
-yss %>% 
-  filter(Age >= 50) %>% 
-  mutate(
-    AgeGrp = cut(Age, seq(0, 100, 5), right = F)
-  )  %>% 
-  filter(!is.na(AgeGrp))
 
 
 yss %>% 
@@ -224,10 +172,10 @@ ys %>%
   ) %>% 
   ggplot() +
   geom_line(aes(x = Year, y = Incidence)) +
-  geom_vline(xintercept = c(2023, 2028, 2033) - 1, linetype = 2) +
-  geom_text(x = 2023 - 1, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
-  geom_text(x = 2028 - 1, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
-  geom_text(x = 2033 - 1, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) + 
+  geom_vline(xintercept = c(2023, 2028, 2033), linetype = 2) +
+  geom_text(x = 2023, y = 0, label = "Phase 1", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2028, y = 0, label = "Phase 2", angle = -90, hjust = 1, vjust = -1) + 
+  geom_text(x = 2033, y = 0, label = "Continuation", angle = -90, hjust = 1, vjust = -1) + 
   scale_y_continuous("Incidence, per 100k", labels = scales::number_format(scale = 1e5)) +
   expand_limits(y = 0)
 

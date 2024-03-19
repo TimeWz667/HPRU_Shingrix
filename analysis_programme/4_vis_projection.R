@@ -3,18 +3,19 @@ library(tidyverse)
 theme_set(theme_bw())
 
 
+root <- "analysis_programme"
 
-load(here::here("outputs", "temp", "yss_soc.rdata"))
-load(here::here("outputs", "temp", "yss_p1.rdata"))
-load(here::here("outputs", "temp", "yss_p2.rdata"))
-load(here::here("outputs", "temp", "yss_p1_95.rdata"))
-load(here::here("outputs", "temp", "yss_p2_95.rdata"))
+
+load(here::here(root, "temp", "yss_soc.rdata"))
+load(here::here(root, "temp", "yss_p1.rdata"))
+load(here::here(root, "temp", "yss_p2.rdata"))
+load(here::here(root, "temp", "yss_p1_95.rdata"))
+load(here::here(root, "temp", "yss_p2_95.rdata"))
 
 
 yss <- bind_rows(c(yss_soc, yss_p1, yss_p2, yss_p1_95, yss_p2_95)) %>% 
   mutate(
-    Scenario = factor(Scenario, levels = c("SOC", "Phase 1 only", "Scheduled", "To 95 yr at 2028", "To 95 yr at 2033")),
-    Year = Year + 1
+    Scenario = factor(Scenario, levels = c("SOC", "Phase 1 only", "Scheduled", "To 95 yr since 2028", "To 95 yr since 2033"))
   )
 
 
@@ -22,8 +23,8 @@ labs_scenarios <- list(
   "SOC" = "SOC", 
   "Phase 1 only" = "Phase 1 only", 
   "Scheduled" = "Scheduled", 
-  "To 95 yr at 2028" = "Scheduled + 95 yo in 2028", 
-  "To 95 yr at 2033" = "Scheduled + 95 yo in 2033"
+  "To 95 yr since 2028" = "Scheduled + 95 yo since 2028", 
+  "To 95 yr since 2033" = "Scheduled + 95 yo since 2033"
 )
 
 
@@ -190,7 +191,6 @@ g_trend <- yss %>%
 g_trend_age <- bind_rows(yss_p1) %>% 
   filter(Age >= 60 & Age < 100) %>%
   mutate(
-    Year = Year + 1,
     AgeGrp = cut(Age, c(0, seq(50, 100, 5), 101), right = F)
   ) %>% 
   group_by(Year, Scenario, AgeGrp) %>% 
@@ -340,20 +340,15 @@ g_nmb <- avt %>%
 
 
 
-ggsave(g_cov, filename = here::here("outputs", "figs", "projection", "g_proj_coverage.png"), width = 6.5, height = 4)
-ggsave(g_cov_age, filename = here::here("outputs", "figs", "projection", "g_proj_coverage_agp.png"), width = 6.5, height = 4)
-ggsave(g_trend, filename = here::here("outputs", "figs", "projection", "g_proj_trend.png"), width = 6.5, height = 4)
-ggsave(g_trend_age, filename = here::here("outputs", "figs", "projection", "g_proj_trend_agp.png"), width = 6.5, height = 4)
-ggsave(g_avt_n, filename = here::here("outputs", "figs", "projection", "g_proj_avt_n.png"), width = 6.5, height = 4)
-ggsave(g_avt_p, filename = here::here("outputs", "figs", "projection", "g_proj_avt_p.png"), width = 6.5, height = 4)
-ggsave(g_dose, filename = here::here("outputs", "figs", "projection", "g_proj_dose.png"), width = 6.5, height = 4)
-ggsave(g_dc_all, filename = here::here("outputs", "figs", "projection", "g_proj_dc_all.png"), width = 6.5, height = 4)
-ggsave(g_cdc_all, filename = here::here("outputs", "figs", "projection", "g_proj_cdc_all.png"), width = 6.5, height = 4)
-ggsave(g_dq_all, filename = here::here("outputs", "figs", "projection", "g_proj_dq_all.png"), width = 6.5, height = 4)
-ggsave(g_cdq_all, filename = here::here("outputs", "figs", "projection", "g_proj_cdq_all.png"), width = 6.5, height = 4)
-
-
-
-
-
+ggsave(g_cov, filename = here::here(root, "figs", "g_proj_coverage.png"), width = 6.5, height = 4)
+ggsave(g_cov_age, filename = here::here(root, "figs", "g_proj_coverage_agp.png"), width = 6.5, height = 4)
+ggsave(g_trend, filename = here::here(root, "figs", "g_proj_trend.png"), width = 6.5, height = 4)
+ggsave(g_trend_age, filename = here::here(root, "figs", "g_proj_trend_agp.png"), width = 6.5, height = 4)
+ggsave(g_avt_n, filename = here::here(root, "figs", "g_proj_avt_n.png"), width = 6.5, height = 4)
+ggsave(g_avt_p, filename = here::here(root, "figs", "g_proj_avt_p.png"), width = 6.5, height = 4)
+ggsave(g_dose, filename = here::here(root, "figs", "g_proj_dose.png"), width = 6.5, height = 4)
+ggsave(g_dc_all, filename = here::here(root, "figs", "g_proj_dc_all.png"), width = 6.5, height = 4)
+ggsave(g_cdc_all, filename = here::here(root, "figs", "g_proj_cdc_all.png"), width = 6.5, height = 4)
+ggsave(g_dq_all, filename = here::here(root, "figs", "g_proj_dq_all.png"), width = 6.5, height = 4)
+ggsave(g_cdq_all, filename = here::here(root, "figs", "g_proj_cdq_all.png"), width = 6.5, height = 4)
 
