@@ -63,9 +63,9 @@ sel <- data.frame(rstan::extract(post, pars = c("p0", "alpha", "beta"))) %>%
   mutate(Key = 1:n())
 
 
-# sel %>% 
-#   filter(Key <= 3000) %>% 
-#   write_csv(here::here("pars", "pars_ve_rzv_zlgamma.csv"))
+sel %>%
+  filter(Key <= 3000) %>%
+  write_csv(here::here("pars", "pars_ve_rzv_zlgamma.csv"))
 
 
 sims <- sel %>% 

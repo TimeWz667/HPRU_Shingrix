@@ -27,6 +27,36 @@ dat_ve <- read_xlsx(here::here("data", "VE.xlsx"), sheet = 1) %>%
   )
 
 
+dat_ve_agp <- read_xlsx(here::here("data", "VE.xlsx"), sheet = 1) %>% 
+  filter(Use) %>% 
+  filter(Type == "HZ") %>% 
+  filter(Vaccine == "Zostavax") %>% 
+  filter(Source == "Mbinta 2022") %>%
+  filter(!is.na(`Age-group`)) %>% 
+  mutate(
+    M = M / 100,
+    L = L / 100, 
+    U = U / 100,
+    Yr = gsub("yr", "", `Sub-group`),
+    Yr = ifelse(is.na(Yr), 1.5, as.numeric(Yr))
+  )
+
+
+dat_ve_agp <- read_xlsx(here::here("data", "VE.xlsx"), sheet = 1) %>% 
+  filter(Use) %>% 
+  filter(Type == "HZ") %>% 
+  filter(Vaccine == "Zostavax") %>% 
+  filter(Source == "Mbinta 2022") %>% 
+  filter(!is.na(`Age-group`)) %>% 
+  mutate(
+    Agp = c(55, 65, 75, 85),
+    M = M / 100,
+    odd = log(M / (1 - M)),
+    or = (odd - odd[2])
+  ) %>% 
+  select(Agp, or, M)
+
+
 dat_ve %>% 
   mutate(
     sd = (U - L) / 2 / 1.96,
@@ -58,14 +88,56 @@ post
 save(post, file = here::here("outputs", "temp", "pars_ve_zvl_zlgamma.rdata"))
 
 
+dat_ve
+
+
 sel <- data.frame(rstan::extract(post, pars = c("p0", "alpha", "beta"))) %>% 
   as_tibble() %>% 
   mutate(Key = 1:n())
 
 
-# sel %>% 
-#   filter(Key <= 3000) %>% 
-#   write_csv(here::here("pars", "pars_ve_zvl_zlgamma.csv"))
+sel %>%
+  filter(Key <= 3000) %>%
+  write_csv(here::here("pars", "pars_ve_zvl_zlgamma.csv"))
+
+
+d_agp <- tibble(Age = 50:100) %>% 
+  mutate(
+    Agp = case_when(
+      Age < 60 ~ 55,
+      Age < 70 ~ 65, 
+      Age < 80 ~ 75,
+      T ~ 85
+    )
+  ) %>% 
+  left_join(dat_ve_agp) %>% 
+  mutate(
+    odd = log(M / (1 - M)),
+    or = odd - odd[Age == 70],
+    or_spline = splinefun(unique(Agp), unique(or), method = "natural")(Age)
+  )
+
+
+d_agp %>% 
+  select(Age, or70 = or, or70spline = or_spline) %>%
+  write_csv(here::here("pars", "pars_ve_zvl_agp.csv"))
+
+
+g_test_agp <- d_agp %>% 
+  mutate(
+    M2 = splinefun(unique(Agp), unique(M), method = "natural")(Age),
+    odd3 = splinefun(unique(Agp), unique(odd), method = "natural")(Age),
+    M3 = 1 / (1 + exp(-odd3)),
+    or4 = splinefun(unique(Agp), unique(or), method = "natural")(Age),
+    odd4 = or4 + odd[Age == 70],
+    M4 = 1 / (1 + exp(-odd4)),
+  ) %>%   
+  ggplot() +
+  geom_line(aes(x = Age, y = M)) +
+  geom_line(aes(x = Age, y = M2)) +
+  geom_line(aes(x = Age, y = M3)) +
+  geom_line(aes(x = Age, y = M4)) +
+  expand_limits(y = 0:1)
 
 
 
