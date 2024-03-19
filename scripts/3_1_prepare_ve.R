@@ -5,7 +5,6 @@ library(tidyverse)
 # load(here::here("outputs", "temp", "sims_coverage.rdata"))
 
 
-
 ves_zosta_nic <- local({
   load(here::here("data", "VE_Zostavax_NIC.rdata"))
   

@@ -8,6 +8,7 @@ theme_set(theme_bw())
 dat_ve <- read_xlsx(here::here("data", "VE.xlsx"), sheet = 1) %>% 
   filter(Use) %>% 
   filter(Type == "HZ") %>% 
+  filter(Vaccine == "Shingrix") %>% 
   mutate(
     M = M / 100,
     L = L / 100, 
@@ -29,7 +30,7 @@ dat_ve %>%
 fit_loglin <- lm(log(M) ~ Yr, data = dat_ve %>% filter(!Realworld))
 fit_step2<- lm(log(M) ~ Yr + (Yr >= 9), data = dat_ve %>% filter(!Realworld))
 
-fit_ce <- read_csv(here::here("pars", "sims_ve_zlgamma.csv")) %>% 
+fit_ce <- read_csv(here::here("pars", "sims_ve_rzv_zlgamma.csv")) %>% 
   group_by(Yr) %>% 
   summarise(f_ga = mean(VE))
 
@@ -77,7 +78,7 @@ ve_nic <- ve0 %>%
   select(-Yr) %>% 
   arrange(Type, Age, AgeVac)
 
-save(ve_nic, file = here::here("pars", "ves_linear.rdata"))
+save(ve_nic, file = here::here("pars", "ves_rzv_linear.rdata"))
 
 
 ve_nic <- ve0 %>% 
@@ -87,7 +88,7 @@ ve_nic <- ve0 %>%
   select(-Yr) %>% 
   arrange(Type, Age, AgeVac)
 
-save(ve_nic, file = here::here("pars", "ves_2step.rdata"))
+save(ve_nic, file = here::here("pars", "ves_rzv_2step.rdata"))
 
 
 ve_nic <- ve0 %>% 
@@ -97,7 +98,7 @@ ve_nic <- ve0 %>%
   select(-Yr) %>% 
   arrange(Type, Age, AgeVac)
 
-save(ve_nic, file = here::here("pars", "ves_ce.rdata"))
+save(ve_nic, file = here::here("pars", "ves_rzv_ce.rdata"))
 
 
 ve_nic <- ve0 %>% 
@@ -107,7 +108,7 @@ ve_nic <- ve0 %>%
   select(-Yr) %>% 
   arrange(Type, Age, AgeVac)
 
-save(ve_nic, file = here::here("pars", "ves_linear_drop10.rdata"))
+save(ve_nic, file = here::here("pars", "ves_rzv_linear_drop10.rdata"))
 
 
 ve_nic <- ve0 %>% 
@@ -117,5 +118,5 @@ ve_nic <- ve0 %>%
   select(-Yr) %>% 
   arrange(Type, Age, AgeVac)
 
-save(ve_nic, file = here::here("pars", "ves_2step_drop10.rdata"))
+save(ve_nic, file = here::here("pars", "ves_rzv_2step_drop10.rdata"))
 
