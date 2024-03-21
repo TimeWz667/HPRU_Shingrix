@@ -4,21 +4,22 @@ library(tidybayes)
 theme_set(theme_bw())
 
 source(here::here("models", "m_dy_hz.R"))
+source(here::here("models", "misc.R"))
 
+# Load inputs
+file_inputs <- "pars_nic_programme.rdata"
+if (!(file_inputs %in% dir(here::here("analysis_cohort", "inputs")))) {
+  source(here::here("analysis_programme", "fn_arrange_inputs.R"))
+  pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3)
+  save(pars_set, file = here::here("analysis_programme", "inputs", file_inputs))
+} else {
+  load(file = here::here("analysis_programme", "inputs", file_inputs))
+}
 
-
-load(here::here("analysis_programme", "inputs", "pars_base.rdata"))
 
 
 k = 5
-
-pars <- c(pars_demo$England, list(
-  Epi = pars_epi %>% filter(Key == k) %>% select(-Key),
-  Uptake = pars_uptake,
-  VE = pars_ves
-))
-
-
+pars <- get_pars(pars_set, k)
 
 
 scenario_soc <- function(df, p0, yr) find_eligible_default(df, p0, min(yr, 2022))
@@ -44,7 +45,6 @@ scenario_2033_95 <- function(df, p0, yr) {
 }
 
 
-
 yss <- bind_rows(
   sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_soc) %>% mutate(Scenario = "SOC"),
   sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_p65) %>% mutate(Scenario = "To 65 yr"),
@@ -57,12 +57,11 @@ yss <- bind_rows(
   )
 
 
-
 yss %>% 
   filter(Age >= 50) %>% 
   group_by(Year, Scenario) %>% 
   summarise(
-    Incidence = sum(HZ) / sum(N)
+    Incidence = sum(N_HZ) / sum(N)
   ) %>% 
   ggplot() +
   geom_line(aes(x = Year, y = Incidence, colour = Scenario)) +
@@ -84,17 +83,14 @@ yss %>%
   )  %>% 
   filter(!is.na(AgeGrp)) %>% 
   group_by(AgeGrp, Scenario) %>% 
-  summarise(Cases = sum(HZ)) %>% 
+  summarise(Cases = sum(N_HZ)) %>% 
   #group_by(Year) %>% 
   #mutate(Cases = Cases / sum(Cases)) %>% 
   ggplot() +
   geom_bar(aes(x = AgeGrp, y = Cases, fill = Scenario), stat = "identity", position = "dodge")
 
 
-
-
-
-ys <- sim_dy_hz_vac(pars, year1 = 2040, rule_eligible = scenario_full)
+ys <- sim_dy_hz_vac(pars, year1 = 2050, rule_eligible = scenario_full)
 
 
 ys %>% 
@@ -168,7 +164,7 @@ ys %>%
 ys %>% 
   group_by(Year) %>% 
   summarise(
-    Incidence = sum(HZ) / sum(N)
+    Incidence = sum(N_HZ) / sum(N)
   ) %>% 
   ggplot() +
   geom_line(aes(x = Year, y = Incidence)) +

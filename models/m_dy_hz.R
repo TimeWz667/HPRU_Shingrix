@@ -25,7 +25,7 @@ sim_bir_ageing <- function(df, p0, yr, hz = F) {
   # Ageing
   sim_1 <- df %>% 
     mutate(
-      N = N - Death + Im - ifelse(hz, HZ_Death, 0),
+      N = N - Death + Im - ifelse(hz, N_HZ_Death, 0),
       Year = yr + 1, 
       Age = Age + 1
     ) %>% 
@@ -41,19 +41,17 @@ sim_bir_ageing <- function(df, p0, yr, hz = F) {
 }
 
 
-
-
 sim_hz <- function(df, p0) {
   df %>% 
     left_join(p0, by = c("Age")) %>% 
-    fill(r_hz, p_gp, p_phn, p_mor_hz, .direction = "up") %>% 
+    fill(r_hz, p_gp, p_phn, r_mor_hz, .direction = "up") %>% 
     mutate(
-      HZ = (1 - Protection) * r_hz * N,
-      HZ_GP = p_gp * HZ,
-      HZ_Hosp = HZ - HZ_GP,
-      HZ_PHN = p_phn * HZ,
-      HZ_PHN_GP = p_gp * HZ_PHN,
-      HZ_Death = p_mor_hz * HZ
+      N_HZ = r_hz * (1 - Protection) * N,
+      N_HZ_GP = p_gp * N_HZ,
+      N_HZ_Hosp = N_HZ - N_HZ_GP,
+      N_HZ_PHN = p_phn * N_HZ,
+      N_HZ_PHN_GP = p_gp * N_HZ_PHN,
+      N_HZ_Death = r_mor_hz * (1 - Protection) * N_HZ
     ) %>% 
     select(-starts_with(c("r_", "p_")))
 }
@@ -66,7 +64,7 @@ sim_uptake_zvl <- function(df) {
   eligible %>% 
     mutate(
       N_None = N * (1- uptake),
-      N_Zostavax = N * uptake
+      N_ZVL = N * uptake
     ) %>% 
     select(-c(Vaccine, uptake, N)) %>% 
     pivot_longer(starts_with("N_"), names_pattern = "N_(\\w+)", names_to = "Vaccine", values_to = "N") %>% 
@@ -86,7 +84,7 @@ sim_uptake_rzv <- function(df) {
   eligible %>% 
     mutate(
       N_None = N * (1- uptake),
-      N_Shingrix = N * uptake
+      N_RZV = N * uptake
     ) %>% 
     select(-c(Vaccine, uptake, N)) %>% 
     pivot_longer(starts_with("N_"), names_pattern = "N_(\\w+)", names_to = "Vaccine", values_to = "N") %>% 
@@ -152,20 +150,36 @@ find_eligible_default <- function(df, p0, yr, cap = 80) {
 sim_dy_hz_vac <- function(pars, year0 = 2013, year1 = 2040, rule_eligible = find_eligible_default) {
   ys <- list()
   
-  sim_0 <- pars$N %>% filter(Year == year0) %>% 
+  ve_zvl <- crossing(Age = 51:100, AgeVac = 51:100) %>% 
+    mutate(TimeVac = Age - AgeVac + 1) %>% 
+    filter(TimeVac > 0) %>% 
+    left_join(pars$VE_ZVL, by = c("Age", "TimeVac"))
+
+  ve_rzv <- crossing(Age = 51:100, AgeVac = 51:100) %>% 
+    mutate(TimeVac = Age - AgeVac + 1) %>% 
+    filter(TimeVac > 0) %>% 
+    left_join(pars$VE_RZV, by = "TimeVac")
+  
+  pars_ve <- bind_rows(ve_zvl, ve_rzv) %>% select(-TimeVac)
+  
+  sim_0 <- pars$Demography$N %>% filter(Year == year0) %>% 
     mutate(Vaccine = "None", Protection = 0, AgeVac  = NA)
   
   for (yr in year0:year1) {
-    fn_vac <- ifelse(yr < 2023, sim_uptake_zvl, sim_uptake_rzv)
-    
+    if (yr < 2023) {
+      fn_vac <- sim_uptake_zvl
+    } else {
+      fn_vac <- sim_uptake_rzv
+    }
+
     sim_t <- sim_0 %>% 
       rule_eligible(pars$Uptake, yr = yr) %>% 
       fn_vac() %>%
-      sim_ve(pars$VE) %>% 
-      sim_hz(pars$Epi) %>% 
-      sim_death_im(pars$DeathIm)
+      sim_ve(pars_ve) %>% 
+      sim_hz(pars$Epidemiology) %>% 
+      sim_death_im(pars$Demography$DeathIm)
     
-    sim_0 <- sim_bir_ageing(sim_t, pars$Birth, yr, hz = (yr < 2023))
+    sim_0 <- sim_bir_ageing(sim_t, pars$Demography$Birth, yr, hz = (yr < 2023))
     
     ys[[length(ys) + 1]] <- sim_t
   }
@@ -174,29 +188,27 @@ sim_dy_hz_vac <- function(pars, year0 = 2013, year1 = 2040, rule_eligible = find
       NewUptake = ifelse(is.na(NewUptake), 0, NewUptake),
       Year = Year + 1  
     )
-  ys
-}
-
-
-decorate_by_ce <- function(df, pars_ce, cost_vac, dis_effects, dis_costs, year0) {
-  yss %>% 
-    left_join(pars_ce, by = "Age") %>% 
-    left_join(cost_vac, by = "Vaccine") %>% 
+  
+  ## Append CE information
+  ys <- ys %>% 
+    left_join(pars$CostVac %>% mutate(Vaccine = ifelse(Vaccine == "Shingrix", "RZV", "ZVL")), by = "Vaccine") %>% 
+    left_join(pars$CostEff, by = "Age") %>% 
     mutate(
-      dis_ql = 1 / ((1 + dis_effects) ^ (Year - year0)),
-      dis_cost = 1 / ((1 + dis_costs) ^ (Year - year0)),
-      QL_y2_d = QL_y2 / (1 + dis_effects),
+      cost_vac_pp = ifelse(is.na(cost_vac_pp), 0, cost_vac_pp),
+      dis_ql = 1 / ((1 + pars$discount_effects) ^ (Year - year0)),
+      dis_cost = 1 / ((1 + pars$discount_costs) ^ (Year - year0)),
+      QL_y2_d = QL_y2 / (1 + pars$discount_effects),
       QL_HZ = QL_y1 + QL_y2,
       QL_HZ_d = QL_y1 + QL_y2_d,
       Q_Life = N * QOL,
-      Q_HZ = - HZ * QL_HZ,
+      Q_HZ = - N_HZ * QL_HZ,
       Q_All = Q_Life + Q_HZ,
       Q_Life_d = Q_Life * dis_ql,
-      Q_HZ_d = - HZ * QL_HZ_d * dis_ql,
+      Q_HZ_d = - N_HZ * QL_HZ_d * dis_ql,
       Q_All_d = Q_Life_d + Q_HZ_d,
-      C_Hosp = HZ_Hosp * cost_Hospitalisation_pp_inf,
-      C_GP_NonPHN = (HZ_GP - HZ_PHN_GP) * cost_GP_pp_non_PHN_HZ_inf,
-      C_GP_PHN = HZ_PHN_GP * cost_GP_pp_PHN_inf,
+      C_Hosp = N_HZ_Hosp * cost_hosp_pp_inf,
+      C_GP_NonPHN = (N_HZ_GP - N_HZ_PHN_GP) * cost_GP_pp_non_PHN_HZ_inf,
+      C_GP_PHN = N_HZ_PHN_GP * cost_GP_pp_PHN_inf,
       C_GP = C_GP_NonPHN + C_GP_PHN,
       C_Vac = cost_vac_pp * NewUptake,
       C_Vac_d = C_Vac * dis_ql,
@@ -209,18 +221,27 @@ decorate_by_ce <- function(df, pars_ce, cost_vac, dis_effects, dis_costs, year0)
       C_All_d = C_Med_d + C_Vac_d,
       across(starts_with(c("C_", "Q_")), function(x) ifelse(is.na(x), 0, x))
     )
+  
+  
+  return(ys)
 }
 
 
-summarise_dy_hz <- function(yss, pars_ce, cost_vac, soc = "SOC", 
-                            dis_effects = 0.035, dis_costs = 0.035, age0 = 50, year0 = 2023) {
+ys %>% 
+  group_by(Year) %>% 
+  summarise(across(starts_with(c("C_", "Q_", "N_")), sum)) %>% 
+  ggplot() +
+  geom_point(aes(x = Year, y = C_Vac_d))
+
+
+
+summarise_dy_hz <- function(yss, soc = "SOC", year0 = 2023) {
   yss_collapse <- yss %>% 
-    decorate_by_ce(pars_ce, cost_vac, dis_effects = dis_effects, dis_costs = dis_costs, year0 = year0) %>% 
     group_by(Year, Age, Scenario, Key) %>% 
     summarise(
-      Coverage_RZV = sum(N[Vaccine == "Shingrix"]) / sum(N),
-      Coverage_ZVL = sum(N[Vaccine == "Zostavax"]) / sum(N),
-      across(c(N, starts_with(c("HZ", "C_", "Q_")), NewUptake), sum)
+      Coverage_RZV = sum(N[Vaccine == "RZV"]) / sum(N),
+      Coverage_ZVL = sum(N[Vaccine == "ZVL"]) / sum(N),
+      across(c(N, starts_with(c("N_", "C_", "Q_")), NewUptake), sum)
     ) %>% 
     ungroup()
   
@@ -235,7 +256,6 @@ summarise_dy_hz <- function(yss, pars_ce, cost_vac, soc = "SOC",
     select(-Key) %>% 
     summarise_all(mean) %>% 
     ungroup()
-  
   
   avt <- stats %>% 
     group_by(Year, Scenario) %>% 

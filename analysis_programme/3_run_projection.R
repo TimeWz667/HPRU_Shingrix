@@ -4,13 +4,17 @@ library(tidybayes)
 theme_set(theme_bw())
 
 source(here::here("models", "m_dy_hz.R"))
+source(here::here("models", "misc.R"))
 
-
-## Loading parameters -----
-root <- "analysis_programme"
-
-load(here::here(root, "inputs", "pars_base.rdata"))
-
+# Load inputs
+file_inputs <- "pars_nic_programme.rdata"
+if (!(file_inputs %in% dir(here::here("analysis_cohort", "inputs")))) {
+  source(here::here("analysis_programme", "fn_arrange_inputs.R"))
+  pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3)
+  save(pars_set, file = here::here("analysis_programme", "inputs", file_inputs))
+} else {
+  load(file = here::here("analysis_programme", "inputs", file_inputs))
+}
 
 
 ## Eligibility functions -----
@@ -41,6 +45,8 @@ scenario_2033_95 <- function(df, p0, yr) {
 
 
 ## Simulation -----
+year1 <- 2050
+
 yss_soc <- list()
 yss_p1 <- list()
 yss_p2 <- list()
@@ -48,27 +54,23 @@ yss_p1_95 <- list()
 yss_p2_95 <- list()
 
 
-keys <- pars_epi %>% pull(Key) %>% unique()
-keys <- keys[1:200]
+keys <- 1:pars_set$N_Sims
+keys <- keys[1:100]
 
 pb <- txtProgressBar(min = 1, max = length(keys), style = 3,  width = 50, char = "=") 
 
 for(k in keys) {
-  pars <- c(pars_demo$England, list(
-    Epi = pars_epi %>% filter(Key == k) %>% select(-Key),
-    Uptake = pars_uptake,
-    VE = pars_ves
-  ))
+  pars <- get_pars(pars_set, k)
   
-  yss_soc[[length(yss_soc) + 1]] <- sim_dy_hz_vac(pars, year1 = 2050, 
+  yss_soc[[length(yss_soc) + 1]] <- sim_dy_hz_vac(pars, year1 = year1, 
                                                   rule_eligible = scenario_soc) %>% mutate(Scenario = "SOC", Key = k)
-  yss_p1[[length(yss_p1) + 1]] <- sim_dy_hz_vac(pars, year1 = 2050, 
+  yss_p1[[length(yss_p1) + 1]] <- sim_dy_hz_vac(pars, year1 = year1, 
                                                 rule_eligible = scenario_p65) %>% mutate(Scenario = "Phase 1 only", Key = k)
-  yss_p2[[length(yss_p2) + 1]] <- sim_dy_hz_vac(pars, year1 = 2050, 
+  yss_p2[[length(yss_p2) + 1]] <- sim_dy_hz_vac(pars, year1 = year1, 
                                                 rule_eligible = scenario_full) %>% mutate(Scenario = "Scheduled", Key = k)
-  yss_p1_95[[length(yss_p1_95) + 1]] <- sim_dy_hz_vac(pars, year1 = 2050, 
+  yss_p1_95[[length(yss_p1_95) + 1]] <- sim_dy_hz_vac(pars, year1 = year1, 
                                                       rule_eligible = scenario_2028_95) %>% mutate(Scenario = "To 95 yr since 2028", Key = k)
-  yss_p2_95[[length(yss_p2_95) + 1]] <- sim_dy_hz_vac(pars, year1 = 2050, 
+  yss_p2_95[[length(yss_p2_95) + 1]] <- sim_dy_hz_vac(pars, year1 = year1, 
                                                       rule_eligible = scenario_2033_95) %>% mutate(Scenario = "To 95 yr since 2033", Key = k)
   
   setTxtProgressBar(pb, k)
@@ -76,6 +78,8 @@ for(k in keys) {
 
 
 ## Outputs -----
+root <- 
+
 save(yss_soc, file = here::here(root, "temp", "yss_soc.rdata"))
 save(yss_p1, file = here::here(root, "temp", "yss_p1.rdata"))
 save(yss_p2, file = here::here(root, "temp", "yss_p2.rdata"))
