@@ -92,5 +92,5 @@ stats_ce <- yss_ce %>%
   )
 
 
-save(stats_mean, stats_ce, file = here::here("analysis_cohort", "temp", "stats_zvl2rzv.rdata"))
+save(stats_mean, stats_ce, file = here::here("analysis_cohort", "tabs", "stats_zvl2rzv.rdata"))
 
