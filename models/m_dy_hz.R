@@ -227,14 +227,6 @@ sim_dy_hz_vac <- function(pars, year0 = 2013, year1 = 2040, rule_eligible = find
 }
 
 
-ys %>% 
-  group_by(Year) %>% 
-  summarise(across(starts_with(c("C_", "Q_", "N_")), sum)) %>% 
-  ggplot() +
-  geom_point(aes(x = Year, y = C_Vac_d))
-
-
-
 summarise_dy_hz <- function(yss, soc = "SOC", year0 = 2023) {
   yss_collapse <- yss %>% 
     group_by(Year, Age, Scenario, Key) %>% 
