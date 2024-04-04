@@ -10,6 +10,9 @@ file_inputs <- "pars_nic.rdata"
 if (!(file_inputs %in% dir(here::here("analysis_cohort", "inputs")))) {
   source(here::here("analysis_cohort", "fn_arrange_inputs.R"))
   pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3)
+  if (!dir.exists(here::here("analysis_cohort", "inputs"))) {
+    dir.create(here::here("analysis_cohort", "inputs"))
+  }
   save(pars_set, file = here::here("analysis_cohort", "inputs", file_inputs))
 } else {
   load(file = here::here("analysis_cohort", "inputs", file_inputs))
