@@ -18,7 +18,7 @@ if (!(file_inputs %in% dir(here::here("analysis_cohort", "inputs")))) {
 
 ## Simulation -----
 keys <- 1:pars_set$N_Sims
-keys <- keys[1:200]
+keys <- keys[1:20]
 
 yss <- list()
 
@@ -27,7 +27,7 @@ pb <- txtProgressBar(min = 1, max = max(keys), style = 3,  width = 50, char = "=
 for(k in keys) {
   pars <- get_pars(pars_set, k)
   
-  for (age0 in seq(60, 90, 5)) {
+  for (age0 in 70:79) {
     for (age1 in (age0 + 1): 95) {
       yss[[length(yss) + 1]] <- 
         sim_cohort_vac(pars, age0 = age0, age1 = age1, vaccine0 = "Zostavax", vaccine1 = "Shingrix") %>% 
