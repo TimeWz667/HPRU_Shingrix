@@ -130,10 +130,21 @@ sim_cohort_vac <- function(pars, age0 = 70, age1 = NA, vaccine0 = "Shingrix", va
     )
   
   if (agg) {
-    res_ce <- res_ce %>% 
+    res_ce_all <- res_ce %>% 
       filter(Age < 100) %>% 
       group_by(Arm) %>% 
-      summarise(across(starts_with(c("N_", "C_", "Q_")), mean))     
+      summarise(across(starts_with(c("N_", "C_", "Q_")), mean)) %>% 
+      mutate(Type = "Overall")
+    
+    if (!is.na(vaccine1)) {
+      pop_revac <- pop0 %>%
+        vaccination(pars, age0, vaccine0) %>% 
+        vaccination(pars, age1, vaccine1) %>% 
+        fn() %>% 
+        mutate(Arm = "ReVac")
+      
+      res <- bind_rows(pop_soc, pop_vac, pop_revac) %>% select(-starts_with(c("p_", "r_")))
+    }
   }
 
   return(res_ce)

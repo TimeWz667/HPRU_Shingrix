@@ -33,7 +33,7 @@ for(k in keys) {
   for (age0 in 70:79) {
     for (age1 in (age0 + 1): 95) {
       yss[[length(yss) + 1]] <- 
-        sim_cohort_vac(pars, age0 = age0, age1 = age1, vaccine0 = "Zostavax", vaccine1 = "Shingrix") %>% 
+        sim_cohort_vac(pars, age0 = age0, age1 = age1, vaccine0 = "Zostavax", vaccine1 = "Shingrix", agg = F) %>% 
         mutate(Key = k, Scenario = glue::as_glue("ReVac_") + age0 + ":" + age1, Age0 = age0, Age1 = age1)
     }
   }
@@ -45,6 +45,9 @@ yss <- bind_rows(yss) %>%
 
 save(yss, file = here::here("analysis_cohort", "temp", "yss_zvl2rzv.rdata"))
 
+
+
+yss
 
 
 diffs <- local({
