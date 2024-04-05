@@ -129,24 +129,70 @@ sim_cohort_vac <- function(pars, age0 = 70, age1 = NA, vaccine0 = "Shingrix", va
       across(starts_with(c("C_", "Q_")), function(x) ifelse(is.na(x), 0, x))
     )
   
+  
+  calc_cea <- function(df, sc0 = "SOC", wtp = 3e5) {
+    df %>% 
+      group_by(Arm) %>% 
+      summarise(across(starts_with(c("N_", "C_", "Q_")), sum)) %>% 
+      select(Arm, N_HZ, N_NewUptake, Q_Life_d, Q_HZ_d, Q_All_d, C_Med_d, C_Vac_d, C_All_d) %>% 
+      mutate(
+        N_Uptake0 = N_NewUptake[Arm == sc0],
+        N_HZ0 = N_HZ[Arm == sc0],
+        Q_Life_d0 = Q_Life_d[Arm == sc0],
+        Q_HZ_d0 = Q_HZ_d[Arm == sc0],
+        Q_All_d0 = Q_All_d[Arm == sc0],
+        C_Med_d0 = C_Med_d[Arm == sc0],
+        C_Vac_d0 = C_Vac_d[Arm == sc0],
+        C_All_d0 = C_All_d[Arm == sc0],
+        dN_Uptake = N_NewUptake - N_Uptake0,
+        dN_HZ = N_HZ - N_HZ0,
+        dQ_Life_d = Q_Life_d0 - Q_Life_d0,
+        dQ_HZ_d = Q_HZ_d - Q_HZ_d0,
+        dQ_All_d = Q_All_d - Q_All_d0,
+        dC_Med_d = C_Med_d - C_Med_d0,
+        dC_Vac_d = C_Vac_d - C_Vac_d0,
+        dC_All_d = C_All_d - C_All_d0,
+        ICER = dC_All_d / dQ_All_d, ICER = ifelse(is.na(ICER), 0, ICER),
+        NMB = dQ_All_d * wtp - dC_All_d
+      )
+  }
+  
+  
   if (agg) {
     res_ce_all <- res_ce %>% 
       filter(Age < 100) %>% 
-      group_by(Arm) %>% 
-      summarise(across(starts_with(c("N_", "C_", "Q_")), mean)) %>% 
+      calc_cea() %>% 
       mutate(Type = "Overall")
     
     if (!is.na(vaccine1)) {
-      pop_revac <- pop0 %>%
-        vaccination(pars, age0, vaccine0) %>% 
-        vaccination(pars, age1, vaccine1) %>% 
-        fn() %>% 
-        mutate(Arm = "ReVac")
-      
-      res <- bind_rows(pop_soc, pop_vac, pop_revac) %>% select(-starts_with(c("p_", "r_")))
-    }
+      res_ce <- bind_rows(
+        res_ce_all, 
+        res_ce %>% 
+          filter(Age < 100) %>% 
+          filter(Arm != "SOC") %>% 
+          filter(Age >= age1) %>% 
+          calc_cea("Vac") %>%
+          mutate(Type = "Second_d"),
+        res_ce %>% 
+          filter(Age < 100) %>% 
+          filter(Arm != "SOC") %>% 
+          filter(Age >= age1) %>% 
+          mutate(
+            across(starts_with("C_"), function(x) x / dis_cost[1]),
+            across(starts_with("Q_"), function(x) x / dis_ql[1])
+          ) %>% 
+          calc_cea("Vac") %>%
+          mutate(Type = "Second")
+        )
+    } else (
+      res_ce <- res_ce_all
+    )
   }
 
   return(res_ce)
 }
 
+
+
+
+  

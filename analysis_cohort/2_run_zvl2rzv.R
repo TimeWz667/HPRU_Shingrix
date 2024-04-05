@@ -21,7 +21,7 @@ if (!(file_inputs %in% dir(here::here("analysis_cohort", "inputs")))) {
 
 ## Simulation -----
 keys <- 1:pars_set$N_Sims
-keys <- keys[1:20]
+keys <- keys[1:100]
 
 yss <- list()
 
@@ -30,10 +30,10 @@ pb <- txtProgressBar(min = 1, max = max(keys), style = 3,  width = 50, char = "=
 for(k in keys) {
   pars <- get_pars(pars_set, k)
   
-  for (age0 in 70:79) {
-    for (age1 in (age0 + 1): 95) {
+  for (age0 in 70:80) {
+    for (age1 in (age0 + 1): 90) {
       yss[[length(yss) + 1]] <- 
-        sim_cohort_vac(pars, age0 = age0, age1 = age1, vaccine0 = "Zostavax", vaccine1 = "Shingrix", agg = F) %>% 
+        sim_cohort_vac(pars, age0 = age0, age1 = age1, vaccine0 = "Zostavax", vaccine1 = "Shingrix", agg = T) %>% 
         mutate(Key = k, Scenario = glue::as_glue("ReVac_") + age0 + ":" + age1, Age0 = age0, Age1 = age1)
     }
   }
@@ -41,13 +41,49 @@ for(k in keys) {
 }
 
 yss <- bind_rows(yss) %>% 
-  relocate(Scenario, Age0, Age1, Arm, Key)
+  relocate(Scenario, Age0, Age1, Arm, Type, Key)
 
 save(yss, file = here::here("analysis_cohort", "temp", "yss_zvl2rzv.rdata"))
 
 
 
+
+  
+yss %>% 
+  filter(Age0 == 70) %>% 
+  #filter(Type == "Overall") %>%
+  filter(Arm == "ReVac") %>% 
+  group_by(Scenario, Age0, Age1, Arm, Type) %>% 
+  summarise(
+    dQ_All_d = mean(dQ_All_d),
+    dC_All_d = mean(dC_All_d)
+  ) %>% 
+  ggplot() +
+  geom_segment(aes(x = 0, y = 0, xend = dQ_All_d, yend = dC_All_d, colour = as.factor(Age1))) +
+  geom_abline(slope = 3e4) +
+  scale_x_continuous("Incremental QALY") +
+  scale_y_continuous("Incremental Cost") +
+  facet_wrap(.~Type)
+
+
+yss %>% 
+  filter(Age0 %in% c(70, 75, 79)) %>% 
+  filter(Type == "Second") %>%
+  filter(Arm == "ReVac") %>% 
+  group_by(Scenario, Age0, Age1, Arm, Type) %>% 
+  summarise(
+    ICER = mean(ICER)
+  ) %>% 
+  ggplot() +
+  geom_line(aes(x = Age1, y = ICER)) +
+  geom_hline(yintercept = 3e4) +
+  scale_x_continuous("Age for revaccination") +
+  scale_y_continuous("ICER") +
+  facet_wrap(.~Age0) +
+  expand_limits(x = 70, y = 0)
+
 yss
+
 
 
 diffs <- local({
