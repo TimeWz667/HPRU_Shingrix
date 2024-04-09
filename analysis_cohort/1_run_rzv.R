@@ -40,3 +40,15 @@ yss <- bind_rows(yss) %>%
 
 save(yss, file = here::here("analysis_cohort", "temp", "yss_rzv.rdata"))
 
+
+
+yss %>% 
+  filter(Arm == "Vac") %>%
+  group_by(Age0) %>% 
+  summarise(ICER = mean(ICER)) %>% 
+  ggplot() +
+  geom_line(aes(x = Age0, y = ICER)) +
+  geom_hline(yintercept = 3e4, linetype = 2) +
+  expand_limits(y = 0)
+
+
