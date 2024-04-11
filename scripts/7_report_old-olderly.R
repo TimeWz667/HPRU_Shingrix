@@ -278,7 +278,7 @@ g1 <- yss %>%
   expand_limits(y = c(0, 1))
 g1
 
-g <- ggpubr::ggarrange(g0, g1, ncol = 1, common.legend = T, legend = "right")
+g <- ggpubr::ggarrange(g0 + labs(subtitle="(A)"), g1 + labs(subtitle="(B)"), ncol = 1, common.legend = T, legend = "right")
 
 g
 
@@ -452,7 +452,9 @@ g <- ggpubr::ggarrange(g_dose, g_avt_p, g_cdq_all, g_cdc_all, g_nmb,
                        common.legend = T, legend = "right")
 
 g0 <- ggpubr::ggarrange(g_dose, g_avt_p, ncol = 1, common.legend = T, legend = "right")
-g1 <- ggpubr::ggarrange(g_cdq_all, g_cdc_all, g_nmb, ncol = 1, common.legend = T, legend = "right")
+g1 <- ggpubr::ggarrange(g_cdq_all + labs(subtitle="(A)"), 
+                        g_cdc_all + labs(subtitle="(B)"), 
+                        g_nmb + labs(subtitle="(C)"), ncol = 1, common.legend = T, legend = "right")
 
 g <- ggpubr::ggarrange(g0, g1, common.legend = T, legend = "right")
 g
