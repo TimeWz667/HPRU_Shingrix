@@ -207,7 +207,7 @@ yss <- bind_rows(c(yss_soc, yss_p1, yss_p2, yss_p1_95, yss_p2_95)) %>%
   mutate(
     Scenario = factor(Scenario, levels = c("SOC", "Phase 1 only", "Scheduled", "To 95 yr since 2028", "To 95 yr since 2033"))
   ) %>% 
-  filter(Year >= 2020 & Year <= 2060) %>% 
+  filter(Year >= 2020 & Year <= 2045) %>% 
   filter(Age >= 60) 
 
 
@@ -334,17 +334,9 @@ g_dose <- avt %>%
   geom_text(x = 2028, y = 0, label = "Phase 2", angle = 90, hjust = -0.1, vjust = 1.2) + 
   geom_text(x = 2033, y = 0, label = "Continuation", angle = 90, hjust = -0.1, vjust = 1.2) + 
   scale_y_continuous("Cumulative doses, RZV, million", labels = scales::number_format(scale = 1e-6)) +
-  scale_x_continuous("Year", breaks = c(2020, 2023, 2028, 2033, 2040, 2050)) +
+  scale_x_continuous("Year", breaks = c(2020, 2023, 2028, 2033, 2040, 2045)) +
   scale_color_discrete("Scenario", labels = labs_scenarios) +
   expand_limits(y = 0, x = 2020)
-
-
-g_avt_n <- avt %>% 
-  ggplot() +
-  geom_line(aes(x = Year, y = CumCases0 - CumCases, colour = Scenario)) +
-  scale_y_continuous("Cases averted, 60+, million", labels = scales::number_format(scale = 1e-6)) +
-  scale_color_discrete("Scenario", labels = labs_scenarios) +
-  labs(subtitle = "Cumulative")
 
 
 g_avt_p <- avt %>% 
@@ -381,10 +373,10 @@ g_cdq_all <- avt %>%
   geom_line(aes(x = Year, y = CumQol - CumQol0, colour = Scenario)) +
   scale_y_continuous("Incremental QALYs, \ndiscounted, thousands", labels = scales::number_format(scale = 1e-3)) +
   geom_vline(xintercept = c(2023, 2028, 2033), linetype = 2) +
-  # geom_text(x = 2023, y = 0, label = "Phase 1", angle = 90, hjust = -0.1, vjust = 1.2) + 
-  # geom_text(x = 2028, y = 0, label = "Phase 2", angle = 90, hjust = -0.1, vjust = 1.2) + 
-  # geom_text(x = 2033, y = 0, label = "Continuation", angle = 90, hjust = -0.1, vjust = 1.2)  +
-  scale_x_continuous("Year", breaks = c(2020, 2023, 2028, 2033, 2040, 2050)) +
+  geom_text(x = 2023, y = 0, label = "Phase 1", angle = 90, hjust = -0.1, vjust = 1.2) +
+  geom_text(x = 2028, y = 0, label = "Phase 2", angle = 90, hjust = -0.1, vjust = 1.2) +
+  geom_text(x = 2033, y = 0, label = "Continuation", angle = 90, hjust = -0.1, vjust = 1.2)  +
+  scale_x_continuous("Year", breaks = c(2020, 2023, 2028, 2033, 2040, 2045)) +
   scale_color_discrete("Scenario", labels = labs_scenarios) +
   expand_limits(y = 0)
 
@@ -413,51 +405,29 @@ g_cdc_all <- avt %>%
   # geom_text(x = 2023, y = 0, label = "Phase 1", angle = 90, hjust = -0.1, vjust = 1.2) + 
   # geom_text(x = 2028, y = 0, label = "Phase 2", angle = 90, hjust = -0.1, vjust = 1.2) + 
   # geom_text(x = 2033, y = 0, label = "Continuation", angle = 90, hjust = -0.1, vjust = 1.2)  +
-  scale_x_continuous("Year", breaks = c(2020, 2023, 2028, 2033, 2040, 2050)) +
+  scale_x_continuous("Year", breaks = c(2020, 2023, 2028, 2033, 2040, 2045)) +
   scale_color_discrete("Scenario", labels = labs_scenarios) +
   expand_limits(y = 0)
-
-
-g_icer <- avt %>% 
-  ggplot() +
-  geom_line(aes(x = Year, y = (CumCost - CumCost0) / (CumQol - CumQol0), colour = Scenario)) +
-  geom_hline(yintercept = 3e4, linetype = 3) +
-  scale_y_continuous("ICER, Cost per QALY gained, thousand", labels = scales::number_format(scale = 1e-3)) +
-  geom_vline(xintercept = c(2023, 2028, 2033), linetype = 2) +
-  geom_text(x = 2023, y = 0, label = "Phase 1", angle = 90, hjust = -0.1, vjust = 1.2) + 
-  geom_text(x = 2028, y = 0, label = "Phase 2", angle = 90, hjust = -0.1, vjust = 1.2) + 
-  geom_text(x = 2033, y = 0, label = "Continuation", angle = 90, hjust = -0.1, vjust = 1.2)  +
-  scale_x_continuous("Year", breaks = c(2020, 2023, 2028, 2033, 2040, 2050)) +
-  scale_color_discrete("Scenario", labels = labs_scenarios) +
-  expand_limits(y = 0) +
-  labs(subtitle = "Cumulative")
-
 
 
 g_nmb <- avt %>% 
   ggplot() +
   geom_line(aes(x = Year, y = (CumQol - CumQol0) * 3e4 - (CumCost - CumCost0), colour = Scenario)) +
   geom_hline(yintercept = 3e4, linetype = 3) +
-  scale_y_continuous("INMB, GBP", labels = scales::number_format(scale = 1e-6)) +
+  scale_y_continuous("INMB, million GBP", labels = scales::number_format(scale = 1e-6)) +
   geom_vline(xintercept = c(2023, 2028, 2033), linetype = 2) +
   # geom_text(x = 2023, y = 0, label = "Phase 1", angle = 90, hjust = -0.1, vjust = 1.2) + 
   # geom_text(x = 2028, y = 0, label = "Phase 2", angle = 90, hjust = -0.1, vjust = 1.2) + 
   # geom_text(x = 2033, y = 0, label = "Continuation", angle = 90, hjust = -0.1, vjust = 1.2)  +
-  scale_x_continuous("Year", breaks = c(2020, 2023, 2028, 2033, 2040, 2050)) +
+  scale_x_continuous("Year", breaks = c(2020, 2023, 2028, 2033, 2040, 2045)) +
   scale_color_discrete("Scenario", labels = labs_scenarios) +
   expand_limits(y = 0)
 
 
-g <- ggpubr::ggarrange(g_dose, g_avt_p, g_cdq_all, g_cdc_all, g_nmb, 
-                       common.legend = T, legend = "right")
-
-g0 <- ggpubr::ggarrange(g_dose, g_avt_p, ncol = 1, common.legend = T, legend = "right")
-g1 <- ggpubr::ggarrange(g_cdq_all + labs(subtitle="(A)"), 
+g <- ggpubr::ggarrange(g_cdq_all + labs(subtitle="(A)"), 
                         g_cdc_all + labs(subtitle="(B)"), 
                         g_nmb + labs(subtitle="(C)"), ncol = 1, common.legend = T, legend = "right")
 
-g <- ggpubr::ggarrange(g0, g1, common.legend = T, legend = "right")
 g
-
-ggsave(g1, file = output_file("Fig8.png"), width = 6, height = 8)
+ggsave(g, file = output_file("Fig8.png"), width = 6, height = 8)
 
