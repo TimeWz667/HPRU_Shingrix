@@ -38,10 +38,11 @@ dat_ve %>%
 ds <- dat_ve %>% 
   filter(Source == "Strezova 2023") %>% 
   mutate(
-    # sd = (U - L) / 2 / 1.96,
-    # n = M * (1 - M) / sd ** 2,
-    # n = round(n),
-    n = c(14035, 13564, 13074, 12517, 7277, 7100, 6878, 6648, 6258),
+    sd = (U - L) / 2 / 1.96,
+    n = M * (1 - M) / sd ** 2,
+    n = round(n),
+    n = c(133, 146, 125, 105, 68, 70, 66, 70, 52),
+    #n = c(14035, 13564, 13074, 12517, 7277, 7100, 6878, 6648, 6258),
     y = round(n * M)
   ) %>% 
   select(n, yr = Yr, y) %>% 
@@ -51,21 +52,16 @@ ds <- dat_ve %>%
 ds$N <- length(ds$yr)
 
 
-post <- sampling(model, data = ds, iter = 5000)
+post <- sampling(model, data = ds, chains = 3, iter = 2000, warmup = floor(2000 - 1000))
 
 post
 
-save(post, file = here::here("outputs", "temp", "pars_ve_rzv_zlgamma.rdata"))
+plot(1 - pgamma(0:10, 30, 2), type = "l")
 
 
 sel <- data.frame(rstan::extract(post, pars = c("p0", "alpha", "beta"))) %>% 
   as_tibble() %>% 
   mutate(Key = 1:n())
-
-
-sel %>%
-  filter(Key <= 3000) %>%
-  write_csv(here::here("pars", "pars_ve_rzv_zlgamma.csv"))
 
 
 sims <- sel %>% 
@@ -74,8 +70,9 @@ sims <- sel %>%
   mutate(
     VE = p0 * (1 - pgamma(Yr, alpha, beta))
   )  %>% 
-  select(Key, Yr, VE) %>% 
-  write_csv(here::here("pars", "sims_ve_rzv_zlgamma.csv"))
+  select(Key, Yr, VE) 
+
+
 
 
 g_gof <- sims %>% 
@@ -95,6 +92,10 @@ g_gof <- sims %>%
 
 g_gof
 
+
+
+save(post, file = here::here("outputs", "temp", "pars_ve_rzv_zlgamma.rdata"))
+write_csv(sims, here::here("pars", "sims_ve_rzv_zlgamma.csv"))
 ggsave(g_gof, filename = here::here("outputs", "figs", "g_pars_ve_rzv_zlgamma.png"), width = 7, height = 5.5)
 
 

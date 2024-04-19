@@ -431,3 +431,31 @@ g <- ggpubr::ggarrange(g_cdq_all + labs(subtitle="(A)"),
 g
 ggsave(g, file = output_file("Fig8.png"), width = 6, height = 8)
 
+
+## Fig 9 sensitivity of vaccine price
+
+stats <- read_csv(here::here("analysis_cohort", "tabs", "tab_rzv_sens_price.csv"))
+
+
+g <- stats %>% 
+  filter(Arm == "Vac") %>%
+  mutate(
+    Price = factor(Price, sort(unique(Price))),
+    CostVac = factor(CostVac, sort(unique(CostVac))),
+    Age0 = factor(Age0, sort(unique(Age0)))  
+  ) %>% 
+  ggplot() +
+  geom_bar(aes(x = Age0, y= ICER, fill = CostVac), stat = "identity", position = "dodge") +
+  geom_hline(yintercept = c(2e4, 3e4), linetype = 2) +
+  scale_fill_ordinal("RZV price, £") +
+  scale_x_discrete("Age of vaccination") +
+  scale_y_continuous("Incremental cost-effectiveness ratio, \ncost per QALY gained, GBP", 
+                     breaks = 0:9 * 1e4, labels = scales::label_dollar(prefix = "")) +
+  expand_limits(y = c(0, 8e4))
+
+
+g
+ggsave(g, file = output_file("Fig9.png"), width = 6, height = 4.5)
+
+
+
