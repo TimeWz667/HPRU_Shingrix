@@ -7,7 +7,6 @@ data {
 
 parameters {
   real<lower=0, upper=1> p0;
-  real<lower=0> alpha;
   real<lower=0> beta;
 }
 
@@ -15,9 +14,8 @@ transformed parameters {
   real<lower=0, upper=1> prob[N];
   
   for (i in 1:N) {
-    prob[i] = p0 * (1 - gamma_cdf(yr[i], alpha, beta));
+    prob[i] = p0 * (1 - exponential_cdf(yr[i], beta));
   }
-  
 }
 
 model {
