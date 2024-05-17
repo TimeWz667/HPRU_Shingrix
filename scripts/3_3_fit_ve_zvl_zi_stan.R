@@ -120,6 +120,7 @@ for (key_model in c("zl_exp", "zl_gamma")) {
   
   
   save(post, file = here::here("outputs", "temp", "pars_ve_zvl_" + glue::as_glue(key_model) + ".rdata"))
+  save(sel, file = here::here("pars", "pars_ve_zvl_" + glue::as_glue(key_model) + ".rdata"))
   write_csv(sims, here::here("pars", "sims_ve_zvl_" + glue::as_glue(key_model) + ".csv"))
   ggsave(g_gof, filename = here::here("outputs", "figs", "g_pars_ve_zvl_" + glue::as_glue(key_model) + ".png"), width = 7, height = 5.5)
   
@@ -144,11 +145,6 @@ d_agp <- tibble(Age = 50:100) %>%
   )
 
 
-d_agp %>% 
-  select(Age, or70 = or, or70spline = or_spline) %>%
-  write_csv(here::here("pars", "pars_ve_zvl_agp.csv"))
-
-
 g_test_agp <- d_agp %>% 
   mutate(
     M2 = splinefun(unique(Agp), unique(M), method = "natural")(Age),
@@ -167,3 +163,7 @@ g_test_agp <- d_agp %>%
 
 g_test_agp
 
+
+d_agp %>% 
+  select(Age, or70 = or, or70spline = or_spline) %>%
+  write_csv(here::here("pars", "pars_ve_zvl_agp.csv"))

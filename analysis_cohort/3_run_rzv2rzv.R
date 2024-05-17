@@ -18,7 +18,7 @@ if (!(file_inputs %in% dir(here::here("analysis_cohort", "inputs")))) {
 
 ## Simulation -----
 keys <- 1:pars_set$N_Sims
-keys <- keys[1:100]
+keys <- keys[1:300]
 
 yss <- list()
 

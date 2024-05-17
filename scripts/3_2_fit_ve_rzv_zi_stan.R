@@ -94,6 +94,7 @@ for (key_model in c("zl_exp", "zl_gamma")) {
   
   
   save(post, file = here::here("outputs", "temp", "pars_ve_rzv_" + glue::as_glue(key_model) + ".rdata"))
+  save(sel, file = here::here("pars", "pars_ve_rzv_" + glue::as_glue(key_model) + ".rdata"))
   write_csv(sims, here::here("pars", "sims_ve_rzv_" + glue::as_glue(key_model) + ".csv"))
   ggsave(g_gof, filename = here::here("outputs", "figs", "g_pars_ve_rzv_" + glue::as_glue(key_model) + ".png"), width = 7, height = 5.5)
   

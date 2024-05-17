@@ -2,7 +2,8 @@ source(here::here("models", "misc.R"))
 
 
 
-load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3) {
+load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3,
+                            ve_rzv = "pars_ve_rzv_rw_zlg.rdata", ve_zvl = "pars_ve_zvl_rw_zlg.rdata") {
   require(tidyverse)
   
   pars <- list(
@@ -58,13 +59,13 @@ load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, ye
 
   
   ## Parameters: Vaccination -----
-  load(here::here("pars", "pars_ve_rw_zvl.rdata"))
-  pars$VE_ZVL <- sample_table(pars_ve_rw_zvl %>% filter(!IC), n_sims) %>%
+  load(here::here("pars", ve_zvl))
+  pars$VE_ZVL <- sample_table(pars_ve_zvl %>% filter(!IC), n_sims) %>%
     select(Key, Vaccine, Age, TimeVac = Yr, Protection = VE)
   
   
-  load(here::here("pars", "pars_ve_rw_rzv.rdata"))
-  pars$VE_RZV <- sample_table(pars_ve_rw_rzv %>% filter(!IC), n_sims) %>% 
+  load(here::here("pars", ve_rzv))
+  pars$VE_RZV <- sample_table(pars_ve_rzv %>% filter(!IC), n_sims) %>% 
     select(Key, Vaccine, TimeVac = Yr, Protection = VE)
   
   
@@ -72,7 +73,8 @@ load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, ye
 }
 
 
-load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3) {
+load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3,
+                           ve_rzv = "pars_ve_rzv_rw_zlg.rdata", ve_zvl = "pars_ve_zvl_rw_zlg.rdata") {
   pars <- list(
     Year0 = year,
     N_Sims = n_sims,
@@ -126,13 +128,13 @@ load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035, yea
   
   
   ## Parameters: Vaccination ----- ## Todo: Use IC-specific rates
-  load(here::here("pars", "pars_ve_rw_zvl.rdata"))
-  pars$VE_ZVL <- sample_table(pars_ve_rw_zvl, n_sims) %>% 
+  load(here::here("pars", ve_zvl))
+  pars$VE_ZVL <- sample_table(pars_ve_zvl %>% filter(!IC), n_sims) %>%
     select(Key, Vaccine, Age, TimeVac = Yr, Protection = VE)
   
   
-  load(here::here("pars", "pars_ve_rw_rzv.rdata"))
-  pars$VE_RZV <- sample_table(pars_ve_rw_rzv, n_sims) %>% 
+  load(here::here("pars", ve_rzv))
+  pars$VE_RZV <- sample_table(pars_ve_rzv %>% filter(!IC), n_sims) %>% 
     select(Key, Vaccine, TimeVac = Yr, Protection = VE)
   
   
