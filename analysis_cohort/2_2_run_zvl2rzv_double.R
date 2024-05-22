@@ -31,7 +31,7 @@ for(k in keys) {
   pars <- get_pars(pars_set, k)
   
   for (age0 in c(70, 75)) {
-    for (age1 in (age0 + 1): 90) {
+    for (age1 in (age0 + 1): 99) {
       yss[[length(yss) + 1]] <- 
         sim_cohort_vac(pars, age0 = age0, age1 = age1, vaccine0 = "Zostavax", vaccine1 = "Shingrix", agg = T) %>% 
         mutate(Key = k, Scenario = glue::as_glue("ReVac_") + age0 + ":" + age1, Age0 = age0, Age1 = age1)

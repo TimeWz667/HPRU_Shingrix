@@ -10,7 +10,43 @@ dir.create(here::here("outputs", "report_scm"), showWarnings = F)
 output_file <- function(file) here::here("outputs", "report_scm", file)
 
 
+## Vaccine CEA
 
+load(here::here("analysis_cohort", "temp", "yss_rzv.rdata"))
+
+tab <- yss %>% 
+  filter(Arm == "Vac") %>% 
+  filter(Age0 >= 70) %>% 
+  mutate(
+    Agp = cut(Age0, seq(70, 100, 5), right = F)
+  ) %>% 
+  group_by(Agp, Key) %>% 
+  summarise(across(c(dC_All_d, dQ_All_d), sum)) %>% 
+  mutate(ICER = dC_All_d / dQ_All_d) %>% 
+  group_by(Agp) %>% 
+  summarise(
+    across(c(dC_All_d, dQ_All_d, ICER), list(
+      M = median,
+      L = function(x) quantile(x, 0.025),
+      U = function(x) quantile(x, 0.975)
+    ))
+  )
+
+
+g <- tab %>% 
+  ggplot(aes(x = Agp)) +
+  geom_pointrange(aes(y = ICER_M, ymin = ICER_L, ymax = ICER_U)) +
+  geom_hline(yintercept = 2e4, linetype = 2) +
+  geom_hline(yintercept = 3e4, linetype = 2) +
+  scale_x_discrete("Age of vaccination") +
+  scale_y_continuous("Incremental cost-effectiveness ratio, \ncost per QALY gained, GBP", 
+                     breaks = 0:9 * 1e4, labels = scales::label_dollar(prefix = "")) +
+  expand_limits(y = 0)
+
+
+g
+
+ggsave(g, file = output_file("Fig_CEA_RZV.png"), width = 6, height = 4.5)
 
 ## Threshold price
 
@@ -40,11 +76,12 @@ TresPrice <- yss %>%
 
 
 TresPriceAgp <- yss %>% 
-  filter(Arm == "Vac") %>% 
-  filter(Age0 < 95) %>% 
+  filter(Arm == "Vac") %>%
+  filter(Age0 >= 70) %>% 
+  #filter(Age0 < 95) %>% 
   select(Key, Age0, N_NewUptake, C_Vac_d, C_Med_d, C_All_d, C_All_d0, dC_All_d, dQ_All_d) %>% 
   mutate(
-    Age0 = cut(Age0, seq(60, 95, 5), right = F)
+    Age0 = cut(Age0, seq(60, 100, 5), right = F)
   ) %>% 
   group_by(Key, Age0) %>% 
   summarise(
@@ -113,8 +150,7 @@ gs$g_tp_vac_agp <- TresPriceAgp %>%
   geom_hline(yintercept = 170, linetype = 2) +
   scale_y_continuous("Threshold price, per vaccinated person") +
   scale_x_discrete("Age of RZV vaccination") +
-  scale_fill_discrete("WTP in GBP") +
-  guides(colour = guide_none()) +
+  scale_colour_discrete("WTP in GBP") +
   expand_limits(y = 0) +
   labs(caption = "Two doses per person; 10 GBP per vaccine administration")
 
@@ -126,13 +162,12 @@ gs$g_tp_rzv_agp <- TresPriceAgp %>%
   geom_hline(yintercept = 75, linetype = 2) +
   scale_y_continuous("Threshold price, per dose") +
   scale_x_discrete("Age of RZV vaccination") +
-  scale_fill_discrete("WTP in GBP") +
-  guides(colour = guide_none()) +
+  scale_colour_discrete("WTP in GBP") +
   expand_limits(y = 0) +
   labs(caption = "Two doses per person; 10 GBP per vaccine administration")
 
 
-gs$g_tp_rzv
+gs$g_tp_vac_agp
 gs$g_tp_rzv_agp
 
 
@@ -146,6 +181,109 @@ ggsave(gs$g_tp_vac, file = output_file("Fig_ThresVac.png"), width = 6, height = 
 ## 
 ## Build-up single dose scenarios
 ## Age-groups or initial age of each group
+
+## [Fig 3] Incremental cost-effectiveness ratios (ICERs) of RZV revaccination for ZVL covered population by age of revaccination.  (cohort models)
+
+
+
+tab <- bind_rows(local({
+  load(here::here("analysis_cohort", "temp", "yss_zvl2rzv_single.rdata"))
+  
+  yss %>% 
+    filter(Type == "Second_d") %>% 
+    filter(Arm == "ReVac") %>% 
+    filter(Age0 %in% c(70, 75)) %>%
+    filter(Age1 %in% seq(80, 95, 5)) %>% 
+    group_by(Age0, Age1, Type) %>% 
+    summarise(
+      across(c(N_NewUptake, dC_All_d, dQ_All_d, ICER), list(
+        M = median,
+        L = function(x) quantile(x, 0.025),
+        U = function(x) quantile(x, 0.975)
+      ))
+    ) %>% 
+    mutate(Dose = "Single dose")
+}), local({
+  load(here::here("analysis_cohort", "temp", "yss_zvl2rzv.rdata"))
+  
+  yss %>% 
+    filter(Type == "Second_d") %>% 
+    filter(Arm == "ReVac") %>% 
+    filter(Age0 %in% c(70, 75)) %>%
+    filter(Age1 %in% seq(80, 95, 5)) %>% 
+    group_by(Age0, Age1, Type) %>% 
+    summarise(
+      across(c(N_NewUptake, dC_All_d, dQ_All_d, ICER), list(
+        M = median,
+        L = function(x) quantile(x, 0.025),
+        U = function(x) quantile(x, 0.975)
+      ))
+    ) %>% 
+    mutate(Dose = "Two doses")
+}))
+  
+
+
+
+g <- tab %>% 
+  mutate(
+    a0 = paste0("Age of ZVL vaccination: ", Age0),
+    Dose = factor(Dose, rev(unique(Dose)))
+  ) %>%
+  ggplot(aes(x = Age1)) +
+  geom_pointrange(aes(y = ICER_M, ymin = ICER_L, ymax = ICER_U, colour = Dose), position = "dodge") +
+  geom_hline(yintercept = 2e4, linetype = 2) +
+  geom_hline(yintercept = 3e4, linetype = 2) +
+  scale_x_continuous("Age of re-vaccination", breaks = seq(70, 95, 5)) +
+  scale_y_continuous("Incremental cost-effectiveness ratio, \ncost per QALY gained, GBP", 
+                     breaks = 0:9 * 1e4, labels = scales::label_dollar(prefix = "")) +
+  expand_limits(y = 0, x = 80) +
+  facet_grid(.~a0)
+
+
+g
+ggsave(g, file = output_file("Fig_ReVac.png"), width = 7, height = 4.5)
+
+
+
+load(here::here("analysis_cohort", "temp", "yss_zvl2rzv_single.rdata"))
+
+
+tab <- yss %>% 
+  filter(Arm == "ReVac") %>% 
+  group_by(Age0, Age1, Type) %>% 
+  summarise(
+    across(c(dC_All_d, dQ_All_d, ICER, NMB), list(
+      M = median,
+      L = function(x) quantile(x, 0.025),
+      U = function(x) quantile(x, 0.975)
+    ))
+  )
+
+
+g <- tab %>% 
+  filter(Type == "Second") %>% 
+  filter(Age0 %in% c(70, 75)) %>%
+  filter(Age1 <= 95) %>% 
+  mutate(
+    a0 = paste0("Age of ZVL vaccination: ", Age0)
+  ) %>% 
+  ggplot(aes(x = Age1)) +
+  geom_ribbon(aes(ymin = ICER_L, ymax = ICER_U), alpha = 0.2) + 
+  geom_line(aes(y = ICER_M)) + 
+  geom_hline(yintercept = 2e4, linetype = 2) +
+  geom_hline(yintercept = 3e4, linetype = 2) +
+  scale_x_continuous("Age of re-vaccination", breaks = c(70, 75, seq(80, 90, 2), 95)) +
+  scale_y_continuous("Incremental cost-effectiveness ratio, \ncost per QALY gained, GBP", 
+                     breaks = 0:6 * 1e4, labels = scales::label_dollar(prefix = "")) +
+  expand_limits(y = c(0, 5e4), x = 70) +
+  facet_grid(.~a0)
+
+g
+
+ggsave(g, file = output_file("Fig3-s.png"), width = 7, height = 4.5)
+
+
 
 
 ## List of figures -----
