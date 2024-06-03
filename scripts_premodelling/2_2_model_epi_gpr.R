@@ -142,6 +142,6 @@ g_epi <- ggarrange(g_r_hz + theme(legend.position = "none"),
 
 g_epi
 
-ggsave(g_epi, filename = here::here("outputs", "figs", "processed", "g_epi_gpr_fit.png"), width = 7, height = 10)
+ggsave(g_epi, filename = here::here("docs", "figs", "processed", "g_epi_gpr_fit.png"), width = 7, height = 10)
 
 
