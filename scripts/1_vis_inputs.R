@@ -4,7 +4,7 @@ library(tidybayes)
 theme_set(theme_bw())
 
 
-folder_outputs <- function(x) here::here("outputs", "figs", "processed", x)
+folder_outputs <- function(x) here::here("docs", "figs", "processed", x)
 
 set.seed(11667)
 
