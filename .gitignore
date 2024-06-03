@@ -46,3 +46,6 @@ models/*.rds
 .config/
 
 out/
+
+del_*/
+
