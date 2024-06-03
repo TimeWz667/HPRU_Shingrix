@@ -7,12 +7,12 @@ source(here::here("models", "misc.R"))
 
 # Load inputs
 file_inputs <- "pars_nic.rdata"
-if (!(file_inputs %in% dir(here::here("analysis_cohort", "inputs")))) {
-  source(here::here("analysis_cohort", "fn_arrange_inputs.R"))
+if (!(file_inputs %in% dir("pars"))) {
+  source(here::here("scripts_analyses", "fn_arrange_inputs.R"))
   pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3)
-  save(pars_set, file = here::here("analysis_cohort", "inputs", file_inputs))
+  save(pars_set, file = here::here("pars", file_inputs))
 } else {
-  load(file = here::here("analysis_cohort", "inputs", file_inputs))
+  load(file = here::here("pars", file_inputs))
 }
 
 
@@ -40,7 +40,7 @@ for(k in keys) {
 yss <- bind_rows(yss) %>% 
   relocate(Scenario, Age0, Age1, Arm, Type, Key)
 
-save(yss, file = here::here("analysis_cohort", "temp", "yss_rzv2rzv.rdata"))
+save(yss, file = here::here("out", "yss_rzv2rzv.rdata"))
 
 
 
@@ -93,7 +93,7 @@ stats_ce <- yss_ce %>%
   )
 
 
-save(stats_mean, stats_ce, file = here::here("analysis_cohort", "tabs", "stats_rzv2rzv.rdata"))
+save(stats_mean, stats_ce, file = here::here("docs", "tabs", "stats_rzv2rzv.rdata"))
 
 
 

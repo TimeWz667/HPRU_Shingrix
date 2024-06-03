@@ -3,7 +3,7 @@ library(tidyverse)
 theme_set(theme_bw())
 
 
-load(here::here("analysis_cohort", "temp", "stats_rzv2rzv.rdata"))
+load(here::here("out", "stats_rzv2rzv.rdata"))
 
 
 g_icer0 <- stats_ce %>% 
@@ -68,10 +68,10 @@ g_c <- stats_ce %>%
 
 g_c
 
-ggsave(g_icer0, filename = here::here("analysis_cohort", "figs", "g_rzv_icer.png"), width = 5, height = 3.5)
-ggsave(g_e, filename = here::here("analysis_cohort", "figs", "g_rzv2rzv_de.png"), width = 8, height = 5)
-ggsave(g_c, filename = here::here("analysis_cohort", "figs", "g_rzv2rzv_dc.png"), width = 8, height = 5)
-ggsave(g_icer, filename = here::here("analysis_cohort", "figs", "g_rzv2rzv_icer.png"), width = 8, height = 5)
+ggsave(g_icer0, filename = here::here("docs", "figs", "g_rzv_icer.png"), width = 5, height = 3.5)
+ggsave(g_e, filename = here::here("docs", "figs", "g_rzv2rzv_de.png"), width = 8, height = 5)
+ggsave(g_c, filename = here::here("docs", "figs", "g_rzv2rzv_dc.png"), width = 8, height = 5)
+ggsave(g_icer, filename = here::here("docs", "figs", "g_rzv2rzv_icer.png"), width = 8, height = 5)
 
 
 
@@ -141,7 +141,7 @@ g_c <- stats_ce %>%
 g_c
 
 
-ggsave(g_icer0, filename = here::here("analysis_cohort", "figs", "g_zvl_icer.png"), width = 5, height = 3.5)
-ggsave(g_e, filename = here::here("analysis_cohort", "figs", "g_zvl2rzv_de.png"), width = 8, height = 5)
-ggsave(g_c, filename = here::here("analysis_cohort", "figs", "g_zvl2rzv_dc.png"), width = 8, height = 5)
-ggsave(g_icer, filename = here::here("analysis_cohort", "figs", "g_zvl2rzv_icer.png"), width = 8, height = 5)
+ggsave(g_icer0, filename = here::here("docs", "figs", "g_zvl_icer.png"), width = 5, height = 3.5)
+ggsave(g_e, filename = here::here("docs", "figs", "g_zvl2rzv_de.png"), width = 8, height = 5)
+ggsave(g_c, filename = here::here("docs", "figs", "g_zvl2rzv_dc.png"), width = 8, height = 5)
+ggsave(g_icer, filename = here::here("docs", "figs", "g_zvl2rzv_icer.png"), width = 8, height = 5)

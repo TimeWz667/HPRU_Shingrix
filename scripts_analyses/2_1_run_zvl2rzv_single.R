@@ -8,14 +8,11 @@ source(here::here("models", "misc.R"))
 # Load inputs
 file_inputs <- "pars_nic.rdata"
 if (!(file_inputs %in% dir(here::here("analysis_cohort", "inputs")))) {
-  source(here::here("analysis_cohort", "fn_arrange_inputs.R"))
+  source(here::here("scripts_analyses", "fn_arrange_inputs.R"))
   pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3)
-  if (!dir.exists(here::here("analysis_cohort", "inputs"))) {
-    dir.create(here::here("analysis_cohort", "inputs"))
-  }
-  save(pars_set, file = here::here("analysis_cohort", "inputs", file_inputs))
+  save(pars_set, file = here::here("pars", file_inputs))
 } else {
-  load(file = here::here("analysis_cohort", "inputs", file_inputs))
+  load(file = here::here("pars", file_inputs))
 }
 
 
@@ -61,7 +58,7 @@ yss <- bind_rows(yss) %>%
   relocate(Scenario, Age0, Age1, Arm, Type, Key)
 
 
-save(yss, file = here::here("analysis_cohort", "temp", "yss_zvl2rzv_single.rdata"))
+save(yss, file = here::here("out", "yss_zvl2rzv_single.rdata"))
 
 
 tab <- yss %>% 

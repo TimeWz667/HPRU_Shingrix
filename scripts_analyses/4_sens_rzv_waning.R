@@ -6,7 +6,7 @@ source(here::here("models", "m_cohort_hz.R"))
 source(here::here("models", "misc.R"))
 
 # Load inputs
-source(here::here("analysis_cohort", "fn_arrange_inputs.R"))
+source(here::here("scripts_analyses", "fn_arrange_inputs.R"))
 pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3)
 
 
@@ -46,7 +46,7 @@ for(p in c("long_zlg", "short_zlg", "zle", "zlg")) {
 yss <- bind_rows(yss) %>% 
   relocate(Scenario, Age0, Arm, Type, Key)
 
-save(yss, file = here::here("analysis_cohort", "temp", "sens_yss_waning.rdata"))
+save(yss, file = here::here("out", "sens_yss_waning.rdata"))
 
 
 
@@ -119,7 +119,7 @@ g_icer <- yss %>%
 
 g <- ggarrange(g_ves, g_icer, nrow = 2, align = "v")
 
-ggsave(g, filename = here::here("outputs", "sens_ves.png"), width = 8, height = 6)
+ggsave(g, filename = here::here("docs", "figs", "g_sens_ves.png"), width = 8, height = 6)
 
 
 
