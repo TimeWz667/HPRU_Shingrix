@@ -34,6 +34,26 @@ pars_ve_zvl %>%
   expand_limits(y = 0:1)
 
 
+ve_zvl <- local({load(here::here("pars", "pars_ve_zvl_zl_exp.rdata")); sel})
+ve_zvl_agp <- read_csv(here::here("pars", "pars_ve_zvl_agp.csv"))
+
+
+pars_ve_zvl <- crossing(Age = 50:100, Key = 1:n_sims, Yr = 1:50) %>% 
+  filter(Age - Yr >= 50) %>% 
+  left_join(ve_zvl) %>% 
+  left_join(ve_zvl_agp) %>% 
+  mutate(
+    VE0 = p0 * (1 - pgamma(Yr, alpha, beta)),
+    oddVE = log(VE0 / (1 - VE0)) + or70spline,
+    VE = 1 / (1 + exp(-oddVE)),
+    Vaccine = "ZVL",
+    IC = F
+  ) %>% 
+  select(Key, Age, Yr, Vaccine, VE0, VE, IC)
+
+save(pars_ve_zvl, file = here::here("pars", "pars_ve_zvl_rw_zle.rdata"))
+
+
 
 ## RZV -----
 
@@ -43,7 +63,7 @@ apply_lor <- function(p0, lor) 1 / (1 + exp(-log(p0 / (1 - p0)) - lor))
 find_lor(0.9, 0.4)
 apply_lor(0.9, find_lor(0.9, 0.4))
 
-lor_rw <- find_lor(0.914, 0.914 * 0.91)
+lor_rw <- find_lor(0.914, 0.79)
 lor_single <- find_lor(0.701, 0.569)
 
 apply_lor(0.82, lor_single)
