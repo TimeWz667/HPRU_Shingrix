@@ -10,6 +10,18 @@ ve_zvl <- local({load(here::here("pars", "pars_ve_zvl_zl_gamma.rdata")); sel})
 ve_zvl_agp <- read_csv(here::here("pars", "pars_ve_zvl_agp.csv"))
 
 
+pars_ve_zvl <- crossing(Key = 1:n_sims, Yr = 1:50) %>% 
+  left_join(ve_zvl) %>% 
+  mutate(
+    VE = p0 * (1 - pgamma(Yr, alpha, beta)),
+    Vaccine = "ZVL",
+    IC = F
+  ) %>% 
+  select(Key, Yr, Vaccine, VE, IC)
+
+save(pars_ve_zvl, file = here::here("pars", "pars_ve_zvl_rw_zlg.rdata"))
+
+
 pars_ve_zvl <- crossing(Age = 50:100, Key = 1:n_sims, Yr = 1:50) %>% 
   filter(Age - Yr >= 50) %>% 
   left_join(ve_zvl) %>% 
@@ -23,7 +35,7 @@ pars_ve_zvl <- crossing(Age = 50:100, Key = 1:n_sims, Yr = 1:50) %>%
   ) %>% 
   select(Key, Age, Yr, Vaccine, VE0, VE, IC)
 
-save(pars_ve_zvl, file = here::here("pars", "pars_ve_zvl_rw_zlg.rdata"))
+save(pars_ve_zvl, file = here::here("pars", "pars_ve_zvl_rwa_zlg.rdata"))
 
 pars_ve_zvl %>% 
   group_by(Age, Yr) %>% 
@@ -38,6 +50,19 @@ ve_zvl <- local({load(here::here("pars", "pars_ve_zvl_zl_exp.rdata")); sel})
 ve_zvl_agp <- read_csv(here::here("pars", "pars_ve_zvl_agp.csv"))
 
 
+pars_ve_zvl <- crossing(Key = 1:n_sims, Yr = 1:50) %>% 
+  left_join(ve_zvl) %>% 
+  mutate(
+    VE = p0 * (1 - pgamma(Yr, alpha, beta)),
+    Vaccine = "ZVL",
+    IC = F
+  ) %>% 
+  select(Key, Yr, Vaccine, VE, IC)
+
+save(pars_ve_zvl, file = here::here("pars", "pars_ve_zvl_rw_zle.rdata"))
+
+
+
 pars_ve_zvl <- crossing(Age = 50:100, Key = 1:n_sims, Yr = 1:50) %>% 
   filter(Age - Yr >= 50) %>% 
   left_join(ve_zvl) %>% 
@@ -51,7 +76,7 @@ pars_ve_zvl <- crossing(Age = 50:100, Key = 1:n_sims, Yr = 1:50) %>%
   ) %>% 
   select(Key, Age, Yr, Vaccine, VE0, VE, IC)
 
-save(pars_ve_zvl, file = here::here("pars", "pars_ve_zvl_rw_zle.rdata"))
+save(pars_ve_zvl, file = here::here("pars", "pars_ve_zvl_rwa_zle.rdata"))
 
 
 

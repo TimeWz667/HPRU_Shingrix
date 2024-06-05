@@ -7,7 +7,7 @@ source(here::here("models", "misc.R"))
 
 # Load inputs
 file_inputs <- "pars_nic.rdata"
-if (!(file_inputs %in% dir(here::here("analysis_cohort", "inputs")))) {
+if (!(file_inputs %in% dir("pars"))) {
   source(here::here("scripts_analyses", "fn_arrange_inputs.R"))
   pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3)
   save(pars_set, file = here::here("pars", file_inputs))
@@ -23,12 +23,6 @@ pars_set$VE_RZV <- local({
   pars_set$VE_RZV <- sample_table(pars_ve_rzv_booster %>% filter(!IC), n_sims) %>% 
     select(Key, Vaccine, TimeVac = Yr, Protection = VE) %>% filter(Key <= n_sims)
 })
-
-pars_set$CostVac <- pars_set$CostVac %>% 
-  mutate(
-    number_courses = ifelse(Vaccine == "Shingrix", 1, number_courses),
-    cost_vac_pp = (cost_vac_per_dose + cost_admin_per_dose) * number_courses
-  )
 
 
 
@@ -47,7 +41,7 @@ for(k in keys) {
   for (age0 in c(70, 75)) {
     for (age1 in (age0 + 1): 99) {
       yss[[length(yss) + 1]] <- 
-        sim_cohort_vac(pars, age0 = age0, age1 = age1, vaccine0 = "Zostavax", vaccine1 = "Shingrix", agg = T) %>% 
+        sim_cohort_vac(pars, age0 = age0, age1 = age1, vaccine0 = "Zostavax", vaccine1 = "Shingrix_Single", agg = T) %>% 
         mutate(Key = k, Scenario = glue::as_glue("ReVac_") + age0 + ":" + age1, Age0 = age0, Age1 = age1)
     }
   }

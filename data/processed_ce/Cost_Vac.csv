@@ -1,3 +1,4 @@
 Vaccine,cost_vac_per_dose,cost_admin_per_dose,number_courses,cost_vac_pp
 Zostavax,100,10,1,110
 Shingrix,75,10,2,170
+Shingrix_Single,75,10,1,85
