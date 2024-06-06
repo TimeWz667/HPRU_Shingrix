@@ -19,7 +19,7 @@ if (!(file_inputs %in% dir("pars"))) {
 
 ## Simulation -----
 keys <- 1:pars_set$N_Sims
-keys <- keys[1:300]
+# keys <- keys[1:300]
 
 yss <- list()
 

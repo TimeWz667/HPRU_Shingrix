@@ -16,11 +16,11 @@ if (!(file_inputs %in% dir("pars"))) {
 }
 
 
-pars_set$VE_RZV <- local({
+pars_set$VE_Re1RZV <- local({
   load(here::here("pars", "pars_ve_rerzv_single_rw_zlg.rdata"))
   
   n_sims <- pars_set$N_Sims
-  pars_set$VE_RZV <- sample_table(pars_ve_rzv_booster %>% filter(!IC), n_sims) %>% 
+  sample_table(pars_ve_rzv_booster %>% filter(!IC), n_sims) %>% 
     select(Key, Vaccine, TimeVac = Yr, Protection = VE) %>% filter(Key <= n_sims)
 })
 
@@ -29,7 +29,7 @@ pars_set$VE_RZV <- local({
 
 ## Simulation -----
 keys <- 1:pars_set$N_Sims
-keys <- keys[1:300]
+# keys <- keys[1:5]
 
 yss <- list()
 
