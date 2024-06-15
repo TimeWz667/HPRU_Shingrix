@@ -49,9 +49,10 @@ out/
 
 del_*/
 
-pars/pars_ve_zvl_rwa_*.rdata
+pars/pars_ve_zvl_*.rdata
 pars/pars_ic.rdata
 pars/pars_nic.rdata
+pars/parset_*.rdata
 
 
 

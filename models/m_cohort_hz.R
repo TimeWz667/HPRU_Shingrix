@@ -40,7 +40,7 @@ sim_cohort_vac <- function(pars, age0 = 70, age1 = NA, vaccine0 = "Shingrix", va
     if (vac == "Shingrix") {
       pv <- pars$VE_RZV %>% mutate(Age = age + TimeVac - 1) %>% select(Age, Protection)
       df1_ve <- df1 %>% left_join(pv, by = "Age")
-    } else if (vac == "Shingrix_Single") {
+    } else if (vac == "Shingrix_Singrix") {
       pv <- pars$VE_Re1RZV %>% mutate(Age = age + TimeVac - 1) %>% select(Age, Protection)
       df1_ve <- df1 %>% left_join(pv, by = "Age")
     } else {

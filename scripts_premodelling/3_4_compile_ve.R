@@ -91,8 +91,11 @@ apply_lor(0.9, find_lor(0.9, 0.4))
 lor_rw <- find_lor(0.914, 0.79)
 lor_single <- find_lor(0.701, 0.569)
 
+lor_re <- find_lor(0.79, 0.75)
+
 apply_lor(0.82, lor_single)
 
+save(lor_rw, lor_re, lor_single, file = here::here("pars", "pars_ve_Lor.rdata"))
 
 ve_rzv <- local({load(here::here("pars", "pars_ve_rzv_zl_gamma.rdata")); sel})
 
@@ -100,7 +103,8 @@ ve_rzv <- local({load(here::here("pars", "pars_ve_rzv_zl_gamma.rdata")); sel})
 pars_ve_rzv <- crossing(Key = 1:n_sims, Yr = 1:50) %>% 
   left_join(ve_rzv) %>% 
   mutate(
-    VE = p0 * (1 - pgamma(Yr, alpha, beta)) * 0.91,
+    VE = p0 * (1 - pgamma(Yr, alpha, beta)),
+    VE = apply_lor(VE, lor_rw),
     Vaccine = "RZV",
     Variant = "RW",
     IC = F
@@ -128,7 +132,8 @@ save(pars_ve_rzv_booster, file = here::here("pars", "pars_ve_rerzv_single_rw_zlg
 pars_ve_rzv <- crossing(Key = 1:n_sims, Yr = 1:50) %>% 
   left_join(ve_rzv) %>% 
   mutate(
-    VE = p0 * (1 - pgamma(pmin(Yr, 10), alpha, beta)) * 0.91,
+    VE = p0 * (1 - pgamma(pmin(Yr, 10), alpha, beta)) ,
+    VE = apply_lor(VE, lor_rw),
     Vaccine = "RZV",
     Variant = "RW",
     IC = F

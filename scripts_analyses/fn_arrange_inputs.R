@@ -1,9 +1,12 @@
 source(here::here("models", "misc.R"))
 
 
+apply_lor <- function(p0, lor) 1 / (1 + exp(-log(p0 / (1 - p0)) - lor))
+
+
 
 load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3,
-                            ve_rzv = "pars_ve_rzv_rw_zlg.rdata", ve_zvl = "pars_ve_zvl_rwa_zlg.rdata") {
+                            ve_rzv = "pars_ve_rzv_rw_zlg.rdata", ve_zvl = "pars_ve_zvl_rwa_zlg.rdata", ve_lor = "pars_ve_lor.rdata") {
   require(tidyverse)
   
   pars <- list(
@@ -65,16 +68,29 @@ load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, ye
   
   
   load(here::here("pars", ve_rzv))
-  pars$VE_RZV <- sample_table(pars_ve_rzv %>% filter(!IC), n_sims) %>% 
+  pars$VE_RZV <- ve_rzv <- sample_table(pars_ve_rzv %>% filter(!IC), n_sims) %>% 
     select(Key, Vaccine, TimeVac = Yr, Protection = VE)
   
+  load(here::here("pars", ve_lor))
+  pars$VE_ReRZV <- ve_rzv %>% 
+    mutate(
+      Vaccine = "ReRZV",
+      Protection = apply_lor(Protection, lor_re) 
+    )
+  
+  pars$VE_ReRZV1 <- ve_rzv %>% 
+    mutate(
+      Vaccine = "ReRZV1",
+      Protection = apply_lor(Protection, lor_re + lor_single) 
+    )
   
   return(pars)
 }
 
 
 load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3,
-                           ve_rzv = "pars_ve_rzv_rw_zlg.rdata", ve_zvl = "pars_ve_zvl_rwa_zlg.rdata") {
+                           ve_rzv = "pars_ve_rzv_rw_zlg.rdata", ve_zvl = "pars_ve_zvl_rwa_zlg.rdata",
+                           ve_rerzv = "pars_ve_rerzv_rw_zlg.rdata", ve_rerzv1 = "pars_ve_rerzv_single_rw_zlg.rdata") {
   pars <- list(
     Year0 = year,
     N_Sims = n_sims,
@@ -134,8 +150,22 @@ load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035, yea
   
   
   load(here::here("pars", ve_rzv))
-  pars$VE_RZV <- sample_table(pars_ve_rzv %>% filter(!IC), n_sims) %>% 
+  pars$VE_RZV <- ve_rzv <- sample_table(pars_ve_rzv %>% filter(!IC), n_sims) %>% 
     select(Key, Vaccine, TimeVac = Yr, Protection = VE)
+  
+  load(here::here("pars", ve_lor))
+  pars$VE_ReRZV <- ve_rzv %>% 
+    mutate(
+      Vaccine = "ReRZV",
+      Protection = apply_lor(Protection, lor_re) 
+    )
+  
+  pars$VE_ReRZV1 <- ve_rzv %>% 
+    mutate(
+      Vaccine = "ReRZV1",
+      Protection = apply_lor(Protection, lor_re + lor_single) 
+    )
+  
   
   
   return(pars)
