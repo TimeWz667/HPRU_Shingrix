@@ -34,7 +34,7 @@ load(file = here::here("pars", "parset_nic_c35q35y24n1k.rdata"))
 
 ## Simulation -----
 keys <- 1:pars_set$N_Sims
-keys <- keys[1:10]
+# keys <- keys[1:10]
 
 yss <- list()
 
@@ -112,5 +112,7 @@ stats_ce <- local({
     pivot_longer(-c(Scenario, Age0, Arm), names_to = c("Index", "name"), names_pattern = "(\\S+)_(M|L|U)") %>% 
     pivot_wider()
 })
+
+write_csv(stats_ce, file = here::here("docs", "tabs", "stats_ce_rzv.csv"))
 
 
