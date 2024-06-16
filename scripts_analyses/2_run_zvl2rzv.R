@@ -58,8 +58,7 @@ load(file = here::here("pars", "parset_nic_c35q35y24n1k.rdata"))
 
 ## Simulation -----
 keys <- 1:pars_set$N_Sims
-# 
-keys <- keys[1:30]
+keys <- keys[1:500]
 
 yss <- list()
 
@@ -68,7 +67,7 @@ pb <- txtProgressBar(min = 1, max = max(keys), style = 3,  width = 50, char = "=
 for(k in keys) {
   pars <- get_pars(pars_set, k)
   
-  for (age0 in c(70, 75)) {
+  for (age0 in 70:79) {
     yss[[length(yss) + 1]] <- a_run(pars, age0 = age0) %>% mutate(Key = k)
   }
   setTxtProgressBar(pb, k)

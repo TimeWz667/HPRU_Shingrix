@@ -69,7 +69,7 @@ stats_ys <- yss %>%
   pivot_wider()
 
 
-write_csv(stats_ys, file = here::here("docs", "tabs", "stats_rzv.csv"))
+write_csv(stats_ys, file = here::here("docs", "tabs", "stats_ys_rzv.csv"))
 
 
 stats_ce <- local({
