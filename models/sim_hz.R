@@ -100,7 +100,7 @@ model$append_ce <- function(df, pars) {
       C_VacRZV = N_VacRZV * (cost_vac_per_dose + cost_admin_per_dose),
       C_Vac = C_VacZVL + C_VacRZV,
       C_All = C_Med + C_Vac,
-      across(starts_with(c("C_", "Q_", "N_")), function(x) ifelse(is.na(x), 0, x))
+      across(starts_with(c("C_", "Q_", "N_")), \(x) ifelse(is.na(x), 0, x))
     )
 }
 
@@ -108,8 +108,8 @@ model$append_ce <- function(df, pars) {
 model$summarise <- function(df, pars) {
   dis_cost <- pars$discount_costs
   dis_eff <- pars$discount_effects
-  year0 <- pars$Year0
-  
+  year0 <- df$Year[1]
+
   df %>% 
     mutate(
       dis_e = 1 / ((1 + dis_eff) ^ (Year - year0)),
@@ -121,16 +121,18 @@ model$summarise <- function(df, pars) {
       Q_All_d = Q_Life_d + Q_HZ_d,
       N_VacZVL_d = N_VacZVL * dis_c,
       N_VacRZV_d = N_VacRZV * dis_c,
-      across(starts_with("C_"), function(x) x * dis_c, .names = "{.col}_d")
+      across(starts_with("C_"), \(x) x * dis_c, .names = "{.col}_d")
     ) %>% 
     summarise(
+      N0 = N_Start[1],
+      Year0 = year0,
       Year_Life = sum(N_Alive),
       Year_Immunised = sum(N_Alive * Protection),
       Risk_HZ = sum(N_HZ) / N_Alive[1],
       Risk_Hosp = sum(N_HZ_Hosp) / N_Alive[1],
       Risk_PHN = sum(N_HZ_PHN) / N_Alive[1],
       Risk_Death = sum(N_HZ_Death) / N_Alive[1],
-      across(starts_with(c("Q_", "C_", "N_Vac")), sum, na.rm = TRUE),
+      across(starts_with(c("Q_", "C_", "N_Vac")), \(x) sum(x, na.rm = T)),
     )
 }
 
