@@ -30,11 +30,15 @@ save(pars_ve_zvl, file = here::here("pars", "pars_ve_zvl_rwa.rdata"))
 
 file_inputs <- "parset_nic_c35q35y24n1k.rdata"
 
+set.seed(11667)
+
 pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3)
 save(pars_set, file = here::here("pars", file_inputs))
 
 
 file_inputs <- "parset_ic_c35q35y24n1k.rdata"
+
+set.seed(11667)
 
 pars_set <- load_inputs_ic(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3)
 save(pars_set, file = here::here("pars", file_inputs))
