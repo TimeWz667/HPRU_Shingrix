@@ -38,3 +38,4 @@ file_inputs <- "parset_ic_c35q35y24n1k.rdata"
 
 pars_set <- load_inputs_ic(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3)
 save(pars_set, file = here::here("pars", file_inputs))
+
