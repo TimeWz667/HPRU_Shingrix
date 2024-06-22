@@ -120,7 +120,7 @@ tab_programme <- ce %>%
 tab_programme
 
 
-write_csv(tab_profile, here::here("docs", "tabs", "tab_programme.csv"))
+write_csv(tab_programme, here::here("docs", "tabs", "tab_programme.csv"))
 
 
 
