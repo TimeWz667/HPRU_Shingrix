@@ -1,5 +1,6 @@
 library(tidyverse)
 
+options(dplyr.summarise.inform = FALSE)
 
 
 source(here::here("models", "sim_hz.R"))
@@ -8,48 +9,45 @@ source(here::here("models", "misc.R"))
 
 a_run <- function(pars, age0) {
   with(model, {
-    df0 <- populate(age0, pars) %>% 
-      run_to_end(pars) %>% 
-      append_ce(pars) %>% 
-      summarise(pars) %>% 
-      mutate(Arm = "SOC", Age1 = NA)
-    
-    df1 <- populate(age0, pars) %>% 
-      vaccinate(age0, "ZVL", pars) %>% 
-      run_to_end(pars) %>% 
-      append_ce(pars) %>% 
-      summarise(pars) %>% 
-      mutate(Arm = "Vac", Age1 = NA)
-    
-    dfs <- list(df0, df1)
-    
-    
-    d2s <- lapply((age0 + 1): 99, function(age1) {
+    dfs <- bind_rows(
+      populate(age0, pars) %>% mutate(Arm = "SOC", Age1 = NA),
       populate(age0, pars) %>% 
         vaccinate(age0, "ZVL", pars) %>% 
-        vaccinate(age1, "ReRZV1", pars) %>% 
-        run_to_end(pars) %>% 
-        append_ce(pars) %>% 
-        summarise(pars) %>% 
-        mutate(Arm = "ReVac_RZV1", Age1 = age1)
-    })
+        mutate(Arm = "Vac", Age1 = NA),
+    ) %>%
+      bind_rows(lapply((age0 + 1): 99, function(age1) {
+        populate(age0, pars) %>% 
+          vaccinate(age0, "ZVL", pars) %>% 
+          vaccinate(age1, "ReRZV1", pars) %>% 
+          mutate(Arm = "ReVac_RZV1", Age1 = age1)
+      })) %>% 
+      bind_rows(lapply((age0 + 1): 99, function(age1) {
+        populate(age0, pars) %>% 
+          vaccinate(age0, "ZVL", pars) %>% 
+          vaccinate(age1, "ReRZV", pars) %>% 
+          mutate(Arm = "ReVac_RZV2", Age1 = age1)
+      })) %>% 
+      mutate(Age0 = age0) %>% 
+      group_by(Arm, Age0, Age1) %>% 
+      run_to_end(pars) %>% 
+      append_ce(pars) %>% 
+      mutate(Scenario = "Overall")
     
-    d3s <- lapply((age0 + 1): 99, function(age1) {
-      populate(age0, pars) %>% 
-        vaccinate(age0, "ZVL", pars) %>% 
-        vaccinate(age1, "ReRZV", pars) %>% 
-        run_to_end(pars) %>% 
-        append_ce(pars) %>% 
-        summarise(pars) %>% 
-        mutate(Arm = "ReVac_RZV2", Age1 = age1)
-    })
     
-    
-    bind_rows(c(dfs, d2s, d3s)) %>% 
-      mutate(Scenario = glue::as_glue("Vac_") + age0, Age0 = age0)
+    dfs <- dfs %>% 
+      bind_rows(bind_rows(lapply((age0 + 1): 99, function(age1) {
+        dfs %>% 
+          filter(Arm == "Vac" | Age1 == age1) %>% 
+          filter(Age >= age1) %>% 
+          mutate(Scenario = "Second_" + glue::as_glue(age1))
+      }))) %>% 
+      group_by(Scenario, Arm, Age0, Age1) %>% 
+      summarise(pars) %>% 
+      ungroup()
+
+    dfs
   })
 }
-
 
 
 # Load inputs
@@ -58,7 +56,7 @@ load(file = here::here("pars", "parset_nic_c35q35y24n1k.rdata"))
 
 ## Simulation -----
 keys <- 1:pars_set$N_Sims
-keys <- keys[1:500]
+keys <- keys[1:200]
 
 yss <- list()
 
@@ -82,7 +80,7 @@ save(yss, file = here::here("out", "yss_zvl2rzv.rdata"))
 ## Output statistics
 
 stats_ys <- yss %>% 
-  group_by(Scenario, Age0, Age1, Arm) %>% 
+  group_by(Scenario, Arm, Age0, Age1) %>% 
   select(-Key) %>% 
   summarise_all(list(
     M = median,
@@ -99,6 +97,7 @@ write_csv(stats_ys, file = here::here("docs", "tabs", "stats_ys_zvl2rzv.csv"))
 
 stats_ce <- local({
   s0 <- yss %>% 
+    filter(Scenario == "Overall") %>% 
     filter(Arm == "SOC") %>% 
     select(Scenario, Age0, Key, Risk_HZ0 = Risk_HZ, Risk_Death0 = Risk_Death, 
            Q_HZ_d0 = Q_HZ_d, Q_Life_d0 = Q_Life_d, Q_All_d0 = Q_All_d,
@@ -107,14 +106,16 @@ stats_ce <- local({
     )
   
   dy0 <- yss %>% 
+    filter(Scenario == "Overall") %>% 
     filter(Arm != "SOC") %>% 
-    select(Scenario, Age0, Age1, Arm, Key, Risk_HZ, Risk_Death, N_VacRZV_d,
+    select(Scenario, Age0, Age1, Arm, Key, N0 = N0, Risk_HZ, Risk_Death, N_VacRZV_d,
            Q_HZ_d, Q_Life_d, Q_All_d, C_Vac_d, C_VacRZV_d, C_Med_d, C_All_d) %>% 
     left_join(s0, by = c("Scenario", "Age0", "Key")) %>% 
     mutate(Type = "Overall")
   
   
   s0 <- yss %>% 
+    filter(Scenario != "Overall") %>% 
     filter(Arm == "Vac") %>% 
     select(Scenario, Age0, Key, Risk_HZ0 = Risk_HZ, Risk_Death0 = Risk_Death, 
            Q_HZ_d0 = Q_HZ_d, Q_Life_d0 = Q_Life_d, Q_All_d0 = Q_All_d,
@@ -123,17 +124,12 @@ stats_ce <- local({
     )
   
   dy1 <- yss %>% 
+    filter(Scenario != "Overall") %>% 
     filter(Arm %in% c("ReVac_RZV1", "ReVac_RZV2")) %>% 
-    select(Scenario, Age0, Age1, Arm, Key, Risk_HZ, Risk_Death, N_VacRZV_d,
+    select(Scenario, Age0, Arm, Age1, Arm, Key, N0 = N0, Risk_HZ, Risk_Death, N_VacRZV_d,
            Q_HZ_d, Q_Life_d, Q_All_d, C_Vac_d, C_VacRZV_d, C_Med_d, C_All_d) %>% 
     left_join(s0, by = c("Scenario", "Age0", "Key")) %>% 
-    mutate(
-      Type = "Second",
-      dis_e = (1 + pars_set$discount_effects) ^ (Age1 - Age0),
-      dis_c = (1 + pars_set$discount_costs) ^ (Age1 - Age0),
-      across(starts_with("Q_"), function(x) x * dis_e),
-      across(starts_with(c("C_", "N_")), function(x) x * dis_c),
-    )
+    mutate(Type = "Second")
   
   bind_rows(dy0, dy1) %>% 
     mutate(
@@ -152,7 +148,7 @@ stats_ce <- local({
       Thres20 = (dQ_All_d * 2e4 - dC_Med_d) / dN_VacRZV_d,
       Thres30 = (dQ_All_d * 3e4 - dC_Med_d) / dN_VacRZV_d,
     ) %>% 
-    select(Scenario, Age0, Age1, Arm, Type, starts_with(c("Avt", "dQ", "dC", "Thres")), ICER) %>% 
+    select(Scenario, Age0, Age1, Arm, Type, N0, starts_with(c("Avt", "dQ", "dC", "dN", "Thres")), ICER) %>% 
     group_by(Scenario, Age0, Age1, Arm, Type) %>% 
     summarise_all(list(
       M = median,

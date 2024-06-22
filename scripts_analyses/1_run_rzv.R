@@ -21,7 +21,14 @@ a_run <- function(pars, age0) {
       summarise(pars) %>% 
       mutate(Arm = "Vac")
     
-    bind_rows(df0, df1) %>% 
+    df2 <- populate(age0, pars) %>% 
+      vaccinate(age0, "ReRZV1", pars) %>% 
+      run_to_end(pars) %>% 
+      append_ce(pars) %>% 
+      summarise(pars) %>% 
+      mutate(Arm = "Vac1")
+    
+    bind_rows(df0, df1, df2) %>% 
       mutate(Scenario = glue::as_glue("Vac_") + age0, Age0 = age0)
   })
 }
@@ -83,7 +90,7 @@ stats_ce <- local({
   
   yss %>% 
     filter(Arm != "SOC") %>% 
-    select(Scenario, Age0, Arm, Key, Risk_HZ, Risk_Death, N_VacRZV_d,
+    select(Scenario, Age0, Arm, Key, N0 = N0, Risk_HZ, Risk_Death, N_VacRZV_d,
            Q_HZ_d, Q_Life_d, Q_All_d, C_Vac_d, C_VacRZV_d, C_Med_d, C_All_d) %>% 
     left_join(s0, by = c("Scenario", "Age0", "Key")) %>% 
     mutate(
@@ -102,7 +109,7 @@ stats_ce <- local({
       Thres20 = (dQ_All_d * 2e4 - dC_Med_d) / dN_VacRZV_d,
       Thres30 = (dQ_All_d * 3e4 - dC_Med_d) / dN_VacRZV_d,
     ) %>% 
-    select(Scenario, Age0, Arm, starts_with(c("Avt", "dQ", "dC", "Thres")), ICER) %>% 
+    select(Scenario, Age0, Arm, N0, starts_with(c("Avt", "dQ", "dC", "dN", "Thres")), ICER) %>% 
     group_by(Scenario, Age0, Arm) %>% 
     summarise_all(list(
       M = median,
