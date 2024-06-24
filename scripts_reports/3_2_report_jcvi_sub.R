@@ -3,16 +3,15 @@ library(tidyverse)
 theme_set(theme_bw())
 
 
-load(here::here("analysis_cohort", "temp", "yss_rzv.rdata"))
 
-dir.create(here::here("outputs", "report_scm"), showWarnings = F)
+dir.create(here::here("docs", "report_scm"), showWarnings = F)
 
-output_file <- function(file) here::here("outputs", "report_scm", file)
+output_file <- function(file) here::here("docs", "report_scm", file)
 
 
 ## Vaccine CEA
 
-load(here::here("analysis_cohort", "temp", "yss_rzv.rdata"))
+load(here::here("out", "yss_rzv.rdata"))
 
 tab <- yss %>% 
   filter(Arm == "Vac") %>% 
@@ -331,71 +330,4 @@ g_tp_rzv_agp
 
 ggsave(g_tp_rzv_agp, file = output_file("Fig_ThresReRzvAgp_Re.png"), width = 6, height = 4.5)
 ggsave(g_tp_vac_agp, file = output_file("Fig_ThresVacAgp_Re.png"), width = 6, height = 4.5)
-
-
-
-# 
-# load(here::here("analysis_cohort", "temp", "yss_zvl2rzv_single.rdata"))
-# 
-# 
-# tab <- yss %>% 
-#   filter(Arm == "ReVac") %>% 
-#   group_by(Age0, Age1, Type) %>% 
-#   summarise(
-#     across(c(dC_All_d, dQ_All_d, ICER, NMB), list(
-#       M = median,
-#       L = function(x) quantile(x, 0.025),
-#       U = function(x) quantile(x, 0.975)
-#     ))
-#   )
-# 
-# 
-# g <- tab %>% 
-#   filter(Type == "Second") %>% 
-#   filter(Age0 %in% c(70, 75)) %>%
-#   filter(Age1 <= 95) %>% 
-#   mutate(
-#     a0 = paste0("Age of ZVL vaccination: ", Age0)
-#   ) %>% 
-#   ggplot(aes(x = Age1)) +
-#   geom_ribbon(aes(ymin = ICER_L, ymax = ICER_U), alpha = 0.2) + 
-#   geom_line(aes(y = ICER_M)) + 
-#   geom_hline(yintercept = 2e4, linetype = 2) +
-#   geom_hline(yintercept = 3e4, linetype = 2) +
-#   scale_x_continuous("Age of re-vaccination", breaks = c(70, 75, seq(80, 90, 2), 95)) +
-#   scale_y_continuous("Incremental cost-effectiveness ratio, \ncost per QALY gained, GBP", 
-#                      breaks = 0:6 * 1e4, labels = scales::label_dollar(prefix = "")) +
-#   expand_limits(y = c(0, 5e4), x = 70) +
-#   facet_grid(.~a0)
-# 
-# g
-# 
-# ggsave(g, file = output_file("Fig3-s.png"), width = 7, height = 4.5)
-# 
-
-
-
-## List of figures -----
-## Fig 1 
-## ICER and Threshold price
-## Fig 2
-## ZVL -> RZV (single dose)
-## Fig 3
-## RZV -> RZV (double -> single dose)
-
-
-## -----
-## Extra Fig 1
-## CE plane
-## Extra Fig 2
-## ZVL -> RZV (two doses)
-## Extra Fig 3
-## RZV -> RZV (two doses)
-
-
-
-
-
-
-
 

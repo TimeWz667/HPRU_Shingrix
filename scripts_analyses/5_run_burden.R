@@ -39,6 +39,7 @@ write_csv(tab_profile, here::here("docs", "tabs", "tab_profile.csv"))
 profile <- read_csv(here::here("docs", "tabs", "sim_profile.csv"))
 stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_rzv.csv"))
 stats_cer <- read_csv(here::here("docs", "tabs", "stats_ce_zvl2rzv.csv"))
+load(here::here("data", "fitted_coverage.rdata"))
 
 sel_cols <- c("N0", "dQ_All_d", "dC_All_d", "dC_VacRZV_d", "dN_VacRZV_d", "ICER")
 
@@ -67,7 +68,7 @@ vaccine <- bind_rows(
 vaccine
 
 
-ce <- profile %>% 
+ce0 <- profile %>% 
   mutate(
     Eligibility = case_when(
       Age < 65 & TimeVac == -1 ~ "",
@@ -90,7 +91,10 @@ ce <- profile %>%
   mutate(
     Eligibility = factor(Eligibility, c("SOC", "New2023", "UV_85", "ZVL_85", ""))
   ) %>% 
-  arrange(Eligibility) %>% 
+  arrange(Eligibility)
+
+
+tab_programme0 <- ce0 %>% 
   group_by(Eligibility, Agp) %>% 
   summarise(
     across(starts_with("d"), \(x) sum(x * N)),
@@ -101,27 +105,79 @@ ce <- profile %>%
   ungroup() %>% 
   mutate(
     cum_N = cumsum(N),
-    across(starts_with("d"), \(x) cumsum(x * N), .names = "cum_{.col}")
-  )
-
-
-tab_programme <- ce %>% 
-  ungroup() %>% 
-  mutate(
+    across(starts_with("d"), \(x) cumsum(x * N), .names = "cum_{.col}"),
     Thres = (cum_dQ_All_d * 2e4 - (cum_dC_All_d - cum_dC_VacRZV_d)) / cum_dN_VacRZV_d,
     cum_ICER = cum_dC_All_d / cum_dQ_All_d,
     pr_cum_N = cumsum(N) / sum(N),
     pr_cum_dC = cum_dC_All_d / max(cum_dC_All_d),
     pr_cum_dQ = cum_dQ_All_d / max(cum_dQ_All_d),
   ) %>% 
-  select(Eligibility, Agp, Arm, dC_All_d, dQ_All_d, pr_cum_N, pr_cum_dC, pr_cum_dQ, Thres, cum_ICER)
+  select(Eligibility, Agp, Arm, N, dC_All_d, dQ_All_d, pr_cum_N, pr_cum_dC, pr_cum_dQ, Thres, cum_ICER)
 
  
-tab_programme
-
-
-write_csv(tab_programme, here::here("docs", "tabs", "tab_programme.csv"))
+tab_programme <- tab_programme0
+write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_all.csv"))
 
 
 
+tab_programme1 <- ce0 %>% 
+  mutate(
+    N = ifelse(Age %in% c(65, 70, 75, 80), N * pred1$pars$p_initial, N * pred1$pars$p_catchup)
+  ) %>% 
+  group_by(Eligibility, Agp) %>% 
+  summarise(
+    across(starts_with("d"), \(x) sum(x * N)),
+    ICER = weighted.mean(ICER, w = N),
+    N = sum(N),
+    Arm = paste(unique(Arm), collapse = "")
+  ) %>% 
+  ungroup() %>% 
+  mutate(
+    cum_N = cumsum(N),
+    across(starts_with("d"), \(x) cumsum(x * N), .names = "cum_{.col}"),
+    Thres = (cum_dQ_All_d * 2e4 - (cum_dC_All_d - cum_dC_VacRZV_d)) / cum_dN_VacRZV_d,
+    cum_ICER = cum_dC_All_d / cum_dQ_All_d,
+    pr_cum_N = cumsum(N) / sum(N),
+    pr_cum_dC = cum_dC_All_d / max(cum_dC_All_d),
+    pr_cum_dQ = cum_dQ_All_d / max(cum_dQ_All_d),
+  ) %>% 
+  select(Eligibility, Agp, Arm, N, dC_All_d, dQ_All_d, pr_cum_N, pr_cum_dC, pr_cum_dQ, Thres, cum_ICER)
+
+
+tab_programme <- tab_programme1
+write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_65_75_5.csv"))
+
+
+tab_programme2 <- ce0 %>% 
+  mutate(
+    N = ifelse(Age %in% c(65, 70, 75), N * pred1$pars$p_initial, N * pred1$pars$p_catchup)
+  ) %>% 
+  group_by(Eligibility, Agp) %>% 
+  summarise(
+    across(starts_with("d"), \(x) sum(x * N)),
+    ICER = weighted.mean(ICER, w = N),
+    N = sum(N),
+    Arm = paste(unique(Arm), collapse = "")
+  ) %>% 
+  ungroup() %>% 
+  mutate(
+    cum_N = cumsum(N),
+    across(starts_with("d"), \(x) cumsum(x * N), .names = "cum_{.col}"),
+    Thres = (cum_dQ_All_d * 2e4 - (cum_dC_All_d - cum_dC_VacRZV_d)) / cum_dN_VacRZV_d,
+    cum_ICER = cum_dC_All_d / cum_dQ_All_d,
+    pr_cum_N = cumsum(N) / sum(N),
+    pr_cum_dC = cum_dC_All_d / max(cum_dC_All_d),
+    pr_cum_dQ = cum_dQ_All_d / max(cum_dQ_All_d),
+  ) %>% 
+  select(Eligibility, Agp, Arm, N, dC_All_d, dQ_All_d, pr_cum_N, pr_cum_dC, pr_cum_dQ, Thres, cum_ICER)
+
+
+tab_programme <- tab_programme2
+write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_65_80_5.csv"))
+
+
+
+
+tab_programme0 %>% 
+  summarise(across(N:dQ_All_d, sum))
 
