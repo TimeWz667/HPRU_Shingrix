@@ -288,3 +288,15 @@ ggsave(g_tp, file = output_file("Fig_ZVL2RZV_ThresPrice.png"), width = 9, height
 ggsave(g_tpr, file = output_file("Fig_ZVL2RZV_ThresPriceRange.png"), width = 9, height = 6.5)
 
 
+
+## Burden estimate
+
+
+tab <- read_csv(here::here("docs", "tabs", "tab_programme_all.csv"))
+
+tab %>% 
+  mutate(
+    across(starts_with("pr_"), scales::percent)
+  )
+
+

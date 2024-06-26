@@ -1,5 +1,6 @@
 Vaccine,cost_vac_per_dose,cost_admin_per_dose,number_courses,cost_vac_pp
 ZVL,100,10,1,110
 RZV,75,10,2,170
+RZV1,75,10,1,85
 ReRZV,75,10,2,170
 ReRZV1,75,10,1,85
