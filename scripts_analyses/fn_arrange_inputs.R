@@ -137,11 +137,11 @@ load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035, yea
   
   pars$CostVac <- cost_vac
   
-  pars_ce <- sample_table(QL, n_sims) %>% 
-    left_join(Cost_Hospitalisation_HZ %>% select(Age, cost_hosp_pp_inf = cost_Hospitalisation_pp_inf)) %>% 
-    left_join(sample_table(Cost_GP, n_sims) %>% select(Key, ends_with("_inf")))
+  pars$CostEff <- sample_table(QL, n_sims) %>% 
+    left_join(sample_table(Cost_Hospitalisation_HZ, n_sims) %>% select(Key, Age, cost_hosp_pp_inf = cost_Hospitalisation_pp_inf), by = c("Key", "Age")) %>% 
+    left_join(sample_table(Cost_GP, n_sims) %>% select(Key, ends_with("_inf")), by = "Key")
   
-  pars$CostEff <- pars_ce
+
   
   
   ## Parameters: Vaccination ----- ## Todo: Use IC-specific rates
