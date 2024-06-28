@@ -3,7 +3,7 @@ library(tidyverse)
 
 load(here::here("data", "processed_demography", "Population_ONS.rdata"))
 load(here::here("data", "fitted_coverage.rdata"))
-load(file = here::here("pars", "parset_nic_c35q35y24n1k.rdata"))
+load(file = here::here("pars", "parset_nic_c35q35y24n1k_realworld.rdata"))
 
 
 source(here::here("models", "sim_profile.R"))
@@ -38,7 +38,7 @@ write_csv(tab_profile, here::here("docs", "tabs", "tab_profile.csv"))
 ## Cost-effective burden by Vaccine
 profile <- read_csv(here::here("docs", "tabs", "sim_profile.csv"))
 stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_rzv_realworld.csv"))
-stats_cer <- read_csv(here::here("docs", "tabs", "stats_ce_zvl2rzv.csv"))
+stats_cer <- read_csv(here::here("docs", "tabs", "stats_ce_zvl2rzv_realworld.csv"))
 load(here::here("data", "fitted_coverage.rdata"))
 
 sel_cols <- c("N0", "dQ_All_d", "dC_All_d", "dC_Med_d", "dC_VacRZV_d", "dN_VacRZV_d")
@@ -51,9 +51,9 @@ n_all <- profile %>%
 
 vaccine <- bind_rows(
   stats_ce %>% 
-    select(Age = Age0, Arm, N0, starts_with(sel_cols)) %>% 
-    pivot_longer(ends_with(c("_L", "_M", "_U")), names_to = c("name", "stats"), 
-                 names_pattern = "(\\S+)_(M|L|U)") %>% 
+    select(Age = Age0, Arm, starts_with(sel_cols)) %>% 
+    pivot_longer(ends_with(c("_A", "_L", "_M", "_U")), names_to = c("name", "stats"), 
+                 names_pattern = "(\\S+)_(A|M|L|U)") %>% 
     filter(stats == "M") %>% 
     select(-stats) %>% 
     pivot_wider() %>% 
@@ -61,9 +61,12 @@ vaccine <- bind_rows(
   stats_cer %>% 
     filter(Scenario != "Overall") %>% 
     mutate(TimeVac = Age1 - Age0) %>% 
-    select(Age = Age1, TimeVac, Arm, Index, M) %>% 
-    filter(Index %in% sel_cols) %>% 
-    pivot_wider(names_from = Index, values_from = M)
+    select(Age = Age1, TimeVac, Arm, starts_with(sel_cols)) %>% 
+    pivot_longer(ends_with(c("_A", "_L", "_M", "_U")), names_to = c("name", "stats"), 
+                 names_pattern = "(\\S+)_(A|M|L|U)") %>% 
+    filter(stats == "M") %>% 
+    select(-stats) %>% 
+    pivot_wider()
 ) %>% 
   mutate(
     nd = ifelse(endsWith(Arm, "1"), 1, 2),

@@ -6,7 +6,8 @@ source(here::here("models", "sim_hz.R"))
 source(here::here("models", "misc.R"))
 
 
-mlu <- list(
+amlu <- list(
+  A = mean,
   M = median,
   L = function(x) quantile(x, 0.025, na.rm = T),
   U = function(x) quantile(x, 0.975, na.rm = T)
@@ -75,7 +76,7 @@ for (ve_type in c("trial", "realworld")) {
   stats_ys <- yss %>% 
     group_by(Scenario, Age0, Arm) %>% 
     select(-Key) %>% 
-    summarise_all(mlu) %>% 
+    summarise_all(amlu) %>% 
     pivot_longer(-c(Scenario, Age0, Arm), names_to = c("Index", "name"), names_pattern = "(\\S+)_(M|L|U)") %>% 
     pivot_wider()
   
@@ -87,7 +88,6 @@ for (ve_type in c("trial", "realworld")) {
   stats_ce <- local({
     temp <- yss %>% 
       pivot_longer(-c(Scenario, Age0, Arm, Key, N0, Year0), names_to = "Index")
-    
     
     temp %>% 
       filter(Arm != "SOC") %>% 
@@ -112,7 +112,7 @@ for (ve_type in c("trial", "realworld")) {
       group_by(Scenario, Age0, Arm, Year0, N0) %>% 
       select(-Key) %>% 
       summarise(
-        across(everything(), mlu),
+        across(everything(), amlu),
         Thres20_50 = median(Thres20),
         Thres30_90 = quantile(Thres30, 0.9)
       ) %>% 

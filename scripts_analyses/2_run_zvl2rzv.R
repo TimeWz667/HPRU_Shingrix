@@ -6,12 +6,13 @@ options(dplyr.summarise.inform = FALSE)
 source(here::here("models", "sim_hz.R"))
 source(here::here("models", "misc.R"))
 
-mlu <- list(
-  M = mean,
+
+amlu <- list(
+  A = mean,
+  M = median,
   L = function(x) quantile(x, 0.025, na.rm = T),
   U = function(x) quantile(x, 0.975, na.rm = T)
 )
-
 
 
 a_run <- function(pars, age0) {
@@ -68,7 +69,7 @@ for (ve_type in c("trial", "realworld")) {
   
   ## Simulation -----
   keys <- 1:pars_set$N_Sims
-  keys <- keys[1:200]
+  # keys <- keys[1:20]
   
   yss <- list()
   
@@ -86,7 +87,7 @@ for (ve_type in c("trial", "realworld")) {
   yss <- bind_rows(yss) %>% 
     relocate(Scenario, Age0, Age1, Arm, Key)
   
-  save(yss, file = here::here("out", "yss_zvl2rzv" + ve_type + ".rdata"))
+  save(yss, file = here::here("out", "yss_zvl2rzv_" + ve_type + ".rdata"))
   
   
   ## Output statistics
@@ -94,78 +95,69 @@ for (ve_type in c("trial", "realworld")) {
   stats_ys <- yss %>% 
     group_by(Scenario, Arm, Age0, Age1) %>% 
     select(-Key) %>% 
-    summarise_all(mlu) %>% 
+    summarise_all(amlu) %>% 
     pivot_longer(-c(Scenario, Age0, Age1, Arm), names_to = c("Index", "name"), names_pattern = "(\\S+)_(M|L|U)") %>% 
     pivot_wider()
   
   
-  write_csv(stats_ys, file = here::here("docs", "tabs", "stats_ys_zvl2rzv" + ve_type + ".csv"))
+  write_csv(stats_ys, file = here::here("docs", "tabs", "stats_ys_zvl2rzv_" + ve_type + ".csv"))
   
   
   
   stats_ce <- local({
-    s0 <- yss %>% 
-      filter(Scenario == "Overall") %>% 
-      filter(Arm == "SOC") %>% 
-      select(Scenario, Age0, Key, Risk_HZ0 = Risk_HZ, Risk_Death0 = Risk_Death, 
-             Q_HZ_d0 = Q_HZ_d, Q_Life_d0 = Q_Life_d, Q_All_d0 = Q_All_d,
-             N_VacRZV_d0 = N_VacRZV_d,
-             C_Vac_d0 = C_Vac_d, C_VacRZV_d0 = C_VacRZV_d, C_Med_d0 =  C_Med_d, C_All_d0 = C_All_d
-      )
+    temp <- yss %>% 
+      pivot_longer(-c(Scenario, Age0, Age1, Arm, Key, N0, Year0), names_to = "Index")
     
-    dy0 <- yss %>% 
-      filter(Scenario == "Overall") %>% 
+    dy0 <- temp %>% 
+      filter(Scenario == "Overall") %>%
       filter(Arm != "SOC") %>% 
-      select(Scenario, Age0, Age1, Arm, Key, N0 = N0, Risk_HZ, Risk_Death, N_VacRZV_d,
-             Q_HZ_d, Q_Life_d, Q_All_d, C_Vac_d, C_VacRZV_d, C_Med_d, C_All_d) %>% 
-      left_join(s0, by = c("Scenario", "Age0", "Key")) %>% 
-      mutate(Type = "Overall")
-    
-    
-    s0 <- yss %>% 
-      filter(Scenario != "Overall") %>% 
-      filter(Arm == "Vac") %>% 
-      select(Scenario, Age0, Key, Risk_HZ0 = Risk_HZ, Risk_Death0 = Risk_Death, 
-             Q_HZ_d0 = Q_HZ_d, Q_Life_d0 = Q_Life_d, Q_All_d0 = Q_All_d,
-             N_VacRZV_d0 = N_VacRZV_d,
-             C_Vac_d0 = C_Vac_d, C_VacRZV_d0 = C_VacRZV_d, C_Med_d0 =  C_Med_d, C_All_d0 = C_All_d
+      left_join(
+        temp %>% 
+          filter(Arm == "SOC") %>% 
+          filter(Scenario == "Overall") %>%
+          select(Scenario, Age0, Key, Index, value0 = value),
+        relationship = "many-to-many"
       )
     
-    dy1 <- yss %>% 
-      filter(Scenario != "Overall") %>% 
+    dy1 <- temp %>% 
+      filter(Scenario != "Overall") %>%
       filter(Arm %in% c("ReVac_RZV1", "ReVac_RZV2")) %>% 
-      select(Scenario, Age0, Arm, Age1, Arm, Key, N0 = N0, Risk_HZ, Risk_Death, N_VacRZV_d,
-             Q_HZ_d, Q_Life_d, Q_All_d, C_Vac_d, C_VacRZV_d, C_Med_d, C_All_d) %>% 
-      left_join(s0, by = c("Scenario", "Age0", "Key")) %>% 
-      mutate(Type = "Second")
+      left_join(
+        temp %>% 
+          filter(Arm == "Vac") %>% 
+          filter(Scenario != "Overall") %>%
+          select(Scenario, Age0, Key, Index, value0 = value),
+        relationship = "many-to-many"
+      )
     
-    bind_rows(dy0, dy1) %>% 
+    dy <- bind_rows(dy0, dy1) %>% 
       mutate(
-        AvtHZ = (Risk_HZ0 - Risk_HZ) / Risk_HZ0,
-        AvtDeath = (Risk_Death0 - Risk_Death) / Risk_Death0,
-        dQ_HZ_d = Q_HZ_d - Q_HZ_d0, 
-        dQ_Life_d = Q_Life_d - Q_Life_d0, 
-        dQ_All_d = Q_All_d - Q_All_d0, 
-        dC_Vac_d = C_Vac_d - C_Vac_d0, 
-        dC_VacRZV_d = C_VacRZV_d - C_VacRZV_d0, 
-        dC_Med_d = C_Med_d - C_Med_d0, 
-        dC_All_d = C_All_d - C_All_d0,
-        dN_VacRZV_d = N_VacRZV_d - N_VacRZV_d0,
+        Index = paste0("d", Index),
+        Diff = value - value0
+      ) %>% 
+      select(-value, -value0) %>% 
+      pivot_wider(names_from = Index, values_from = "Diff") %>% 
+      mutate(
+        across(starts_with("d"), \(x) x/N0),
         ICER = dC_All_d / dQ_All_d,
-        price = dC_VacRZV_d / dN_VacRZV_d,
+        Price0 = dC_VacRZV_d / dN_VacRZV_d,
         Thres20 = (dQ_All_d * 2e4 - dC_Med_d) / dN_VacRZV_d,
         Thres30 = (dQ_All_d * 3e4 - dC_Med_d) / dN_VacRZV_d,
       ) %>% 
-      select(Scenario, Age0, Age1, Arm, Type, N0, starts_with(c("Avt", "dQ", "dC", "dN", "Thres")), ICER) %>% 
-      group_by(Scenario, Age0, Age1, Arm, Type) %>% 
-      summarise_all(mlu) %>% 
-      pivot_longer(-c(Scenario, Age0, Age1, Arm, Type), names_to = c("Index", "name"), 
-                   names_pattern = "(\\S+)_(M|L|U)") %>% 
-      pivot_wider()
+      select(-N0) %>% 
+      group_by(Scenario, Age0, Age1, Arm, Year0) %>% 
+      select(-Key) %>% 
+      summarise(
+        across(everything(), amlu),
+        Thres20_50 = median(Thres20),
+        Thres30_90 = quantile(Thres30, 0.9)
+      ) %>% 
+      mutate(
+        Thres = pmin(Thres20_50, Thres30_90)
+      )
   })
   
-  write_csv(stats_ce, file = here::here("docs", "tabs", "stats_ce_zvl2rzv" + ve_type + ".csv"))
-  
-  
+  write_csv(stats_ce, file = here::here("docs", "tabs", "stats_ce_zvl2rzv_" + ve_type + ".csv"))
+
 }
 
