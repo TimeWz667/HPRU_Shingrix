@@ -5,8 +5,12 @@ apply_lor <- function(p0, lor) 1 / (1 + exp(-log(p0 / (1 - p0)) - lor))
 
 
 
-load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3, realworld = T,
-                            ve_rzv = "pars_ve_rzv_rw_zlg.rdata", ve_zvl = "pars_ve_zvl_rwa.rdata", ve_lor = "pars_ve_lor.rdata") {
+load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, 
+                            year = 2024, n_sims = 1e3, 
+                            realworld = T,
+                            ve_rzv = "pars_ve_rzv_rw_zlg.rdata", 
+                            ve_zvl = "pars_ve_zvl_rwa.rdata", 
+                            ve_lor = "pars_ve_lor.rdata") {
   require(tidyverse)
   
   pars <- list(
@@ -91,15 +95,19 @@ load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, ye
     pars$VE_RZV <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
     pars$VE_ReRZV <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
     pars$VE_ReRZV1 <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
-    pars$VE_ZVL <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
+    pars$VE_ZVL <- pars$VE_ZVL %>% mutate(Protection = apply_lor(Protection, -lor_rw))
   }
   
   return(pars)
 }
 
 
-load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3,
-                           ve_rzv = "pars_ve_rzv_rw_zlg.rdata", ve_zvl = "pars_ve_zvl_rwa.rdata", ve_lor = "pars_ve_lor.rdata") {
+load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035, 
+                           year = 2024, n_sims = 1e3,
+                           realworld = T,
+                           ve_rzv = "pars_ve_rzv_rw_zlg.rdata", 
+                           ve_zvl = "pars_ve_zvl_rwa.rdata", 
+                           ve_lor = "pars_ve_lor.rdata") {
   pars <- list(
     Year0 = year,
     N_Sims = n_sims,
