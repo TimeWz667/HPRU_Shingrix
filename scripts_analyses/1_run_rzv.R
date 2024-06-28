@@ -50,7 +50,7 @@ for (ve_type in c("trial", "realworld")) {
   
   ## Simulation -----
   keys <- 1:pars_set$N_Sims
-  keys <- keys[1:100]
+  # keys <- keys[1:10]
   
   yss <- list()
   

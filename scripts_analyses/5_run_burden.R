@@ -37,17 +37,26 @@ write_csv(tab_profile, here::here("docs", "tabs", "tab_profile.csv"))
 
 ## Cost-effective burden by Vaccine
 profile <- read_csv(here::here("docs", "tabs", "sim_profile.csv"))
-stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_rzv.csv"))
+stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_rzv_realworld.csv"))
 stats_cer <- read_csv(here::here("docs", "tabs", "stats_ce_zvl2rzv.csv"))
 load(here::here("data", "fitted_coverage.rdata"))
 
-sel_cols <- c("N0", "dQ_All_d", "dC_All_d", "dC_VacRZV_d", "dN_VacRZV_d", "ICER")
+sel_cols <- c("N0", "dQ_All_d", "dC_All_d", "dC_Med_d", "dC_VacRZV_d", "dN_VacRZV_d")
+
+
+n_all <- profile %>% 
+  group_by(Agp) %>% 
+  summarise(N_All = sum(N))
+
 
 vaccine <- bind_rows(
   stats_ce %>% 
-    select(Age = Age0, Arm, Index, M) %>% 
-    filter(Index %in% sel_cols) %>% 
-    pivot_wider(names_from = Index, values_from = M) %>% 
+    select(Age = Age0, Arm, N0, starts_with(sel_cols)) %>% 
+    pivot_longer(ends_with(c("_L", "_M", "_U")), names_to = c("name", "stats"), 
+                 names_pattern = "(\\S+)_(M|L|U)") %>% 
+    filter(stats == "M") %>% 
+    select(-stats) %>% 
+    pivot_wider() %>% 
     mutate(TimeVac = -1),
   stats_cer %>% 
     filter(Scenario != "Overall") %>% 
@@ -57,19 +66,17 @@ vaccine <- bind_rows(
     pivot_wider(names_from = Index, values_from = M)
 ) %>% 
   mutate(
-    dQ_All_d = dQ_All_d / N0,
-    dC_All_d = dC_All_d / N0,
-    dC_VacRZV_d = dC_VacRZV_d / N0,
-    dN_VacRZV_d = dN_VacRZV_d / N0
+    nd = ifelse(endsWith(Arm, "1"), 1, 2),
+    Price = dC_VacRZV_d / dN_VacRZV_d,
+    fac = nd / dN_VacRZV_d,
+    across(starts_with("d"), \(x) x * fac)
   ) %>% 
-  select(-N0)
-
-
-vaccine
+  select(-N0, -nd, -Price, fac)
 
 
 ce0 <- profile %>% 
   mutate(
+    #TimeVac = ifelse(Age >= 85, -1, TimeVac),
     Eligibility = case_when(
       Age < 65 & TimeVac == -1 ~ "",
       Age < 70 & TimeVac == -1 ~ "New2023",
@@ -77,107 +84,94 @@ ce0 <- profile %>%
       Age < 80 ~ "",
       Age < 85 & TimeVac == -1 ~ "UV_85",
       Age < 85 ~ "ZVL_85",
+      Age < 95 & TimeVac == -1 ~ "UV_95",
+      Age < 95 ~ "ZVL_90",
       T ~ ""
     ),
     Arm = case_when(
       Eligibility %in% c("New2023", "SOC") ~ "Vac",
-      Eligibility == "ZVL_85" ~ "ReVac_RZV1",
-      Eligibility %in% c("UV_85") ~ "Vac1",
+      Eligibility %in% c("ZVL_85", "ZVL_90") ~ "ReVac_RZV1",
+      Eligibility %in% c("UV_85", "UV_95") ~ "Vac1",
       T ~ NA
     ) 
   ) %>% 
   filter(!is.na(Arm)) %>% 
   left_join(vaccine) %>% 
   mutate(
-    Eligibility = factor(Eligibility, c("SOC", "New2023", "UV_85", "ZVL_85", ""))
+    Eligibility = factor(Eligibility, c("New2023", "SOC", "ZVL_85", "UV_85", "ZVL_90", "UV_95", ""))
   ) %>% 
   arrange(Eligibility)
 
 
-tab_programme0 <- ce0 %>% 
-  group_by(Eligibility, Agp) %>% 
-  summarise(
-    across(starts_with("d"), \(x) sum(x * N)),
-    ICER = weighted.mean(ICER, w = N),
-    N = sum(N),
-    Arm = paste(unique(Arm), collapse = "")
-  ) %>% 
-  ungroup() %>% 
+
+make_profile <- function(df) {
+  df %>% 
+    group_by(Eligibility, Agp) %>% 
+    summarise(
+      across(starts_with("d"), \(x) sum(x * N_Uptake)),
+      N_Doses = sum(N_Uptake * ifelse(endsWith(Arm, "1"), 1, 2)),
+      N = sum(N),
+      N_Uptake = sum(N_Uptake),
+      Arm = paste(unique(Arm), collapse = "")
+    ) %>% 
+    ungroup() %>% 
+    mutate(
+      across(c(N, N_Uptake, N_Doses), \(x) cumsum(x), .names = "cum_{.col}"),
+      across(starts_with("d"), \(x) cumsum(x), .names = "cum_{.col}"),
+      Thres = (cum_dQ_All_d * 2e4 - cum_dC_Med_d) / cum_dN_VacRZV_d,
+      cum_dC_All_d = cum_dC_Med_d + cum_dN_VacRZV_d * 60,
+      dC_All_d = dC_Med_d + dN_VacRZV_d * 60,
+      CumICER = cum_dC_All_d / cum_dQ_All_d,
+      Prop_Uptake = cum_N_Uptake / cum_N_Uptake[3],
+      Prop_Doses = cum_N_Doses / cum_N_Doses[3],
+      Prop_dQ = cum_dQ_All_d / cum_dQ_All_d[3],
+      Prop_dC_Med = cum_dC_Med_d / cum_dC_Med_d[3],
+      ICER = dC_All_d / dQ_All_d
+    ) %>% 
+    left_join(n_all) %>% 
+    select(Eligibility, Agp, Arm, N_All, N, N_Uptake, N_Doses, 
+           dC_Med_d, dQ_All_d, Thres, starts_with("Prop"))
+  
+}
+
+
+
+tab_programme <- tab_programme0 <- ce0 %>% 
   mutate(
-    cum_N = cumsum(N),
-    across(starts_with("d"), \(x) cumsum(x * N), .names = "cum_{.col}"),
-    Thres = (cum_dQ_All_d * 2e4 - (cum_dC_All_d - cum_dC_VacRZV_d)) / cum_dN_VacRZV_d,
-    cum_ICER = cum_dC_All_d / cum_dQ_All_d,
-    pr_cum_N = cumsum(N) / sum(N),
-    pr_cum_dC = cum_dC_All_d / max(cum_dC_All_d),
-    pr_cum_dQ = cum_dQ_All_d / max(cum_dQ_All_d),
+    N_Uptake = N * ifelse(Age %in% c(65, 70), pred1$pars$p_initial, pred1$pars$p_catchup)
   ) %>% 
-  select(Eligibility, Agp, Arm, N, dC_All_d, dQ_All_d, pr_cum_N, pr_cum_dC, pr_cum_dQ, Thres, cum_ICER)
-
- 
-tab_programme <- tab_programme0
-write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_all.csv"))
+  make_profile()
+  
+write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_cont.csv"))
 
 
-
-tab_programme1 <- ce0 %>% 
+tab_programme <- tab_programme1 <- ce0 %>% 
   mutate(
-    N = ifelse(Age %in% c(65, 70, 75, 80), N * pred1$pars$p_initial, N * pred1$pars$p_catchup)
+    N_Uptake = N * case_when(
+      Age %in% c(65, 70, 80) ~ pred1$pars$p_initial,
+      Age < 80 ~ pred1$pars$p_catchup,
+      T ~ 0
+    )
   ) %>% 
-  group_by(Eligibility, Agp) %>% 
-  summarise(
-    across(starts_with("d"), \(x) sum(x * N)),
-    ICER = weighted.mean(ICER, w = N),
-    N = sum(N),
-    Arm = paste(unique(Arm), collapse = "")
-  ) %>% 
-  ungroup() %>% 
+  make_profile()
+
+write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_call80.csv"))
+
+
+tab_programme <- tab_programme2 <- ce0 %>% 
   mutate(
-    cum_N = cumsum(N),
-    across(starts_with("d"), \(x) cumsum(x * N), .names = "cum_{.col}"),
-    Thres = (cum_dQ_All_d * 2e4 - (cum_dC_All_d - cum_dC_VacRZV_d)) / cum_dN_VacRZV_d,
-    cum_ICER = cum_dC_All_d / cum_dQ_All_d,
-    pr_cum_N = cumsum(N) / sum(N),
-    pr_cum_dC = cum_dC_All_d / max(cum_dC_All_d),
-    pr_cum_dQ = cum_dQ_All_d / max(cum_dQ_All_d),
+    N_Uptake = N * ifelse(Age %in% c(65, 70, 80), pred1$pars$p_initial, pred1$pars$p_catchup)
   ) %>% 
-  select(Eligibility, Agp, Arm, N, dC_All_d, dQ_All_d, pr_cum_N, pr_cum_dC, pr_cum_dQ, Thres, cum_ICER)
+  make_profile()
 
-
-tab_programme <- tab_programme1
-write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_65_75_5.csv"))
-
-
-tab_programme2 <- ce0 %>% 
-  mutate(
-    N = ifelse(Age %in% c(65, 70, 75), N * pred1$pars$p_initial, N * pred1$pars$p_catchup)
-  ) %>% 
-  group_by(Eligibility, Agp) %>% 
-  summarise(
-    across(starts_with("d"), \(x) sum(x * N)),
-    ICER = weighted.mean(ICER, w = N),
-    N = sum(N),
-    Arm = paste(unique(Arm), collapse = "")
-  ) %>% 
-  ungroup() %>% 
-  mutate(
-    cum_N = cumsum(N),
-    across(starts_with("d"), \(x) cumsum(x * N), .names = "cum_{.col}"),
-    Thres = (cum_dQ_All_d * 2e4 - (cum_dC_All_d - cum_dC_VacRZV_d)) / cum_dN_VacRZV_d,
-    cum_ICER = cum_dC_All_d / cum_dQ_All_d,
-    pr_cum_N = cumsum(N) / sum(N),
-    pr_cum_dC = cum_dC_All_d / max(cum_dC_All_d),
-    pr_cum_dQ = cum_dQ_All_d / max(cum_dQ_All_d),
-  ) %>% 
-  select(Eligibility, Agp, Arm, N, dC_All_d, dQ_All_d, pr_cum_N, pr_cum_dC, pr_cum_dQ, Thres, cum_ICER)
-
-
-tab_programme <- tab_programme2
-write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_65_80_5.csv"))
+write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_call80_cont.csv"))
 
 
 
+tab_programme0 %>% tail(5)
+tab_programme1 %>% tail(5)
+tab_programme2 %>% tail(5)
 
-tab_programme0 %>% 
-  summarise(across(N:dQ_All_d, sum))
+
+
 

@@ -98,6 +98,7 @@ model$append_ce <- function(df, pars) {
       C_Med = C_GP + C_Hosp,
       C_VacZVL = N_VacZVL * (cost_vac_per_dose + cost_admin_per_dose),
       C_VacRZV = N_VacRZV * (cost_vac_per_dose + cost_admin_per_dose),
+      across(starts_with("C_Vac"), \(x) ifelse(is.na(x), 0, x)),
       C_Vac = C_VacZVL + C_VacRZV,
       C_All = C_Med + C_Vac,
       across(starts_with(c("C_", "Q_", "N_")), \(x) ifelse(is.na(x), 0, x))

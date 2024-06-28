@@ -6,6 +6,13 @@ options(dplyr.summarise.inform = FALSE)
 source(here::here("models", "sim_hz.R"))
 source(here::here("models", "misc.R"))
 
+mlu <- list(
+  M = mean,
+  L = function(x) quantile(x, 0.025, na.rm = T),
+  U = function(x) quantile(x, 0.975, na.rm = T)
+)
+
+
 
 a_run <- function(pars, age0) {
   with(model, {
@@ -87,11 +94,7 @@ for (ve_type in c("trial", "realworld")) {
   stats_ys <- yss %>% 
     group_by(Scenario, Arm, Age0, Age1) %>% 
     select(-Key) %>% 
-    summarise_all(list(
-      M = median,
-      L = function(x) quantile(x, 0.025, na.rm = T),
-      U = function(x) quantile(x, 0.975, na.rm = T)
-    )) %>% 
+    summarise_all(mlu) %>% 
     pivot_longer(-c(Scenario, Age0, Age1, Arm), names_to = c("Index", "name"), names_pattern = "(\\S+)_(M|L|U)") %>% 
     pivot_wider()
   
@@ -155,11 +158,7 @@ for (ve_type in c("trial", "realworld")) {
       ) %>% 
       select(Scenario, Age0, Age1, Arm, Type, N0, starts_with(c("Avt", "dQ", "dC", "dN", "Thres")), ICER) %>% 
       group_by(Scenario, Age0, Age1, Arm, Type) %>% 
-      summarise_all(list(
-        M = median,
-        L = function(x) quantile(x, 0.025, na.rm = T),
-        U = function(x) quantile(x, 0.975, na.rm = T)
-      )) %>% 
+      summarise_all(mlu) %>% 
       pivot_longer(-c(Scenario, Age0, Age1, Arm, Type), names_to = c("Index", "name"), 
                    names_pattern = "(\\S+)_(M|L|U)") %>% 
       pivot_wider()
