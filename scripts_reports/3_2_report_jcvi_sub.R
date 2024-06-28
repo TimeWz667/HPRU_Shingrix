@@ -19,7 +19,9 @@ pop <- local({
 
 ## Vaccine CEA
 
-load(here::here("out", "yss_rzv.rdata"))
+
+
+load(here::here("out", "yss_rzv_tr.rdata"))
 
 
 yss_ce <- local({

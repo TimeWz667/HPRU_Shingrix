@@ -5,7 +5,7 @@ apply_lor <- function(p0, lor) 1 / (1 + exp(-log(p0 / (1 - p0)) - lor))
 
 
 
-load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3,
+load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, year = 2024, n_sims = 1e3, realworld = T,
                             ve_rzv = "pars_ve_rzv_rw_zlg.rdata", ve_zvl = "pars_ve_zvl_rwa.rdata", ve_lor = "pars_ve_lor.rdata") {
   require(tidyverse)
   
@@ -62,6 +62,10 @@ load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, ye
 
   
   ## Parameters: Vaccination -----
+  load(here::here("pars", ve_lor))
+  lor_re <- 0
+  
+  
   load(here::here("pars", ve_zvl))
   pars$VE_ZVL <- sample_table(pars_ve_zvl %>% filter(!IC), n_sims) %>%
     select(Key, Vaccine, Age, TimeVac = Yr, Protection = VE)
@@ -70,9 +74,6 @@ load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, ye
   load(here::here("pars", ve_rzv))
   pars$VE_RZV <- ve_rzv <- sample_table(pars_ve_rzv %>% filter(!IC), n_sims) %>% 
     select(Key, Vaccine, TimeVac = Yr, Protection = VE)
-  
-  load(here::here("pars", ve_lor))
-  lor_re <- 0
   
   pars$VE_ReRZV <- ve_rzv %>% 
     mutate(
@@ -85,6 +86,13 @@ load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035, ye
       Vaccine = "ReRZV1",
       Protection = apply_lor(Protection, lor_re + lor_single) 
     )
+  
+  if (!realworld) {
+    pars$VE_RZV <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
+    pars$VE_ReRZV <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
+    pars$VE_ReRZV1 <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
+    pars$VE_ZVL <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
+  }
   
   return(pars)
 }
