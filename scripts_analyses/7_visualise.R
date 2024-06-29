@@ -4,10 +4,20 @@ theme_set(theme_bw())
 
 
 
-stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_rzv.csv"))
+stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_rzv_realworld.csv"))
+
+ce <- stats_ce %>% 
+  select(Scenario:N0, ends_with(c("_A", "_M", "L", "U"))) %>% 
+  pivot_longer(ends_with(c("_A", "_M", "L", "U")), names_to = c("Index", "name"), names_pattern = "(\\S+)_(A|M|L|U)") %>% 
+  pivot_wider()
+
+thres <- stats_ce %>% 
+  select(Scenario:N0, starts_with("Thre"))
 
 
-g_icer <- stats_ce %>% 
+
+g_icer <- ce %>% 
+  
   filter(Index == "ICER") %>% 
   filter(Arm == "Vac" | Age0 >= 80) %>% 
   ggplot(aes(x = Age0)) +
@@ -23,7 +33,7 @@ g_icer <- stats_ce %>%
 g_icer
 
 
-g_e <- stats_ce %>% 
+g_e <- ce %>% 
   filter(Index == "dQ_All_d") %>% 
   filter(Arm == "Vac" | Age0 >= 80) %>% 
   ggplot(aes(x = Age0)) +
@@ -38,7 +48,7 @@ g_e <- stats_ce %>%
 g_e
 
 
-g_c <- stats_ce %>% 
+g_c <- ce %>% 
   filter(Index == "dC_All_d") %>% 
   filter(Arm == "Vac" | Age0 >= 80) %>% 
   ggplot(aes(x = Age0)) +
@@ -51,17 +61,15 @@ g_c <- stats_ce %>%
   expand_limits(y = 0)
 
 g_thres <- stats_ce %>% 
-  filter(Index == "Thres20") %>% 
   filter(Arm == "Vac" | Age0 >= 80) %>% 
   ggplot(aes(x = Age0)) +
-  geom_ribbon(aes(ymin = L, ymax = U, fill = Arm), alpha = 0.2) +
-  geom_line(aes(y = M, colour = Arm)) +
+  geom_line(aes(x = Age0, y = Thres20_50, colour = "50% CE at 20,000")) +
+  geom_line(aes(x = Age0, y = Thres30_90, colour = "90% CE at 30,000")) +
   scale_y_continuous("Threshold price of RZV, GBP per adminstration") +
   scale_x_continuous("Age of RZV vaccination") +
-  scale_fill_discrete("Intervention", labels = c(Vac = "Double doses", Vac1 = "Single dose")) +
-  guides(colour = guide_none()) +
-  expand_limits(y = 0) +
-  labs(caption = "WTP = 20,000 GBP")
+  scale_colour_discrete("Bound") +
+  facet_wrap(.~Arm, labeller = labeller(Arm = c(Vac = "Double doses", Vac1 = "Single dose"))) +
+  expand_limits(y = 0)
 
 g_thres
 
@@ -74,15 +82,24 @@ ggsave(g_thres, filename = here::here("docs", "figs", "g_rzv_thres.png"), width 
 
 
 
-
-stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_zvl2rzv.csv"))
+stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_zvl2rzv_realworld.csv"))
 
 labs_arm <- c(ReVac_RZV2 = "Double doses", ReVac_RZV1 = "Single dose")
 
-g_icer <- stats_ce %>% 
+
+ce <- stats_ce %>% 
+  select(Scenario:Year0 , ends_with(c("_A", "_M", "L", "U"))) %>% 
+  pivot_longer(ends_with(c("_A", "_M", "L", "U")), names_to = c("Index", "name"), names_pattern = "(\\S+)_(A|M|L|U)") %>% 
+  pivot_wider()
+
+thres <- stats_ce %>% 
+  select(Scenario:Year0, starts_with("Thre"))
+
+
+g_icer <- ce %>% 
   filter(Age0 %in% c(60, 65, 70, 75, 80, 85, 90)) %>% 
   filter(Index == "ICER") %>% 
-  filter(Type == "Second") %>% 
+  filter(Scenario != "Overall") %>% 
   filter(Arm %in% c("ReVac_RZV1", "ReVac_RZV2")) %>% 
   ggplot(aes(x = Age1)) +
   geom_ribbon(aes(ymin = L, ymax = U, fill = Arm), alpha = 0.2) +
@@ -101,10 +118,10 @@ g_icer <- stats_ce %>%
 g_icer
 
 
-g_e <- stats_ce %>% 
+g_e <- ce %>% 
   filter(Age0 %in% c(60, 65, 70, 75, 80, 85, 90)) %>% 
   filter(Index == "dQ_All_d") %>% 
-  filter(Type == "Second") %>% 
+  filter(Scenario != "Overall") %>% 
   filter(Arm %in% c("ReVac_RZV1", "ReVac_RZV2")) %>% 
   ggplot(aes(x = Age1)) +
   geom_ribbon(aes(ymin = L, ymax = U, fill = Arm), alpha = 0.2) +
@@ -121,10 +138,10 @@ g_e <- stats_ce %>%
 g_e
 
 
-g_c <- stats_ce %>% 
+g_c <- ce %>% 
   filter(Age0 %in% c(60, 65, 70, 75, 80, 85, 90)) %>% 
   filter(Index == "dC_All_d") %>% 
-  filter(Type == "Second") %>% 
+  filter(Scenario != "Overall") %>% 
   filter(Arm %in% c("ReVac_RZV1", "ReVac_RZV2")) %>% 
   ggplot(aes(x = Age1)) +
   geom_ribbon(aes(ymin = L, ymax = U, fill = Arm), alpha = 0.2) +
@@ -142,23 +159,21 @@ g_c
 
 
 
-g_thres <- stats_ce %>% 
+
+g_thres <- thres %>% 
+  mutate(A0 = paste0("Age of ZVL vaccination: ", Age0)) %>% 
   filter(Age0 %in% c(60, 65, 70, 75, 80, 85, 90)) %>% 
-  filter(Index == "Thres20") %>% 
-  filter(Type == "Second") %>% 
+  filter(Scenario != "Overall") %>% 
   filter(Arm %in% c("ReVac_RZV1", "ReVac_RZV2")) %>% 
   ggplot(aes(x = Age1)) +
-  geom_ribbon(aes(ymin = L, ymax = U, fill = Arm), alpha = 0.2) +
-  geom_vline(aes(xintercept = Age0), linetype = 2) +
-  geom_text(aes(x = Age0, y = 0), label = "ZVL vaccination", angle = 90, hjust = 0, vjust = 1.2) +
-  geom_line(aes(y = M, colour = Arm)) +
+  geom_line(aes(y = Thres20_50, colour = "50% CE at 20,000")) +
+  geom_line(aes(y = Thres30_90, colour = "90% CE at 30,000")) +
   scale_y_continuous("Threshold price of RZV, GBP per adminstration") +
-  scale_x_continuous("Age for RZV revaccination") +
-  scale_fill_discrete("RZV \nvaccination", labels = labs_arm) +
-  guides(colour = guide_none()) +
-  facet_wrap(.~Age0) +
-  expand_limits(y = 0) +
-  labs(caption = "WTP = 20,000 GBP")
+  scale_x_continuous("Age of RZV revaccination") +
+  scale_colour_discrete("Bound") +
+  facet_wrap(A0~Arm, labeller = labeller(Arm = c(ReVac_RZV2 = "Double doses", ReVac_RZV1 = "Single dose"))) +
+  expand_limits(y = 0)
+
 
 g_thres
 
@@ -173,7 +188,7 @@ ggsave(g_thres, filename = here::here("docs", "figs", "g_zvl2rzv_thres.png"), wi
 
 
 ## Programme-based profile
-profile <- read_csv(here::here("docs", "tabs", "tab_programme.csv"))
+profile <- read_csv(here::here("docs", "tabs", "tab_programme_cont.csv"))
 
 profile <- profile %>% 
   mutate(
@@ -183,20 +198,20 @@ profile <- profile %>%
 
 
 g_pro <- profile %>% 
-  mutate(N = c(pr_cum_N[1], diff(pr_cum_N))) %>% 
-  select(Arm, Group, N, dC_All_d, dQ_All_d) %>% 
-  pivot_longer(c(N, dC_All_d, dQ_All_d)) %>% 
+  mutate(N = c(Prop_Doses[1], diff(Prop_Doses))) %>% 
+  select(Arm, Group, N, dC_Med_d, dQ_All_d) %>% 
+  pivot_longer(c(N, dC_Med_d, dQ_All_d)) %>% 
   ggplot() +
-  geom_histogram(aes(x = value, y = name, fill = Group), stat = "identity", position = "fill") +
-  scale_y_discrete("", labels = c(N = "Population", dC_All_d="Cost", dQ_All_d="QALY")) +
+  geom_histogram(aes(x = abs(value), y = name, fill = Group), stat = "identity", position = "fill") +
+  scale_y_discrete("", labels = c(N = "Population", dC_Med_d="Medical cost", dQ_All_d="QALY")) +
   scale_x_continuous("Shares, %", labels = scales::percent) +
-  scale_fill_discrete("", labels = c(
-    "ZVL_85 [80,85)" = "Vaccinated with ZVL, 80-85",
-    "UV_85 [80,85)" = "Unvaccinated, 80-85",
-    "New2023 " = "2023-2028 eligibility",
-    "SOC " = "~2023 eligibility",
-    "SOC " = "~2023 eligibility"
-  )) +
+  # scale_fill_discrete("", labels = c(
+  #   "ZVL_85 [80,85)" = "Vaccinated with ZVL, 80-85",
+  #   "UV_85 [80,85)" = "Unvaccinated, 80-85",
+  #   "New2023 " = "2023-2028 eligibility",
+  #   "SOC " = "~2023 eligibility",
+  #   "SOC " = "~2023 eligibility"
+  # )) +
   guides(fill = guide_legend(reverse = TRUE)) +
   theme(legend.position = "bottom")
 
@@ -204,8 +219,4 @@ g_pro
 
 
 ggsave(g_pro, filename = here::here("docs", "figs", "g_profile_burden.png"), width = 8, height = 4)
-
-
-
-profile
 
