@@ -90,20 +90,21 @@ for (ve_type in c("trial", "realworld")) {
   save(yss, file = here::here("out", "yss_zvl2rzv_" + ve_type + ".rdata"))
   
   
-  ## Output statistics
+  ## Output statistics -----
   
+  ### Single arm -----
   stats_ys <- yss %>% 
     group_by(Scenario, Arm, Age0, Age1) %>% 
     select(-Key) %>% 
     summarise_all(amlu) %>% 
-    pivot_longer(-c(Scenario, Age0, Age1, Arm), names_to = c("Index", "name"), names_pattern = "(\\S+)_(M|L|U)") %>% 
+    pivot_longer(-c(Scenario, Age0, Age1, Arm), names_to = c("Index", "name"), names_pattern = "(\\S+)_(A|M|L|U)") %>% 
     pivot_wider()
   
   
   write_csv(stats_ys, file = here::here("docs", "tabs", "stats_ys_zvl2rzv_" + ve_type + ".csv"))
   
   
-  
+  ### Comparison -----
   stats_ce <- local({
     temp <- yss %>% 
       pivot_longer(-c(Scenario, Age0, Age1, Arm, Key, N0, Year0), names_to = "Index")
