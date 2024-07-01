@@ -42,11 +42,11 @@ a_run <- function(pars, age0) {
 }
 
 
-# Load inputs
 
 for (ve_type in c("trial", "realworld")) {
   ve_type <- glue::as_glue(ve_type)
   
+  # Load inputs
   load(file = here::here("pars", "parset_nic_c35q35y24n1k_" + ve_type + ".rdata"))
   
   ## Simulation -----
@@ -71,8 +71,15 @@ for (ve_type in c("trial", "realworld")) {
   
   save(yss, file = here::here("out", "yss_rzv_" + ve_type + ".rdata"))
   
+}
+
+
+## Output statistics
+for (ve_type in c("trial", "realworld")) {
+  ve_type <- glue::as_glue(ve_type)
   
-  ## Output statistics
+  load(file = here::here("out", "yss_rzv_" + ve_type + ".rdata"))
+  
   stats_ys <- yss %>% 
     group_by(Scenario, Age0, Arm) %>% 
     select(-Key) %>% 

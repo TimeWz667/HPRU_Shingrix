@@ -89,8 +89,15 @@ for (ve_type in c("trial", "realworld")) {
   
   save(yss, file = here::here("out", "yss_zvl2rzv_" + ve_type + ".rdata"))
   
+}
+
+
+## Output statistics -----
+for (ve_type in c("trial", "realworld")) {
+  ve_type <- glue::as_glue(ve_type)  
   
-  ## Output statistics -----
+  
+  load(file = here::here("out", "yss_zvl2rzv_" + ve_type + ".rdata"))
   
   ### Single arm -----
   stats_ys <- yss %>% 
