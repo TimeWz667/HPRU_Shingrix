@@ -21,7 +21,7 @@ pop <- local({
 
 
 
-load(here::here("out", "yss_rzv_.rdata"))
+load(here::here("out", "yss_rzv_realworld.rdata"))
 
 
 yss_ce <- local({
@@ -146,7 +146,7 @@ ggsave(g_tpr, file = output_file("Fig_RZV_ThresPriceRange.png"), width = 7, heig
 ## [Fig 3] Incremental cost-effectiveness ratios (ICERs) of RZV revaccination for ZVL covered population by age of revaccination.  (cohort models)
 
 
-load(here::here("out", "yss_zvl2rzv.rdata"))
+load(here::here("out", "yss_zvl2rzv_realworld.rdata"))
 
 
 

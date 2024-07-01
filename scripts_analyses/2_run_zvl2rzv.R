@@ -23,13 +23,13 @@ a_run <- function(pars, age0) {
         vaccinate(age0, "ZVL", pars) %>% 
         mutate(Arm = "Vac", Age1 = NA),
     ) %>%
-      bind_rows(lapply((age0 + 1): 99, function(age1) {
+      bind_rows(lapply(80:99, function(age1) {
         populate(age0, pars) %>% 
           vaccinate(age0, "ZVL", pars) %>% 
           vaccinate(age1, "ReRZV1", pars) %>% 
           mutate(Arm = "ReVac_RZV1", Age1 = age1)
       })) %>% 
-      bind_rows(lapply((age0 + 1): 99, function(age1) {
+      bind_rows(lapply(80:99, function(age1) {
         populate(age0, pars) %>% 
           vaccinate(age0, "ZVL", pars) %>% 
           vaccinate(age1, "ReRZV", pars) %>% 

@@ -113,8 +113,8 @@ model$summarise <- function(df, pars) {
 
   df %>% 
     mutate(
-      dis_e = 1 / ((1 + dis_eff) ^ (Year - year0)),
-      dis_c = 1 / ((1 + dis_cost) ^ (Year - year0)),
+      dis_e = 1 / ((1 + dis_eff) ^ (Year - Year[1])),
+      dis_c = 1 / ((1 + dis_cost) ^ (Year - Year[1])),
       QL_y2_d = QL_y2 / (1 + dis_eff),
       QL_HZ_d = (QL_y1 + QL_y2_d) * dis_e,
       Q_HZ_d = - N_HZ * QL_HZ_d,    
