@@ -11,10 +11,18 @@ dat <- read_csv(here::here("docs", "tabs", "stats_ce_rzv.csv"))
 
 dat %>% 
   select(-c(L, U)) %>%
+  filter(Index %in% c("dQ_HZ_d", "dQ_Life_d", "dC_Hosp_d", "dC_GP_NonPHN_d",
+         "dC_GP_PHN_d", "dC_VacRZV_d", "dN_VacRZV_d")) %>% 
+  group_by(Age0, Arm)
+
+
+
+dat %>% 
+  select(-c(L, U)) %>%
   filter(Index %in% c("dQ_HZ_d", "dQ_Life_d", "dC_Vac_d", "dC_Med_d")) %>% 
   group_by(Age0, Arm) %>% 
   mutate(
-    M = ifelse(Index == "dC_Vac_d", M / 85 * 50, M),
+    M = ifelse(Index == "dC_Vac_d", M / 85 * Thres20, M),
     Type = ifelse(startsWith(Index, "dQ"), "QoL", "Cost"),
     Index = factor(Index, c("dQ_Life_d", "dQ_HZ_d", "dC_Med_d", "dC_Vac_d")),
     id = as.numeric(Index)

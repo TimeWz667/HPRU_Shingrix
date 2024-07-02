@@ -84,15 +84,13 @@ for (ve_type in c("trial", "realworld")) {
     group_by(Scenario, Age0, Arm) %>% 
     select(-Key) %>% 
     summarise_all(amlu) %>% 
-    pivot_longer(-c(Scenario, Age0, Arm), names_to = c("Index", "name"), names_pattern = "(\\S+)_(M|L|U)") %>% 
+    pivot_longer(-c(Scenario, Age0, Arm), names_to = c("Index", "name"), names_pattern = "(\\S+)_(A|M|L|U)") %>% 
     pivot_wider()
   
   
   write_csv(stats_ys, file = here::here("docs", "tabs", "stats_ys_rzv_" + ve_type + ".csv"))
   
-  
-  
-  stats_ce <- local({
+  yss_diff <- local({
     temp <- yss %>% 
       pivot_longer(-c(Scenario, Age0, Arm, Key, N0, Year0), names_to = "Index")
     
@@ -115,21 +113,42 @@ for (ve_type in c("trial", "realworld")) {
         Price0 = dC_VacRZV_d / dN_VacRZV_d,
         Thres20 = (dQ_All_d * 2e4 - dC_Med_d) / dN_VacRZV_d,
         Thres30 = (dQ_All_d * 3e4 - dC_Med_d) / dN_VacRZV_d,
-      ) %>% 
-      group_by(Scenario, Age0, Arm, Year0, N0) %>% 
-      select(-Key) %>% 
-      summarise(
-        across(everything(), amlu),
-        Thres20_50 = median(Thres20),
-        Thres30_90 = quantile(Thres30, 0.9)
-      ) %>% 
-      mutate(
-        Thres = pmin(Thres20_50, Thres30_90)
       )
     
   })
   
+  
+  stats_ce <- yss_diff %>% 
+    group_by(Scenario, Age0, Arm, Year0, N0) %>% 
+    select(-Key) %>% 
+    summarise(
+      across(everything(), amlu),
+      Thres20_50 = median(Thres20),
+      Thres30_90 = quantile(Thres30, 0.9)
+    ) %>% 
+    mutate(
+      Thres = pmin(Thres20_50, Thres30_90)
+    )
+  
   write_csv(stats_ce, file = here::here("docs", "tabs", "stats_ce_rzv_" + ve_type + ".csv"))
+  
+  
+  stats_icer <- yss_diff %>% 
+    mutate(
+      ICER25 = (dC_Med_d + dN_VacRZV_d * 25) / dQ_All_d,
+      ICER50 = (dC_Med_d + dN_VacRZV_d * 50) / dQ_All_d,
+      ICER75 = (dC_Med_d + dN_VacRZV_d * 75) / dQ_All_d,
+      ICER100 = (dC_Med_d + dN_VacRZV_d * 100) / dQ_All_d,
+      ICER_Thres = (dC_Med_d + dN_VacRZV_d * Thres20) / dQ_All_d # For validation
+    ) %>% 
+    select(Scenario, Age0, Arm, Year0, starts_with("ICER")) %>% 
+    group_by(Scenario, Age0, Arm, Year0) %>% 
+    summarise_all(amlu)
+  
+  
+  write_csv(stats_icer, file = here::here("docs", "tabs", "stats_icer_rzv_" + ve_type + ".csv"))
+  
+  
 }
 
 
