@@ -147,8 +147,6 @@ for (ve_type in c("trial", "realworld")) {
   
   
   write_csv(stats_icer, file = here::here("docs", "tabs", "stats_icer_rzv_" + ve_type + ".csv"))
-  
-  
 }
 
 
