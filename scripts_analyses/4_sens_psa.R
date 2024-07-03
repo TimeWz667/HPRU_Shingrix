@@ -62,7 +62,7 @@ g_rzv_psa <- bind_rows(
   scale_y_continuous("Probability of cost-effecive, %", label = scales::percent, breaks = c(0, 0.1, 0.25, 0.5, 0.75, 0.9, 1)) +
   scale_x_continuous("Cost per administration, £") +
   scale_linetype_discrete("Willingness to pay") +
-  scale_color_discrete("Type", label = c(Vac1 = "Single dose", Vac2 = "Two doses")) +
+  scale_color_discrete("Type", label = c(Vac1 = "Single-dose", Vac2 = "Two-doses")) +
   theme(legend.position = c(1, 1), legend.justification = c(1.2, 1.2))
 
 ggsave(g_rzv_psa, filename = here::here("docs", "figs", "g_sens_psa_price.png"), width = 7.5, height = 4.5)

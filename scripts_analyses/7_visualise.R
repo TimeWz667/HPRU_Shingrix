@@ -27,7 +27,7 @@ g_icer <- ce %>%
   geom_hline(yintercept = 3e4, linetype = 3) +
   scale_y_continuous("ICER, GBP", breaks = 0:15 * 1e4) +
   scale_x_continuous("Age of RZV vaccination") +
-  scale_fill_discrete("Intervention", labels = c(Vac = "Double doses", Vac1 = "Single dose")) +
+  scale_fill_discrete("Intervention", labels = c(Vac = "Two-doses", Vac1 = "Single-dose")) +
   guides(colour = guide_none())
 
 g_icer
@@ -41,7 +41,7 @@ g_e <- ce %>%
   geom_line(aes(y = M, colour = Arm)) +
   scale_y_continuous("Utility gained, QALY per capita") +
   scale_x_continuous("Age of RZV vaccination") +
-  scale_fill_discrete("Intervention", labels = c(Vac = "Double doses", Vac1 = "Single dose")) +
+  scale_fill_discrete("Intervention", labels = c(Vac = "Two-doses", Vac1 = "Single-dose")) +
   guides(colour = guide_none()) +
   expand_limits(y = 0)
 
@@ -56,7 +56,7 @@ g_c <- ce %>%
   geom_line(aes(y = M, colour = Arm)) +
   scale_y_continuous("Incremental cost, GBP per capita") +
   scale_x_continuous("Age of RZV vaccination") +
-  scale_fill_discrete("Intervention", labels = c(Vac = "Double doses", Vac1 = "Single dose")) +
+  scale_fill_discrete("Intervention", labels = c(Vac = "Two-doses", Vac1 = "Single-dose")) +
   guides(colour = guide_none()) +
   expand_limits(y = 0)
 
@@ -68,7 +68,7 @@ g_thres <- stats_ce %>%
   scale_y_continuous("Threshold price of RZV, GBP per adminstration") +
   scale_x_continuous("Age of RZV vaccination") +
   scale_colour_discrete("Bound") +
-  facet_wrap(.~Arm, labeller = labeller(Arm = c(Vac = "Double doses", Vac1 = "Single dose"))) +
+  facet_wrap(.~Arm, labeller = labeller(Arm = c(Vac = "Two-doses", Vac1 = "Single-dose"))) +
   expand_limits(y = 0)
 
 g_thres
@@ -84,7 +84,7 @@ ggsave(g_thres, filename = here::here("docs", "figs", "g_rzv_thres.png"), width 
 
 stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_zvl2rzv_realworld.csv"))
 
-labs_arm <- c(ReVac_RZV2 = "Double doses", ReVac_RZV1 = "Single dose")
+labs_arm <- c(ReVac_RZV2 = "Two-doses", ReVac_RZV1 = "Single-dose")
 
 
 ce <- stats_ce %>% 
@@ -171,7 +171,7 @@ g_thres <- thres %>%
   scale_y_continuous("Threshold price of RZV, GBP per adminstration") +
   scale_x_continuous("Age of RZV revaccination") +
   scale_colour_discrete("Bound") +
-  facet_wrap(A0~Arm, labeller = labeller(Arm = c(ReVac_RZV2 = "Double doses", ReVac_RZV1 = "Single dose"))) +
+  facet_wrap(A0~Arm, labeller = labeller(Arm = c(ReVac_RZV2 = "Two-doses", ReVac_RZV1 = "Single-dose"))) +
   expand_limits(y = 0)
 
 
