@@ -37,21 +37,35 @@ yss_diff <- local({
     )
   
 }) %>% 
-  filter(Age0 == 70 & Arm == "Vac")
+  filter(Age0 == 70)
 
 
+yd_v1 <- yss_diff %>% filter(Arm == "Vac1")
+yd_v2 <- yss_diff %>% filter(Arm == "Vac")
 
 
-
-tibble(Price = seq(0, 200, 5)) %>% 
-  mutate(
-    PrCE20 = sapply(Price, \(x) mean(yss_diff$Thres20 > x)),
-    PrCE30 = sapply(Price, \(x) mean(yss_diff$Thres30 > x))
-  ) %>% 
+g_rzv_psa <- bind_rows(
+  tibble(Price = seq(0, 250, 5), Arm = "Vac1") %>% 
+    mutate(
+      PrCE20 = sapply(Price, \(x) mean(yd_v1$Thres20 > x)),
+      PrCE30 = sapply(Price, \(x) mean(yd_v1$Thres30 > x))
+    ),
+  tibble(Price = seq(0, 250, 5), Arm = "Vac2") %>% 
+    mutate(
+      PrCE20 = sapply(Price, \(x) mean(yd_v2$Thres20 > x)),
+      PrCE30 = sapply(Price, \(x) mean(yd_v2$Thres30 > x))
+    )
+) %>% 
   ggplot() +
-  geom_line(aes(x = Price, y = PrCE20, colour = "WTP20k")) +
-  geom_line(aes(x = Price, y = PrCE30, colour = "WTP30k"))
+  geom_line(aes(x = Price, y = PrCE20, colour = Arm, linetype = "£20,000")) +
+  geom_line(aes(x = Price, y = PrCE30, colour = Arm, linetype = "£30,000")) + 
+  scale_y_continuous("Probability of cost-effecive, %", label = scales::percent, breaks = c(0, 0.1, 0.25, 0.5, 0.75, 0.9, 1)) +
+  scale_x_continuous("Cost per administration, £") +
+  scale_linetype_discrete("Willingness to pay") +
+  scale_color_discrete("Type", label = c(Vac1 = "Single dose", Vac2 = "Two doses")) +
+  theme(legend.position = c(1, 1), legend.justification = c(1.2, 1.2))
 
+ggsave(g_rzv_psa, filename = here::here("docs", "figs", "g_sens_psa_price.png"), width = 7.5, height = 4.5)
 
 
 

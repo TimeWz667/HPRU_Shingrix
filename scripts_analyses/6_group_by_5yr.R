@@ -92,7 +92,7 @@ for (ve_type in c("realworld", "trial")) {
     summarise(
       across(everything(), amlu),
       Thres20_50 = median(Thres20, na.rm = T),
-      Thres30_90 = quantile(Thres30, 0.9, na.rm = T)
+      Thres30_90 = quantile(Thres30, 0.1, na.rm = T)
     ) %>% 
     mutate(
       Thres = pmin(Thres20_50, Thres30_90)
@@ -190,7 +190,7 @@ for (ve_type in c("realworld", "trial")) {
     summarise(
       across(everything(), amlu),
       Thres20_50 = median(Thres20),
-      Thres30_90 = quantile(Thres30, 0.9)
+      Thres30_90 = quantile(Thres30, 0.1)
     ) %>% 
     mutate(
       Thres = pmin(Thres20_50, Thres30_90)
