@@ -38,7 +38,7 @@ load(file = here::here("pars", "parset_nic_c35q35y24n1k_" + ve_type + ".rdata"))
 
 ## Simulation -----
 keys <- 1:pars_set$N_Sims
-keys <- keys[1:20]
+keys <- keys
 
 
 yss <- list()
@@ -68,6 +68,8 @@ yss <- bind_rows(yss) %>%
   select(-SOC, -Vac) %>% 
   pivot_wider(values_from = Diff)
 
+
+save(yss, file = here::here("out", "yss_sens_1way.rdata"))
 
 
 fn_thres <- function(df) {
@@ -136,28 +138,39 @@ lvs <- case1 %>%
 
 lvs
 
+labs_lvs <- c(
+  "C_GP_PHN" = "Cost, GP, PHN",
+  "C_GP_NonPHN" = "Cost, GP, No PHN",
+  "Q_Life" = "QALY, Survival",
+  "C_Hosp" = "Cost, Hospitalisation",     
+  "Q_HZ" = "QALY, HZ"
+)
 
 sens_ce <- case1 %>% 
   select(Pars, Direction, Thres, Age0) %>% 
   left_join(case0 %>% select(Age0, Thres0 = Thres)) 
 
 
-g_sens_ce <- sens_ce %>% 
+g_sens_ce <- sens_ce %>%
+  filter(Age0 %in% c(80, 85)) %>% 
   mutate(
     Pars = factor(Pars, lvs),
     i = as.numeric(Pars),
-    D = ifelse(Direction > 0, "+10%", "-10%")
+    D = ifelse(Direction > 0, "+10%", "-10%"),
+    a0 = paste0("Age of vaccination: ", Age0)
   ) %>% 
   ggplot() +
   geom_rect(aes(xmin = Thres0, xmax = Thres, ymin = i - 0.45, ymax = i + 0.45, 
                 y = Pars, fill = D)) +
   scale_fill_discrete("Changes") +
   scale_x_continuous("Threshold price, GBP per administration") +
-  scale_y_discrete("Components") +
-  facet_grid(Age0~.)
+  scale_y_discrete("Components", labels = labs_lvs) +
+  facet_wrap(a0~.)
 
 
-ggsave(g_sens_ce, filename = here::here("docs", "figs", "g_sens_ce.png"), width = 5.5, height = 8)
+g_sens_ce
+
+ggsave(g_sens_ce, filename = here::here("docs", "figs", "g_sens_ce.png"), width = 9, height = 4)
 
 
 

@@ -146,7 +146,8 @@ save(pars_ve_rzv, file = here::here("pars", "pars_ve_rzv_rw_long_zlg.rdata"))
 pars_ve_rzv <- crossing(Key = 1:n_sims, Yr = 1:50) %>% 
   left_join(ve_rzv) %>% 
   mutate(
-    VE = p0 * (1 - pgamma(Yr, alpha, beta)) * 0.91,
+    VE = p0 * (1 - pgamma(pmin(Yr, 10), alpha, beta)) ,
+    VE = apply_lor(VE, lor_rw),
     VE = ifelse(Yr <= 10, VE, 0),
     Vaccine = "RZV",
     Variant = "RW",
