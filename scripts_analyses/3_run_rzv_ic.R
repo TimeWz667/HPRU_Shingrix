@@ -29,14 +29,7 @@ a_run <- function(pars, age0) {
       summarise(pars) %>% 
       mutate(Arm = "Vac")
     
-    df2 <- populate(age0, pars) %>% 
-      vaccinate(age0, "ReRZV1", pars) %>% 
-      run_to_end(pars) %>% 
-      append_ce(pars) %>% 
-      summarise(pars) %>% 
-      mutate(Arm = "Vac1")
-    
-    bind_rows(df0, df1, df2) %>% 
+    bind_rows(df0, df1) %>% 
       mutate(Scenario = glue::as_glue("Vac_") + age0, Age0 = age0)
   })
 }
@@ -60,7 +53,7 @@ for (ve_type in c("trial", "realworld")) {
   for(k in keys) {
     pars <- get_pars(pars_set, k)
     
-    for (age0 in 60:99) {
+    for (age0 in 18:99) {
       yss[[length(yss) + 1]] <- a_run(pars, age0 = age0) %>% mutate(Key = k)
     }
     setTxtProgressBar(pb, k)
