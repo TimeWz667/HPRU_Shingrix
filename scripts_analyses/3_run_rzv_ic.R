@@ -71,7 +71,7 @@ for (ve_type in c("trial", "realworld")) {
 for (ve_type in c("trial", "realworld")) {
   ve_type <- glue::as_glue(ve_type)
   
-  load(file = here::here("out", "yss_rzv_" + ve_type + ".rdata"))
+  load(file = here::here("out", "yss_rzv_ic_" + ve_type + ".rdata"))
   
   stats_ys <- yss %>% 
     group_by(Scenario, Age0, Arm) %>% 

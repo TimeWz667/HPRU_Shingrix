@@ -81,6 +81,84 @@ ggsave(g_icer, filename = here::here("docs", "figs", "g_rzv_icer.png"), width = 
 ggsave(g_thres, filename = here::here("docs", "figs", "g_rzv_thres.png"), width = 8, height = 5)
 
 
+## IC real world
+stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_rzv_ic_realworld.csv"))
+
+ce <- stats_ce %>% 
+  select(Scenario:N0, ends_with(c("_A", "_M", "L", "U"))) %>% 
+  pivot_longer(ends_with(c("_A", "_M", "L", "U")), names_to = c("Index", "name"), names_pattern = "(\\S+)_(A|M|L|U)") %>% 
+  pivot_wider()
+
+thres <- stats_ce %>% 
+  select(Scenario:N0, starts_with("Thre"))
+
+
+
+g_icer <- ce %>% 
+  
+  filter(Index == "ICER") %>% 
+  filter(Arm == "Vac" | Age0 >= 80) %>% 
+  ggplot(aes(x = Age0)) +
+  geom_ribbon(aes(ymin = L, ymax = U, fill = Arm), alpha = 0.2) +
+  geom_line(aes(y = M, colour = Arm)) +
+  geom_hline(yintercept = 2e4, linetype = 2) +
+  geom_hline(yintercept = 3e4, linetype = 3) +
+  scale_y_continuous("ICER, GBP", breaks = 0:15 * 1e4) +
+  scale_x_continuous("Age of RZV vaccination") +
+  scale_fill_discrete("Intervention", labels = c(Vac = "Two-doses", Vac1 = "Single-dose")) +
+  guides(colour = guide_none())
+
+g_icer
+
+
+g_e <- ce %>% 
+  filter(Index == "dQ_All_d") %>% 
+  filter(Arm == "Vac" | Age0 >= 80) %>% 
+  ggplot(aes(x = Age0)) +
+  geom_ribbon(aes(ymin = L, ymax = U, fill = Arm), alpha = 0.2) +
+  geom_line(aes(y = M, colour = Arm)) +
+  scale_y_continuous("Utility gained, QALY per capita") +
+  scale_x_continuous("Age of RZV vaccination") +
+  scale_fill_discrete("Intervention", labels = c(Vac = "Two-doses", Vac1 = "Single-dose")) +
+  guides(colour = guide_none()) +
+  expand_limits(y = 0)
+
+g_e
+
+
+g_c <- ce %>% 
+  filter(Index == "dC_All_d") %>% 
+  filter(Arm == "Vac" | Age0 >= 80) %>% 
+  ggplot(aes(x = Age0)) +
+  geom_ribbon(aes(ymin = L, ymax = U, fill = Arm), alpha = 0.2) +
+  geom_line(aes(y = M, colour = Arm)) +
+  scale_y_continuous("Incremental cost, GBP per capita") +
+  scale_x_continuous("Age of RZV vaccination") +
+  scale_fill_discrete("Intervention", labels = c(Vac = "Two-doses", Vac1 = "Single-dose")) +
+  guides(colour = guide_none()) +
+  expand_limits(y = 0)
+
+g_thres <- stats_ce %>% 
+  filter(Arm == "Vac" | Age0 >= 80) %>% 
+  ggplot(aes(x = Age0)) +
+  geom_line(aes(x = Age0, y = Thres20_50, colour = "50% CE at 20,000")) +
+  geom_line(aes(x = Age0, y = Thres30_90, colour = "90% CE at 30,000")) +
+  scale_y_continuous("Threshold price of RZV, GBP per adminstration") +
+  scale_x_continuous("Age of RZV vaccination") +
+  scale_colour_discrete("Bound") +
+  facet_wrap(.~Arm, labeller = labeller(Arm = c(Vac = "Two-doses", Vac1 = "Single-dose"))) +
+  expand_limits(y = 0)
+
+g_thres
+
+
+
+ggsave(g_e, filename = here::here("docs", "figs", "g_rzv_ic_de.png"), width = 8, height = 5)
+ggsave(g_c, filename = here::here("docs", "figs", "g_rzv_ic_dc.png"), width = 8, height = 5)
+ggsave(g_icer, filename = here::here("docs", "figs", "g_rzv_ic_icer.png"), width = 8, height = 5)
+ggsave(g_thres, filename = here::here("docs", "figs", "g_rzv_ic_thres.png"), width = 8, height = 5)
+
+
 
 stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_zvl2rzv_realworld.csv"))
 
