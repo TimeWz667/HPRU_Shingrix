@@ -2,6 +2,8 @@ library(tidyverse)
 
 source("scripts_analyses/fn_arrange_inputs.R")
 
+seed <- 11667
+
 ## VE
 pars_ve_zvl <- local({
   load(here::here("pars", "pars_ve_zvl_rw_zlg.rdata"))
@@ -30,7 +32,7 @@ save(pars_ve_zvl, file = here::here("pars", "pars_ve_zvl_rwa.rdata"))
 
 file_inputs <- "parset_nic_c35q35y24n1k_trial.rdata"
 
-set.seed(11667)
+set.seed(seed)
 pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, 
                             year = 2024, n_sims = 1e3, realworld = F)
 save(pars_set, file = here::here("pars", file_inputs))
@@ -38,7 +40,7 @@ save(pars_set, file = here::here("pars", file_inputs))
 
 file_inputs <- "parset_nic_c35q35y24n1k_realworld.rdata"
 
-set.seed(11667)
+set.seed(seed)
 pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, 
                             year = 2024, n_sims = 1e3, realworld = T)
 save(pars_set, file = here::here("pars", file_inputs))
@@ -46,18 +48,31 @@ save(pars_set, file = here::here("pars", file_inputs))
 
 file_inputs <- "parset_nic_c35q35y24n1k_zle_realworld.rdata"
 
-set.seed(11667)
+set.seed(seed)
 pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, 
-                            year = 2024, n_sims = 1e3, realworld = T, ve_rzv = "pars_ve_rzv_rw_zle.rdata")
+                            year = 2024, n_sims = 1e3, realworld = T, 
+                            ve_rzv = "pars_ve_rzv_rw_zle.rdata")
 save(pars_set, file = here::here("pars", file_inputs))
 
 
 ## Immuno-compromised population
-file_inputs <- "parset_ic_c35q35y24n1k.rdata"
+file_inputs <- "parset_ic_c35q35y24n1k_trial.rdata"
 
-set.seed(11667)
-
+set.seed(seed)
 pars_set <- load_inputs_ic(discount_costs = 0.035, discount_effects = 0.035, 
-                           year = 2024, n_sims = 1e3)
+                            year = 2024, n_sims = 1e3, realworld = F)
 save(pars_set, file = here::here("pars", file_inputs))
+
+
+file_inputs <- "parset_ic_c35q35y24n1k_realworld.rdata"
+
+set.seed(seed)
+pars_set <- load_inputs_ic(discount_costs = 0.035, discount_effects = 0.035, 
+                           year = 2024, n_sims = 1e3, realworld = T)
+save(pars_set, file = here::here("pars", file_inputs))
+
+
+
+
+
 

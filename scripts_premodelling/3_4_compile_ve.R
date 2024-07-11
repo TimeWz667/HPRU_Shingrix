@@ -89,9 +89,13 @@ find_lor(0.9, 0.4)
 apply_lor(0.9, find_lor(0.9, 0.4))
 
 lor_rw <- find_lor(0.914, 0.79)
-lor_single <- find_lor(0.701, 0.569)
+lor_single <- find_lor(0.701, 0.569) # Lzurieta HS 2021
 
 lor_re <- find_lor(0.79, 0.75)
+
+lor_ic <- find_lor(0.705, 0.641)
+lor_ic_single <- find_lor(0.705, 0.37)
+
 
 apply_lor(0.82, lor_single)
 

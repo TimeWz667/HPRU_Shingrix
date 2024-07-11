@@ -93,8 +93,8 @@ load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035,
   
   if (!realworld) {
     pars$VE_RZV <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
-    pars$VE_ReRZV <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
-    pars$VE_ReRZV1 <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
+    pars$VE_ReRZV <- pars$VE_ReRZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
+    pars$VE_ReRZV1 <- pars$VE_ReRZV1 %>% mutate(Protection = apply_lor(Protection, - lor_rw))
     pars$VE_ZVL <- pars$VE_ZVL %>% mutate(Protection = apply_lor(Protection, -lor_rw))
   }
   
@@ -108,6 +108,7 @@ load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035,
                            ve_rzv = "pars_ve_rzv_rw_zlg.rdata", 
                            ve_zvl = "pars_ve_zvl_rwa.rdata", 
                            ve_lor = "pars_ve_lor.rdata") {
+  require(tidyverse)
   pars <- list(
     Year0 = year,
     N_Sims = n_sims,
@@ -158,9 +159,10 @@ load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035,
     left_join(sample_table(Cost_GP, n_sims) %>% select(Key, ends_with("_inf")), by = "Key")
   
 
+  ## Parameters: Vaccination -----
+  load(here::here("pars", ve_lor))
+  lor_re <- 0
   
-  
-  ## Parameters: Vaccination ----- ## Todo: Use IC-specific rates
   load(here::here("pars", ve_zvl))
   pars$VE_ZVL <- sample_table(pars_ve_zvl %>% filter(!IC), n_sims) %>%
     select(Key, Vaccine, Age, TimeVac = Yr, Protection = VE)
@@ -169,9 +171,6 @@ load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035,
   load(here::here("pars", ve_rzv))
   pars$VE_RZV <- ve_rzv <- sample_table(pars_ve_rzv %>% filter(!IC), n_sims) %>% 
     select(Key, Vaccine, TimeVac = Yr, Protection = VE)
-  
-  load(here::here("pars", ve_lor))
-  lor_re <- 0
   
   pars$VE_ReRZV <- ve_rzv %>% 
     mutate(
@@ -184,6 +183,19 @@ load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035,
       Vaccine = "ReRZV1",
       Protection = apply_lor(Protection, lor_re + lor_single) 
     )
+  
+  pars$VE_RZV <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, lor_ic))
+  pars$VE_ReRZV <- pars$VE_ReRZV %>% mutate(Protection = apply_lor(Protection, lor_ic))
+  pars$VE_ReRZV1 <- pars$VE_ReRZV1 %>% mutate(Protection = apply_lor(Protection, lor_ic))
+  pars$VE_ZVL <- pars$VE_ZVL %>% mutate(Protection = apply_lor(Protection, lor_ic))
+  
+  
+  if (!realworld) {
+    pars$VE_RZV <- pars$VE_RZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
+    pars$VE_ReRZV <- pars$VE_ReRZV %>% mutate(Protection = apply_lor(Protection, -lor_rw))
+    pars$VE_ReRZV1 <- pars$VE_ReRZV1 %>% mutate(Protection = apply_lor(Protection, - lor_rw))
+    pars$VE_ZVL <- pars$VE_ZVL %>% mutate(Protection = apply_lor(Protection, -lor_rw))
+  }
   
   return(pars)
 }
