@@ -82,7 +82,8 @@ ce0 <- profile %>%
     #TimeVac = ifelse(Age >= 85, -1, TimeVac),
     Eligibility = case_when(
       Age < 65 & TimeVac == -1 ~ "",
-      Age < 70 & TimeVac == -1 ~ "New2023",
+      Age == 65 & TimeVac == -1 ~ "New2023",
+      Age < 70 & TimeVac == -1 ~ "",
       Age < 80 & TimeVac == -1 ~ "SOC",
       Age < 80 ~ "",
       Age < 85 & TimeVac == -1 ~ "UV_85",
