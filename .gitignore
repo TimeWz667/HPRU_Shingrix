@@ -54,6 +54,8 @@ pars/pars_ic.rdata
 pars/pars_nic.rdata
 pars/parset_*.rdata
 
+# Temp files during HTML generation
+figure/
 
 
 

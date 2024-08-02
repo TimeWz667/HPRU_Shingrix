@@ -1,0 +1,21 @@
+---
+title: "`r title`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tibble)
+```
+
+### Data descriptions
+
+```{r echo=FALSE}
+kable(tibble(Attribute = names(desc), Description = desc))
+```
+
+### Model fits
+
+```{r pressure, echo=FALSE}
+g_gof
+```
