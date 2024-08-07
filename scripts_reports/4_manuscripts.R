@@ -58,7 +58,7 @@ g_wf <- waterfall %>%
   geom_vline(xintercept = 2.5) +
   annotate("text", x = 2.3, y = 170, label = "QoL", hjust = 1) +
   annotate("text", x = 2.7, y = 170, label = "Cost", hjust = 0) +
-  scale_y_continuous("Net montary benefit (WTP = 20,000 GBP)") + 
+  scale_y_continuous("Net monetary benefit (WTP = 20,000 GBP)") + 
   scale_x_discrete("Source", labels = labs_comp) +
   facet_grid(Age0~Arm, labeller = labeller(
     Arm = c(Vac = "Two doses", Vac1 = "Single dose"),
