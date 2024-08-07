@@ -102,6 +102,26 @@ load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035,
 }
 
 
+load_inputs_nic_t <- function(discount_costs = 0.035, discount_effects = 0.035, 
+                              year = 2024, n_sims = 1e3, 
+                              ve_rzv = "pars_ve_rzv_rw_zlg.rdata", 
+                              ve_zvl = "pars_ve_zvl_rwa.rdata", 
+                              ve_lor = "pars_ve_lor.rdata") {
+  
+  pars <- load_inputs_nic(discount_costs = discount_costs, discount_effects = discount_effects,
+                          year = year, n_sims = n_sims, 
+                          realworld = T,
+                          ve_rzv = ve_rzv, 
+                          ve_zvl = ve_zvl, 
+                          ve_lor = ve_lor)
+  
+  load(here::here("pars", "pars_demo.rdata"))
+  pars$Demography <- pars_demo$England
+  
+  return(pars)
+}
+
+
 load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035, 
                            year = 2024, n_sims = 1e3,
                            realworld = T,

@@ -1,8 +1,9 @@
 library(tidyverse)
 
-source("scripts_analyses/fn_arrange_inputs.R")
+source(here::here("models", "fn_arrange_inputs.R"))
 
 seed <- 11667
+
 
 ## VE
 pars_ve_zvl <- local({
@@ -52,6 +53,14 @@ set.seed(seed)
 pars_set <- load_inputs_nic(discount_costs = 0.035, discount_effects = 0.035, 
                             year = 2024, n_sims = 1e3, realworld = T, 
                             ve_rzv = "pars_ve_rzv_rw_zle.rdata")
+save(pars_set, file = here::here("pars", file_inputs))
+
+
+file_inputs <- "parset_t_c35q35y24n1k_realworld.rdata"
+
+set.seed(seed)
+pars_set <- load_inputs_nic_t(discount_costs = 0.035, discount_effects = 0.035, 
+                            year = 2024, n_sims = 1e3)
 save(pars_set, file = here::here("pars", file_inputs))
 
 
