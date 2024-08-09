@@ -149,6 +149,34 @@ stats_avt <- local({
 write_csv(stats_avt, file = here::here("docs", "tabs", "stats_avt.csv"))
 
 
+## Visualise
+theme_set(theme_bw())
+
+stats_epi <- read_csv(here::here("docs", "tabs", "stats_epi.csv")) %>% 
+  mutate(
+    Scenario = factor(Scenario, levels = c(
+      "No new programme", "Switch to RZV only", "Expand to 65+", "Scheduled", "Scheduled + [80, 85)"  
+    ))
+  )
+
+stats_avt <- read_csv(here::here("docs", "tabs", "stats_avt.csv")) %>% 
+  mutate(
+    Scenario = ifelse(is.na(Scenario), "No new programme", Scenario),
+    Scenario = factor(Scenario, levels = c(
+      "No new programme", "Switch to RZV only", "Expand to 65+", "Scheduled", "Scheduled + [80, 85)"  
+    ))
+  )
+
+
+labs_scs <- c(
+  "No new programme" = "(1)", 
+  "Switch to RZV only" = "(2)", 
+  "Expand to 65+" = "(3)", 
+  "Scheduled" = "(4)", 
+  "Scheduled + [80, 85)" = "(5)"
+)
+
+
 g_inc <- stats_epi %>% 
   filter(Index == "IncHZ") %>% 
   filter(Group != "All") %>% 
@@ -156,24 +184,39 @@ g_inc <- stats_epi %>%
   ggplot() + 
   geom_line(aes(x = Year, y = M, colour = Scenario)) +
   scale_y_continuous("Incidence of Shingles, per 100,000", labels = scales::number_format(scale = 1e5)) +
+  scale_colour_discrete("Scenario", labels = labs_scs) +
   facet_wrap(.~Group, 
              labeller = labeller(Group = c("60u"="60 years-old and above", "80u"="80 years-old and above"))) +
   expand_limits(y = 0)
 
-ggsave(g_inc, filename = here::here("docs", "figs", "g_inc.png"), width = 10, height = 4.5)
+g_inc
+
+ggsave(g_inc, filename = here::here("docs", "figs", "g_proj_inc.png"), width = 10, height = 4.5)
 
 
 
-g_avt <- stats_avt %>% 
+# 
+# labs_scs <- c(
+#   "No new programme" = "(1) - (1)",
+#   "Switch to RZV only" = "(2) - (1)", 
+#   "Expand to 65+" = "(3) - (1)", 
+#   "Scheduled" = "(4) - (1)", 
+#   "Scheduled + [80, 85)" = "(5) - (1)"
+# )
+
+
+g_avt <- stats_avt %>%
+  filter(!is.na(Scenario)) %>% 
   ggplot() +
   geom_line(aes(x = Year, y = M, colour = Scenario)) +
   scale_x_continuous("Year", breaks = c(2023, 2028, 2033, 2040, 2045, 2050)) +
   scale_y_continuous("Averted cases, %", labels = scales::percent) +
+  scale_colour_discrete("Scenario", labels = labs_scs) +
   guides(colour = guide_legend(reverse = T))
 
 g_avt
 
-ggsave(g_avt, filename = here::here("docs", "figs", "g_avt.png"), width = 7, height = 4)
+ggsave(g_avt, filename = here::here("docs", "figs", "g_proj_avt.png"), width = 7, height = 4)
 
 
 
