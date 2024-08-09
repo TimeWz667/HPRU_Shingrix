@@ -81,7 +81,3 @@ pars_set <- load_inputs_ic(discount_costs = 0.035, discount_effects = 0.035,
 save(pars_set, file = here::here("pars", file_inputs))
 
 
-
-
-
-

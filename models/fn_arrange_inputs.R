@@ -118,6 +118,9 @@ load_inputs_nic_t <- function(discount_costs = 0.035, discount_effects = 0.035,
   load(here::here("pars", "pars_demo.rdata"))
   pars$Demography <- pars_demo$England
   
+  load(here::here("data", "fitted_coverage.rdata"))
+  pars$Uptake <- pred1$pars
+  
   return(pars)
 }
 
