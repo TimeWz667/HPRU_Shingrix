@@ -151,6 +151,9 @@ g_thres <- stats_ce %>%
 
 g_thres
 
+stats_ce %>% 
+  filter(Arm == "Vac" & Age0 %in% seq(70, 100, 5)) %>% 
+  select(Age0, Arm, Thres20_50) 
 
 
 ggsave(g_e, filename = here::here("docs", "figs", "g_rzv_ic_de.png"), width = 8, height = 5)
