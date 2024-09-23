@@ -99,7 +99,7 @@ lor_ic_single <- find_lor(0.705, 0.37)
 
 apply_lor(0.82, lor_single)
 
-save(lor_rw, lor_re, lor_single, file = here::here("pars", "pars_ve_Lor.rdata"))
+save(lor_rw, lor_re, lor_single, lor_ic, lor_ic_single, file = here::here("pars", "pars_ve_lor.rdata"))
 
 ve_rzv <- local({load(here::here("pars", "pars_ve_rzv_zl_gamma.rdata")); sel})
 

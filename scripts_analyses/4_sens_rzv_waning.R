@@ -2,7 +2,7 @@ library(tidyverse)
 
 
 
-source(here::here("scripts_analyses", "fn_arrange_inputs.R"))
+source(here::here("models", "fn_arrange_inputs.R"))
 source(here::here("models", "sim_hz.R"))
 source(here::here("models", "misc.R"))
 
@@ -24,7 +24,7 @@ a_run <- function(pars, age0) {
       mutate(Arm = "Vac")
     
     bind_rows(df0, df1) %>% 
-      mutate(Scenario = glue::as_glue("Vac_") + age0, Age0 = age0)
+      mutate(Scenario = glue::as_glue("Vac_") + as.character(age0), Age0 = age0)
   })
 }
 
