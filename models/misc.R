@@ -1,4 +1,12 @@
 
+amlu <- list(
+  A = mean,
+  M = median,
+  L = function(x) quantile(x, 0.025, na.rm = T),
+  U = function(x) quantile(x, 0.975, na.rm = T)
+)
+
+
 sample_table <- function(df, n_sims) {
   keys <- unique(df$Key)
   id_map <- tibble(ID = 1:n_sims, Key = sample(keys, n_sims, rep = T))

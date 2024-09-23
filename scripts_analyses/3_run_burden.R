@@ -41,7 +41,7 @@ stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_rzv_realworld.csv"))
 stats_cer <- read_csv(here::here("docs", "tabs", "stats_ce_zvl2rzv_realworld.csv"))
 load(here::here("data", "fitted_coverage.rdata"))
 
-sel_cols <- c("N0", "dQ_All_d", "dC_All_d", "dC_Med_d", "dC_VacRZV_d", "dN_VacRZV_d")
+sel_cols <- c("N0", "dRisk_HZ", "dQ_All_d", "dC_All_d", "dC_Med_d", "dC_VacRZV_d", "dN_VacRZV_d")
 
 
 n_all <- profile %>% 
@@ -128,13 +128,14 @@ make_profile <- function(df) {
       CumICER = cum_dC_All_d / cum_dQ_All_d,
       Prop_Uptake = cum_N_Uptake / cum_N_Uptake[3],
       Prop_Doses = cum_N_Doses / cum_N_Doses[3],
+      Prop_Case = cum_dRisk_HZ / cum_dRisk_HZ[3],
       Prop_dQ = cum_dQ_All_d / cum_dQ_All_d[3],
       Prop_dC_Med = cum_dC_Med_d / cum_dC_Med_d[3],
       ICER = dC_All_d / dQ_All_d
     ) %>% 
     left_join(n_all) %>% 
     select(Eligibility, Agp, Arm, N_All, N, N_Uptake, N_Doses, 
-           dC_Med_d, dQ_All_d, Thres, starts_with("Prop"))
+           dRisk_HZ, dC_Med_d, dQ_All_d, Thres, starts_with("Prop"))
   
 }
 

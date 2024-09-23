@@ -16,6 +16,18 @@ labs_comp <- c(
 )
 
 
+dat %>% 
+  mutate(
+    NNV = - dN_VacRZV_A / dRisk_HZ_A,
+    NNV = ifelse(Arm == "Vac", NNV / 2, NNV)
+  ) %>% 
+  filter(Age0 > 80) %>% 
+  select(Age0, Arm, Scenario, NNV) %>% 
+  ggplot() +
+  geom_line(aes(x = Age0, y = NNV, colour = Arm)) +
+  expand_limits(y = 0)
+
+
 waterfall <- dat %>% 
   select(Age0, Arm, 
          dQ_HZ_d = dQ_HZ_d_M, dQ_Life_d = dQ_Life_d_M, 

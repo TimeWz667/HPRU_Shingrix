@@ -64,7 +64,7 @@ pars_set <- load_inputs_nic_t(discount_costs = 0.035, discount_effects = 0.035,
 save(pars_set, file = here::here("pars", file_inputs))
 
 
-## Immuno-compromised population
+## Immuno-compromised population ## Todo: check sources
 file_inputs <- "parset_ic_c35q35y24n1k_trial.rdata"
 
 set.seed(seed)
