@@ -1,12 +1,7 @@
 library(tidyverse)
 
 
-amlu <- list(
-  A = mean,
-  M = median,
-  L = function(x) quantile(x, 0.025, na.rm = T),
-  U = function(x) quantile(x, 0.975, na.rm = T)
-)
+source(here::here("models", "misc.R"))
 
 
 ## Load population
@@ -162,7 +157,7 @@ for (ve_type in c("realworld", "trial")) {
       ungroup()
     
     dy <- temp %>% 
-      filter(Arm %in% c("ReVac_RZV1", "ReVac_RZV2")) %>% 
+      filter(Arm %in% c("ReVac_RZV_1d", "ReVac_RZV_2d")) %>% 
       left_join(
         temp %>% 
           filter(Arm == "Vac") %>% 

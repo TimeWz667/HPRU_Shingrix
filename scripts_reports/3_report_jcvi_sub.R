@@ -51,7 +51,7 @@ for (ve_type in c("realworld", "trial")) {
   ## Threshold price
   stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_5yr_rzv_" + ve_type + ".csv")) %>% 
     mutate(
-      Arm = factor(Arm, c("Vac1", "Vac"))
+      Arm = factor(Arm, c("Vac_1d", "Vac_2d"))
     )
   
   g_tp <- stats_ce %>%
@@ -62,8 +62,9 @@ for (ve_type in c("realworld", "trial")) {
     scale_x_discrete("Age of RZV vaccination") +
     scale_colour_discrete("Scenario") +
     expand_limits(y = c(0, 200)) +
-    facet_grid(.~Arm, labeller = labeller(Arm = c("Vac1"="Single-dose RZV", "Vac"="Two-doses RZV")))
+    facet_grid(.~Arm, labeller = labeller(Arm = c("Vac_1d"="Single-dose RZV", "Vac_2d"="Two-doses RZV")))
   
+  g_tp
   ggsave(g_tp, file = output_file("Fig_RZV_Thres_" + ve_type + ".png"), width = 9, height = 4)
   
   
@@ -91,7 +92,7 @@ for (ve_type in c("realworld", "trial")) {
                        breaks = 0:15 * 1e4, labels = scales::label_dollar(prefix = "")) +
     scale_color_discrete("RZV price\nper admin.", guide = guide_legend(reverse = T)) +
     expand_limits(y = 0) +
-    facet_grid(a0~Arm, labeller = labeller(Arm = c("ReVac_RZV1"="Single-dose RZV", "ReVac_RZV2"="Two-doses RZV")))
+    facet_grid(a0~Arm, labeller = labeller(Arm = c("ReVac_RZV_1d"="Single-dose RZV", "ReVac_RZV_2d"="Two-doses RZV")))
   
   ggsave(g_ce, file = output_file("Fig_ZVL2RZV_ICER_" + ve_type + ".png"), width = 9, height = 6)
 
@@ -111,7 +112,7 @@ for (ve_type in c("realworld", "trial")) {
     scale_x_discrete("Age of RZV vaccination") +
     scale_colour_discrete("Scenario") +
     expand_limits(y = c(0, 200)) +
-    facet_grid(a0~Arm, labeller = labeller(Arm = c("ReVac_RZV1"="Single-dose RZV", "ReVac_RZV2"="Two-doses RZV")))
+    facet_grid(a0~Arm, labeller = labeller(Arm = c("ReVac_RZV_1d"="Single-dose RZV", "ReVac_RZV_2d"="Two-doses RZV")))
   
   g_tp
   
@@ -120,14 +121,14 @@ for (ve_type in c("realworld", "trial")) {
   
   stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_5yr_rzv_" + ve_type + ".csv")) %>% 
     mutate(
-      Arm = factor(Arm, c("Vac1", "Vac"))
+      Arm = factor(Arm, c("Vac_1d", "Vac_2d"))
     ) %>% 
     select(Agp = Agp0, Arm, Thres20_50, Thres30_90) %>% 
-    filter((Agp %in% c("[80,85)", "[85,90)", "[90,95)", "[95,100)")) | Arm == "Vac") %>% 
+    filter((Agp %in% c("[80,85)", "[85,90)", "[90,95)", "[95,100)")) | Arm == "Vac_2d") %>% 
     mutate(
       Case = case_when(
         Agp %in% c("[60,65)", "[65,70)", "[70,75)", "[75,80)") ~ "Programme target",
-        Arm == "Vac" ~ "Naïve\ntwo-doses",
+        Arm == "Vac_2d" ~ "Naïve\ntwo-doses",
         T ~ "Naïve\nsingle-dose"
       )
     ) %>% 
@@ -137,13 +138,13 @@ for (ve_type in c("realworld", "trial")) {
   stats_ce_re <- read_csv(here::here("docs", "tabs", "stats_ce_5yr_zvl2rzv_" + ve_type + ".csv"))%>%
     filter(Age0 %in% c(70, 75)) %>% 
     select(Age0, Agp = Age1, Arm, Thres20_50, Thres30_90) %>% 
-    filter(Arm == "ReVac_RZV1") %>% 
+    filter(Arm == "ReVac_RZV_1d") %>% 
     mutate(
       Case = case_when(
-        Arm == "ReVac_RZV2" & Age0 == 70 ~ "ZVL at 70\ntwo-doses",
-        Arm == "ReVac_RZV2" & Age0 == 75 ~ "ZVL at 75\ntwo-doses",
-        Arm == "ReVac_RZV1" & Age0 == 70 ~ "ZVL at 70\nsingle-dose",
-        Arm == "ReVac_RZV1" & Age0 == 75 ~ "ZVL at 75\nsingle-dose"
+        Arm == "ReVac_RZV_2d" & Age0 == 70 ~ "ZVL at 70\ntwo-doses",
+        Arm == "ReVac_RZV_2d" & Age0 == 75 ~ "ZVL at 75\ntwo-doses",
+        Arm == "ReVac_RZV_1d" & Age0 == 70 ~ "ZVL at 70\nsingle-dose",
+        Arm == "ReVac_RZV_1d" & Age0 == 75 ~ "ZVL at 75\nsingle-dose"
       )
     ) %>% 
     select(-c(Arm, Age0))

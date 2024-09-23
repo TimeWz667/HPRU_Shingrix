@@ -7,14 +7,6 @@ source(here::here("models", "sim_hz.R"))
 source(here::here("models", "misc.R"))
 
 
-amlu <- list(
-  A = mean,
-  M = median,
-  L = function(x) quantile(x, 0.025, na.rm = T),
-  U = function(x) quantile(x, 0.975, na.rm = T)
-)
-
-
 a_run <- function(pars, age0) {
   with(model, {
     dfs <- bind_rows(
@@ -27,13 +19,13 @@ a_run <- function(pars, age0) {
         populate(age0, pars) %>% 
           vaccinate(age0, "ZVL", pars) %>% 
           vaccinate(age1, "ReRZV1", pars) %>% 
-          mutate(Arm = "ReVac_RZV1", Age1 = age1)
+          mutate(Arm = "ReVac_RZV_1d", Age1 = age1)
       })) %>% 
       bind_rows(lapply(80:99, function(age1) {
         populate(age0, pars) %>% 
           vaccinate(age0, "ZVL", pars) %>% 
           vaccinate(age1, "ReRZV", pars) %>% 
-          mutate(Arm = "ReVac_RZV2", Age1 = age1)
+          mutate(Arm = "ReVac_RZV_2d", Age1 = age1)
       })) %>% 
       mutate(Age0 = age0) %>% 
       group_by(Arm, Age0, Age1) %>% 
@@ -67,7 +59,7 @@ for (ve_type in c("trial", "realworld")) {
   
   ## Simulation -----
   keys <- 1:pars_set$N_Sims
-  # keys <- keys[1:20]
+  #keys <- keys[1:10]
   
   yss <- list()
   
@@ -76,7 +68,7 @@ for (ve_type in c("trial", "realworld")) {
   for(k in keys) {
     pars <- get_pars(pars_set, k)
     
-    for (age0 in 70:79) {
+    for (age0 in c(70, 75)) {
       yss[[length(yss) + 1]] <- a_run(pars, age0 = age0) %>% mutate(Key = k)
     }
     setTxtProgressBar(pb, k)
@@ -127,7 +119,7 @@ for (ve_type in c("trial", "realworld")) {
     
     dy1 <- temp %>% 
       filter(Scenario != "Overall") %>%
-      filter(Arm %in% c("ReVac_RZV1", "ReVac_RZV2")) %>% 
+      filter(Arm %in% c("ReVac_RZV_1d", "ReVac_RZV_2d")) %>% 
       left_join(
         temp %>% 
           filter(Arm == "Vac") %>% 

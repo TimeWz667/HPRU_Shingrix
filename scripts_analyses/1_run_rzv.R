@@ -6,14 +6,6 @@ source(here::here("models", "sim_hz.R"))
 source(here::here("models", "misc.R"))
 
 
-amlu <- list(
-  A = mean,
-  M = median,
-  L = function(x) quantile(x, 0.025, na.rm = T),
-  U = function(x) quantile(x, 0.975, na.rm = T)
-)
-
-
 a_run <- function(pars, age0) {
   with(model, {
     df0 <- populate(age0, pars) %>% 
@@ -27,14 +19,14 @@ a_run <- function(pars, age0) {
       run_to_end(pars) %>% 
       append_ce(pars) %>% 
       summarise(pars) %>% 
-      mutate(Arm = "Vac")
+      mutate(Arm = "Vac_2d")
     
     df2 <- populate(age0, pars) %>% 
       vaccinate(age0, "ReRZV1", pars) %>% 
       run_to_end(pars) %>% 
       append_ce(pars) %>% 
       summarise(pars) %>% 
-      mutate(Arm = "Vac1")
+      mutate(Arm = "Vac_1d")
     
     bind_rows(df0, df1, df2) %>% 
       mutate(Scenario = glue::as_glue("Vac_") + as.character(age0), Age0 = age0)
@@ -51,7 +43,7 @@ for (ve_type in c("trial", "realworld")) {
   
   ## Simulation -----
   keys <- 1:pars_set$N_Sims
-  # keys <- keys[1:10]
+  #keys <- keys[1:10]
   
   yss <- list()
   

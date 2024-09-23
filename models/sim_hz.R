@@ -15,7 +15,7 @@ model$populate <- function(age0, pars) {
       Protection = 0,
       n_uptake = 0,
     ) %>% 
-    left_join(pars$Demography %>% select(Age, r_mor_bg = r_death), by = "Age") %>% 
+    left_join(pars$Demography %>% select(Age, r_mor_bg = r_death, norm), by = "Age") %>% 
     left_join(pars$Epidemiology, by = "Age")
   
   return(pop0)
@@ -77,6 +77,7 @@ model$run_to_end <- function(df, pars) {
     N_HZ_PHN = p_phn * N_HZ,
     N_HZ_PHN_GP = p_gp * N_HZ_PHN,
     N_HZ_Death = p_mor_hz * N_HZ,
+    QALY = norm * (N_Alive + N_Start) / 2
   ) %>% 
     select(-starts_with(c("r_", "p_", "n_"), ignore.case = F), - N)
 }
@@ -87,9 +88,9 @@ model$append_ce <- function(df, pars) {
     left_join(pars$CostEff, by = "Age") %>% 
     mutate(
       cost_vac_pp = ifelse(is.na(cost_vac_pp), 0, cost_vac_pp),
-      Q_Life = N_Start * QOL,
-      QL_HZ = QL_y1 + QL_y2,
-      Q_HZ = - N_HZ * QL_HZ,
+      Q_Life = QALY,
+      Q_HZ = - N_HZ * QLH,
+      Q_HZ_Norm = - N_HZ * QL,
       Q_All = Q_Life + Q_HZ,
       C_Hosp = N_HZ_Hosp * cost_hosp_pp_inf,
       C_GP_NonPHN = (N_HZ_GP - N_HZ_PHN_GP) * cost_GP_pp_non_PHN_HZ_inf,
@@ -115,9 +116,10 @@ model$summarise <- function(df, pars) {
     mutate(
       dis_e = 1 / ((1 + dis_eff) ^ (Year - Year[1])),
       dis_c = 1 / ((1 + dis_cost) ^ (Year - Year[1])),
-      QL_y2_d = QL_y2 / (1 + dis_eff),
-      QL_HZ_d = (QL_y1 + QL_y2_d) * dis_e,
-      Q_HZ_d = - N_HZ * QL_HZ_d,    
+      #QL_y2_d = QL_y2 / (1 + dis_eff),
+      #QL_HZ_d = (QL_y1 + QL_y2_d) * dis_e,
+      Q_HZ_d = Q_HZ * dis_e, 
+      Q_HZ_Norm_d = Q_HZ_Norm * dis_e, 
       Q_Life_d = Q_Life * dis_e,
       Q_All_d = Q_Life_d + Q_HZ_d,
       N_VacZVL_d = N_VacZVL * dis_c,
