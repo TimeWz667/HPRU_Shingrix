@@ -2,7 +2,7 @@ library(tidyverse)
 
 
 
-source(here::here("scripts_analyses", "fn_arrange_inputs.R"))
+source(here::here("models", "fn_arrange_inputs.R"))
 source(here::here("models", "sim_hz.R"))
 source(here::here("models", "misc.R"))
 
