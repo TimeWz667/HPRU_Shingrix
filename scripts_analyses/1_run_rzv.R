@@ -37,7 +37,7 @@ a_run <- function(pars, age0) {
       mutate(Arm = "Vac1")
     
     bind_rows(df0, df1, df2) %>% 
-      mutate(Scenario = glue::as_glue("Vac_") + age0, Age0 = age0)
+      mutate(Scenario = glue::as_glue("Vac_") + as.character(age0), Age0 = age0)
   })
 }
 
