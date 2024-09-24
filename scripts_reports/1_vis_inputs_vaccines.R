@@ -108,7 +108,7 @@ d <- pars_ve_rzv%>%
     VE = median(VE)
   ) %>% 
   mutate(
-    Tag = "Real-world, two-doses"
+    Tag = "Real-world, two doses (Baseline)"
   )
 
 
@@ -117,41 +117,40 @@ ve_rzv <- bind_rows(
   d %>% 
     mutate(
       VE = apply_lor(VE, - lor_rw),
-      Tag = "Trials, two-doses (Baseline)"
+      Tag = "Trial, two doses"
     ),
   d %>% 
     mutate(
       VE = apply_lor(VE, lor_single),
-      Tag = "Real-world, single-dose"
+      Tag = "Real-world, single dose"
     ),
   d %>%
     mutate(
       VE = apply_lor(VE, lor_re),
-      Tag = "Real-world, two-doses after ZVL"
+      Tag = "Real-world, two doses after ZVL"
     ),
   d %>%
     mutate(
       VE = apply_lor(VE, lor_re + lor_single),
-      Tag = "Real-world, single-dose after ZVL"
+      Tag = "Real-world, single dose after ZVL"
     )
 ) %>% 
   mutate(
-    Tag = factor(Tag, c("Trials, two-doses (Baseline)", 
-                        "Real-world, two-doses", 
-                        "Real-world, two-doses after ZVL", 
-                        "Real-world, single-dose",
-                        "Real-world, single-dose after ZVL"))
+    Tag = factor(Tag, c("Trial, two doses", 
+                        "Real-world, two doses (Baseline)", 
+                        "Real-world, two doses after ZVL", 
+                        "Real-world, single dose",
+                        "Real-world, single dose after ZVL"))
   )
 
 
-g_rzv_gof <- pars_ve_rzv%>% 
+g_rzv_gof <- pars_ve_rzv %>% 
   filter(Yr <= 20) %>% 
   group_by(Yr) %>% 
   summarise(
-    VE = apply_lor(VE, - lor_rw),
-    M = mean(VE),
-    L = quantile(VE, 0.025),
-    U = quantile(VE, 0.975)
+    M = mean(apply_lor(VE, - lor_rw)),
+    L = quantile(apply_lor(VE, - lor_rw), 0.025),
+    U = quantile(apply_lor(VE, - lor_rw), 0.975)
   ) %>% 
   ggplot() +
   geom_ribbon(aes(x = Yr, ymin = L, ymax = U), alpha = 0.2) +
@@ -181,6 +180,50 @@ g_rzv <- ggpubr::ggarrange(
 
 g_rzv
 
+# Plot focusing on main VE estimate
+d_rw <- pars_ve_rzv %>% 
+  filter(Yr <= 20) %>% 
+  group_by(Yr) %>% 
+  summarise(
+    M = mean(VE),
+    L = quantile(VE, 0.025),
+    U = quantile(VE, 0.975)
+  )
+d_rw$Tag <- "Real-world, two doses (Baseline)"
+
+g_rzv_gof_alt <- pars_ve_rzv %>% 
+  filter(Yr <= 20) %>% 
+  group_by(Yr) %>% 
+  summarise(
+    M = mean(apply_lor(VE, - lor_rw)),
+    L = quantile(apply_lor(VE, - lor_rw), 0.025),
+    U = quantile(apply_lor(VE, - lor_rw), 0.975)
+  ) %>% 
+  ggplot() +
+  geom_ribbon(aes(x = Yr, ymin = L, ymax = U, fill = "Trial, two doses"), alpha = 0.2) +
+  geom_line(aes(x = Yr, y = M, colour = "Trial, two doses", linetype = "Trial, two doses")) +
+  geom_pointrange(data = dat_ve %>% filter(!Realworld), aes(x = Yr, y = M, ymin = L, ymax = U)) +
+  scale_y_continuous("Vaccine efficacy, %", label = scales::percent) +
+  scale_x_continuous("Year since vaccinated") +
+  scale_colour_manual(NULL, values = c("black"), aesthetics = c("fill", "colour")) +
+  scale_linetype_manual(NULL, values = c("32")) +
+  expand_limits(y = 0) +
+  theme(legend.position = c(0, 0), legend.justification = c(-0.1, -0.1))
+
+g_rzv_var_alt <- ggplot(ve_rzv) +
+  geom_ribbon(data = d_rw, aes(x = Yr, ymin = L, ymax = U, fill = Tag), alpha = 0.2) +
+  geom_line(aes(x = Yr, y = VE, colour = Tag, linetype = Tag)) +
+  scale_y_continuous("Vaccine efficacy/effectiveness, %", labels = scales::percent) +
+  scale_x_continuous("Year since vaccinated", breaks = c(1, seq(5, 20, 5))) +
+  scale_colour_manual(NULL, values = c("black", "#36f", "#36f", "#e3a", "#e3a"), aesthetics = c("fill", "colour")) +
+  scale_linetype_manual(NULL, values = c("32", "solid", "32", "solid", "32")) +
+  expand_limits(y = 0:1, x = 20) +
+  theme(legend.position = c(0, 0), legend.justification = c(-0.1, -0.1))
+
+g_rzv_alt <- ggpubr::ggarrange(
+  g_rzv_gof_alt + labs(subtitle = "(A) Goodness of fit"), 
+  g_rzv_var_alt + labs(subtitle = "(B) Variants of implementation")
+)
 
 
 
@@ -222,6 +265,7 @@ g_uptake_gof
 
 ggsave(g_zvl, filename = here::here("docs", "figs", "g_vaccine_ve_zvl.png"), width = 12, height = 6)
 ggsave(g_rzv, filename = here::here("docs", "figs", "g_vaccine_ve_rzv.png"), width = 12, height = 6)
+ggsave(g_rzv_alt, filename = here::here("docs", "figs", "g_vaccine_ve_rzv_alt.png"), width = 12, height = 6)
 ggsave(g_uptake_gof, filename = here::here("docs", "figs", "g_vaccine_uptake.png"), width = 6, height = 4.5)
 
 
