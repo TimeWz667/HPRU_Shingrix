@@ -228,7 +228,7 @@ sim_ve <- bind_rows(
       Vaccine = "ZVL"
     )
 )
-
+   
 sim_ve %>% 
   ggplot() +
   geom_line(aes(x = Yr, y = VE, colour = Vaccine, group = Key), alpha = 0.1) +

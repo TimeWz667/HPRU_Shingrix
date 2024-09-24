@@ -42,7 +42,7 @@ waterfall <- dat %>%
   select(Age0, Arm, dQ_HZ_d, dQ_Life_d, dC_Hosp_d, dC_GP_d, dC_VacRZV_d) %>% 
   pivot_longer(-c(Age0, Arm), names_to = "Index") %>% 
   mutate(
-    Arm = factor(Arm, c("Vac1", "Vac")),
+    Arm = factor(Arm, c("Vac_1d", "Vac_2d")),
     Type = ifelse(startsWith(Index, "dQ"), "QoL", "Cost"),
     Index = factor(Index, names(labs_comp)),
     id = as.numeric(Index),
@@ -68,12 +68,12 @@ g_wf <- waterfall %>%
                    yend=y1)) +
   geom_hline(yintercept = 0, linetype = 2) +
   geom_vline(xintercept = 2.5) +
-  annotate("text", x = 2.3, y = 170, label = "QoL", hjust = 1) +
-  annotate("text", x = 2.7, y = 170, label = "Cost", hjust = 0) +
+  annotate("text", x = 2.3, y = 220, label = "QoL", hjust = 1) +
+  annotate("text", x = 2.7, y = 220, label = "Cost", hjust = 0) +
   scale_y_continuous("Net monetary benefit (WTP = 20,000 GBP)") + 
   scale_x_discrete("Source", labels = labs_comp) +
   facet_grid(Age0~Arm, labeller = labeller(
-    Arm = c(Vac = "Two doses", Vac1 = "Single dose"),
+    Arm = c(Vac_2d = "Two doses", Vac_1d = "Single dose"),
     Age0 = c("70" = "Vaccinated at 70 YOA", "80" = "Vaccinated at 80 YOA")
   )) +
   theme(axis.text.x = element_text(angle = 30, hjust = 1))
@@ -88,7 +88,7 @@ g_comp_stack <- waterfall %>%
   geom_bar(aes(y = MB, fill = Index), stat = "identity", position = "stack", colour = NA, width = 1) +
   scale_y_continuous("Monetary benefit in GBP") +
   scale_fill_discrete("Components", labels = labs_comp) +
-  facet_grid(.~Arm, labeller = labeller(Arm = c(Vac = "Two doses", Vac1 = "Single dose"))) +
+  facet_grid(.~Arm, labeller = labeller(Arm = c(Vac_2d = "Two doses", Vac_1d = "Single dose"))) +
   scale_x_continuous("Age of vaccination") +
   labs(caption = "1 QALY = 20,000 GBP")
 
@@ -102,7 +102,7 @@ g_comp_fill <- waterfall %>%
   geom_bar(aes(y = MB, fill = Index), stat = "identity", position = "fill", colour = NA, width = 1) +
   scale_fill_discrete("Components", labels = labs_comp) +
   scale_y_continuous("Share of monetary benefit, %", labels = scales::percent) +
-  facet_grid(.~Arm, labeller = labeller(Arm = c(Vac = "Two doses", Vac1 = "Single dose"))) +
+  facet_grid(.~Arm, labeller = labeller(Arm = c(Vac_2d = "Two doses", Vac_1d = "Single dose"))) +
   scale_x_continuous("Age of vaccination") +
   labs(caption = "1 QALY = 20,000 GBP")
 

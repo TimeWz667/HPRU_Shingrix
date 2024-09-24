@@ -165,7 +165,7 @@ ggsave(g_thres, filename = here::here("docs", "figs", "g_rzv_ic_thres.png"), wid
 
 stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_zvl2rzv_realworld.csv"))
 
-labs_arm <- c(ReVac_RZV2 = "Two-doses", ReVac_RZV1 = "Single-dose")
+labs_arm <- c(ReVac_RZV_2d = "Two-doses", ReVac_RZV_1d = "Single-dose")
 
 
 ce <- stats_ce %>% 
