@@ -27,7 +27,7 @@ for (ve_type in c("realworld", "trial")) {
                  names_to = c("Price", "name"), names_pattern = "ICER(\\d+)_(\\S)") %>% 
     pivot_wider() %>% 
     mutate(
-      Arm = factor(Arm, c("Vac1", "Vac"))
+      Arm = factor(Arm, c("Vac_1d", "Vac_2d"))
     )
   
   
@@ -43,7 +43,7 @@ for (ve_type in c("realworld", "trial")) {
                        breaks = 0:15 * 1e4, labels = scales::label_dollar(prefix = "")) +
     scale_color_discrete("RZV price\nper admin.", guide = guide_legend(reverse = T)) +
     expand_limits(y = 0) +
-    facet_grid(.~Arm, labeller = labeller(Arm = c("Vac1"="Single-dose RZV", "Vac"="Two-doses RZV")))
+    facet_grid(.~Arm, labeller = labeller(Arm = c("Vac_1d"="Single-dose RZV", "Vac_2d"="Two-doses RZV")))
 
   ggsave(g_ce, file = output_file("Fig_RZV_ICER_" + ve_type + ".png"), width = 9, height = 4)
   

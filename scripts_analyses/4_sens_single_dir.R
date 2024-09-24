@@ -172,9 +172,4 @@ g_sens_ce
 
 ggsave(g_sens_ce, filename = here::here("docs", "figs", "g_sens_ce.png"), width = 9, height = 4)
 
-
-
-
-
-
-
+ 

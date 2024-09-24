@@ -69,7 +69,7 @@ vaccine <- bind_rows(
     pivot_wider()
 ) %>% 
   mutate(
-    nd = ifelse(endsWith(Arm, "1"), 1, 2),
+    nd = ifelse(endsWith(Arm, "1d"), 1, 2),
     Price = dC_VacRZV_d / dN_VacRZV_d,
     fac = nd / dN_VacRZV_d,
     across(starts_with("d"), \(x) x * fac)
@@ -93,9 +93,9 @@ ce0 <- profile %>%
       T ~ ""
     ),
     Arm = case_when(
-      Eligibility %in% c("New2023", "SOC") ~ "Vac",
-      Eligibility %in% c("ZVL_85", "ZVL_90") ~ "ReVac_RZV1",
-      Eligibility %in% c("UV_85", "UV_95") ~ "Vac1",
+      Eligibility %in% c("New2023", "SOC") ~ "Vac_2d",
+      Eligibility %in% c("ZVL_85", "ZVL_90") ~ "ReVac_RZV_1d",
+      Eligibility %in% c("UV_85", "UV_95") ~ "Vac_1d",
       T ~ NA
     ) 
   ) %>% 

@@ -97,7 +97,7 @@ load_inputs_nic <- function(discount_costs = 0.035, discount_effects = 0.035,
   
   ## Parameters: Vaccination -----
   load(here::here("pars", ve_lor))
-  lor_re <- 0
+  #lor_re <- 0
   
   
   load(here::here("pars", ve_zvl))
@@ -214,7 +214,7 @@ load_inputs_ic <- function(discount_costs = 0.035, discount_effects = 0.035,
 
   ## Parameters: Vaccination -----
   load(here::here("pars", ve_lor))
-  lor_re <- 0
+  #lor_re <- 0
   
   load(here::here("pars", ve_zvl))
   pars$VE_ZVL <- sample_table(pars_ve_zvl %>% filter(!IC), n_sims) %>%
