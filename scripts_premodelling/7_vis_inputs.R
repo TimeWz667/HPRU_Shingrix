@@ -142,6 +142,78 @@ gs$g_epi <- ggarrange(
 gs$g_epi
 
 
+# Comparison plots with Rosello & Jit report to JCVI, 2018
+# Incidence of cases in primary care
+dp1 <- read_csv(here::here("data", "previous", "2019_fig1.csv"))
+g_comp_gp <- Epi_HZ %>% 
+  filter(IC == 0) %>% 
+  ggplot() +
+  stat_interval(aes(x = Age, y = r_hz)) +
+  geom_ribbon(data = dp1, aes(x = Age, ymin = lower, ymax = upper), fill = "#ec3", alpha = 0.5) +
+  geom_line(data = dp1, aes(x = Age, y = middle), colour = "#440") +
+  geom_pointinterval(data = epi_hz %>% filter(IC == 0), aes(x = Age, y = M, ymin = L, ymax = U)) +
+  scale_colour_brewer() +
+  scale_y_continuous("Incidence HZ per 1,000", labels = scales::number_format(scale = 1e3), breaks = c(0, 2, 4, 6, 8, 10, 12) * 0.001) +
+  expand_limits(y = 0) +
+  theme(legend.position = "none")
+
+# Proportion with PHN
+dp4 <-read_csv(here::here("data", "previous", "2019_fig4.csv"))
+g_comp_phn <- Epi_HZ %>% 
+  filter(IC == 0) %>% 
+  ggplot() +
+  stat_interval(aes(x = Age, y = p_phn)) +
+  geom_ribbon(data = dp4, aes(x = Age, ymin = lower, ymax = upper), fill = "#ec3", alpha = 0.5) +
+  geom_line(data = dp4, aes(x = Age, y = middle), colour = "#440") +
+  geom_pointinterval(data = epi_phn %>% filter(IC == 0), aes(x = Age, y = M, ymin = L, ymax = U)) +
+  scale_colour_brewer() +
+  scale_y_continuous("Postherpetic neuralgia, %", labels = scales::percent) +
+  expand_limits(y = 0) +
+  theme(legend.position = "none")
+
+# Hospitalisation
+dp2 <- read_csv(here::here("data", "previous", "2019_fig2.csv"))
+dp2 <- dp2[!is.na(dp2$middle), ]
+g_comp_hosp <- Epi_HZ %>% 
+  filter(IC == 0) %>% 
+  ggplot() +
+  stat_interval(aes(x = Age, y = r_hz * (1 - p_gp))) +
+  geom_ribbon(data = dp2, aes(x = Age, ymin = lower, ymax = upper), fill = "#ec3", alpha = 0.5) +
+  geom_line(data = dp2, aes(x = Age, y = middle), colour = "#440") +
+  scale_colour_brewer() +
+  scale_y_continuous("Hospitalization HZ per 100,000", labels = scales::number_format(scale = 1e5)) +
+  expand_limits(y = 0) +
+  theme(legend.position = "none")
+
+
+# Mortality: not simulated in previous report
+g_comp_mort <- local({
+  load(here::here("data", "processed_epi", "Epi_HZ_NIC_CPRD_bind.rdata"))
+  Epi_HZ %>% 
+    select(Key, Age, r_mor_hz) %>% 
+    filter(Age >= 50)
+}) %>% 
+  ggplot(aes(x = Age, y = r_mor_hz)) +
+  stat_lineribbon(.width = c(.99, .95, .8, .5), color = "#08519C") +
+  scale_y_continuous("Mortality HZ per 100,000", labels = scales::number_format(scale = 1e5)) +
+  expand_limits(y = 0) +
+  scale_fill_brewer() +
+  theme(legend.position = "none")
+
+g_comp <- ggarrange(
+  g_comp_gp   + labs(subtitle = "(A)"),
+  g_comp_phn  + labs(subtitle = "(B)"),
+  g_comp_hosp + labs(subtitle = "(C)"),
+  g_comp_mort + labs(subtitle = "(D)"),
+  nrow = 2, ncol = 2, align = "v"
+)
+
+ggsave(g_comp, filename = here::here("outputs", "figs", "g_epi_nic_comp.png"), width = 7.5, height = 6.8)
+
+
+
+
+
 load("D:/Projects/HPRU/Shingrix/Analyses/data/processed_demography/Population_ONS.rdata")
 demo <- demo_ons %>% filter(Location == "England") %>% 
   filter(Age < 100) %>% 
