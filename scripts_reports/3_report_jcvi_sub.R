@@ -67,6 +67,19 @@ for (ve_type in c("realworld", "trial")) {
   g_tp
   ggsave(g_tp, file = output_file("Fig_RZV_Thres_" + ve_type + ".png"), width = 9, height = 4)
   
+  g_tpn <- stats_ce %>%
+    ggplot(aes(x = Agp0)) +
+    geom_point(aes(y = ThresNorm20_50, colour = "50% CE given 20,000 WTP")) +
+    geom_point(aes(y = ThresNorm30_90, colour = "90% CE given 30,000 WTP")) +
+    scale_y_continuous("Threshold price, per adminstration") +
+    scale_x_discrete("Age of RZV vaccination") +
+    scale_colour_discrete("Scenario") +
+    expand_limits(y = c(0, 200)) +
+    facet_grid(.~Arm, labeller = labeller(Arm = c("Vac_1d"="Single-dose RZV", "Vac_2d"="Two-doses RZV")))
+  
+  g_tpn
+  ggsave(g_tpn, file = output_file("Fig_RZV_ThresNorm_" + ve_type + ".png"), width = 9, height = 4)
+  
   
   
   ## [Fig 3] Incremental cost-effectiveness ratios (ICERs) of RZV revaccination for ZVL covered population by age of revaccination.  (cohort models)
@@ -117,6 +130,25 @@ for (ve_type in c("realworld", "trial")) {
   g_tp
   
   ggsave(g_tp, file = output_file("Fig_ZVL2RZV_Thres_" + ve_type + ".png"), width = 9, height = 6)
+  
+  g_tpn <- stats_ce %>%
+    filter(Age0 %in% c(70, 75)) %>% 
+    mutate(
+      a0 = paste0("Age of ZVL vaccination: ", Age0)
+    ) %>% 
+    ggplot(aes(x = Age1)) +
+    geom_point(aes(y = ThresNorm20_50, colour = "50% CE given 20,000 WTP")) +
+    geom_point(aes(y = ThresNorm30_90, colour = "90% CE given 30,000 WTP")) +
+    scale_y_continuous("Threshold price, per adminstration") +
+    scale_x_discrete("Age of RZV vaccination") +
+    scale_colour_discrete("Scenario") +
+    expand_limits(y = c(0, 200)) +
+    facet_grid(a0~Arm, labeller = labeller(Arm = c("ReVac_RZV_1d"="Single-dose RZV", "ReVac_RZV_2d"="Two-doses RZV")))
+  
+  g_tpn
+  
+  ggsave(g_tpn, file = output_file("Fig_ZVL2RZV_ThresNorm_" + ve_type + ".png"), width = 9, height = 6)
+  
   
   
   stats_ce <- read_csv(here::here("docs", "tabs", "stats_ce_5yr_rzv_" + ve_type + ".csv")) %>% 

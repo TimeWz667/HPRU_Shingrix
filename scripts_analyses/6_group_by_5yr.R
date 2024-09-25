@@ -76,6 +76,8 @@ for (ve_type in c("realworld", "trial")) {
         Price0 = dC_VacRZV_d / dN_VacRZV_d,
         Thres20 = (dQ_All_d * 2e4 - dC_Med_d) / dN_VacRZV_d,
         Thres30 = (dQ_All_d * 3e4 - dC_Med_d) / dN_VacRZV_d,
+        ThresNorm20 = ((dQ_Life_d + dQ_HZ_Norm_d) * 2e4 - dC_Med_d) / dN_VacRZV_d,
+        ThresNorm30 = ((dQ_Life_d + dQ_HZ_Norm_d) * 3e4 - dC_Med_d) / dN_VacRZV_d,
       ) 
     
   })
@@ -87,10 +89,13 @@ for (ve_type in c("realworld", "trial")) {
     summarise(
       across(everything(), amlu),
       Thres20_50 = median(Thres20, na.rm = T),
-      Thres30_90 = quantile(Thres30, 0.1, na.rm = T)
+      Thres30_90 = quantile(Thres30, 0.1, na.rm = T),
+      ThresNorm20_50 = median(ThresNorm20, na.rm = T),
+      ThresNorm30_90 = quantile(ThresNorm30, 0.1, na.rm = T)
     ) %>% 
     mutate(
-      Thres = pmin(Thres20_50, Thres30_90)
+      Thres = pmin(Thres20_50, Thres30_90),
+      ThresNorm = pmin(ThresNorm20_50, ThresNorm30_90)
     )
   
   write_csv(stats_ce, file = here::here("docs", "tabs", "stats_ce_5yr_rzv_" + ve_type + ".csv"))
@@ -175,6 +180,8 @@ for (ve_type in c("realworld", "trial")) {
         Price0 = dC_VacRZV_d / dN_VacRZV_d,
         Thres20 = (dQ_All_d * 2e4 - dC_Med_d) / dN_VacRZV_d,
         Thres30 = (dQ_All_d * 3e4 - dC_Med_d) / dN_VacRZV_d,
+        ThresNorm20 = ((dQ_Life_d + dQ_HZ_Norm_d) * 2e4 - dC_Med_d) / dN_VacRZV_d,
+        ThresNorm30 = ((dQ_Life_d + dQ_HZ_Norm_d) * 3e4 - dC_Med_d) / dN_VacRZV_d,
       )
   })
   
@@ -185,10 +192,13 @@ for (ve_type in c("realworld", "trial")) {
     summarise(
       across(everything(), amlu),
       Thres20_50 = median(Thres20),
-      Thres30_90 = quantile(Thres30, 0.1)
+      Thres30_90 = quantile(Thres30, 0.1),
+      ThresNorm20_50 = median(ThresNorm20, na.rm = T),
+      ThresNorm30_90 = quantile(ThresNorm30, 0.1, na.rm = T)
     ) %>% 
     mutate(
-      Thres = pmin(Thres20_50, Thres30_90)
+      Thres = pmin(Thres20_50, Thres30_90),
+      ThresNorm = pmin(ThresNorm20_50, ThresNorm30_90)
     )
   
   write_csv(stats_ce, file = here::here("docs", "tabs", "stats_ce_5yr_zvl2rzv_" + ve_type + ".csv"))

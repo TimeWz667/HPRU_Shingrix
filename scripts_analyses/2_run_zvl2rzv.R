@@ -59,7 +59,7 @@ for (ve_type in c("trial", "realworld")) {
   
   ## Simulation -----
   keys <- 1:pars_set$N_Sims
-  keys <- keys[1:100]
+  #keys <- keys[1:100]
   
   yss <- list()
   
@@ -68,7 +68,7 @@ for (ve_type in c("trial", "realworld")) {
   for(k in keys) {
     pars <- get_pars(pars_set, k)
     
-    for (age0 in 70:79) {
+    for (age0 in c(70, 75)) {
       yss[[length(yss) + 1]] <- a_run(pars, age0 = age0) %>% mutate(Key = k)
     }
     setTxtProgressBar(pb, k)

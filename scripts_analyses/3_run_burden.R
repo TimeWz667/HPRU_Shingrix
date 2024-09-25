@@ -113,7 +113,7 @@ make_profile <- function(df) {
     group_by(Eligibility, Agp) %>% 
     summarise(
       across(starts_with("d"), \(x) sum(x * N_Uptake)),
-      N_Doses = sum(N_Uptake * ifelse(endsWith(Arm, "1"), 1, 2)),
+      N_Doses = sum(N_Uptake * ifelse(endsWith(Arm, "1d"), 1, 2)),
       N = sum(N),
       N_Uptake = sum(N_Uptake),
       Arm = paste(unique(Arm), collapse = "")
