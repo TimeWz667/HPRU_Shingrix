@@ -265,3 +265,20 @@ ggsave(gs$g_demo, filename = here::here("outputs", "figs", "g_demo_nic.png"), wi
 
 
 
+gs$g_nlm_c_hosp_nic_50plus <- local({
+  load(here::here("data", "processed_ce", "Cost_Hospitalisation_NIC.rdata"))
+  
+  Cost_Hospitalisation_HZ %>% 
+    filter(Age >= 50) %>% 
+    ggplot(aes(x = Age, y = Hospitalisation_costs_pp_HZ )) +
+    stat_lineribbon(.width = c(.99, .95, .8, .5), color = "#08519C") +
+    scale_y_continuous("HZ-related hospitalisation cost \nper patient, GBP") +
+    expand_limits(y = 0) +
+    scale_fill_brewer()
+
+})
+
+ggsave(gs$g_nlm_c_hosp_nic_50plus + theme(legend.position = "none"), filename = here::here("outputs", "figs", "g_hosp_cost.png"), width = 4, height = 3)
+
+
+
