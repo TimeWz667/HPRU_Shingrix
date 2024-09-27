@@ -90,19 +90,19 @@ ce0 <- profile %>%
       Age < 85 ~ "ZVL_85",
       Age < 95 & TimeVac == -1 ~ "UV_95",
       Age < 95 ~ "ZVL_90",
-      T ~ ""
+      T ~ "UV_100"
     ),
     Arm = case_when(
       Eligibility %in% c("New2023", "SOC") ~ "Vac_2d",
       Eligibility %in% c("ZVL_85", "ZVL_90") ~ "ReVac_RZV_1d",
-      Eligibility %in% c("UV_85", "UV_95") ~ "Vac_1d",
+      Eligibility %in% c("UV_85", "UV_95", "UV_100") ~ "Vac_1d",
       T ~ NA
     ) 
   ) %>% 
   filter(!is.na(Arm)) %>% 
   left_join(vaccine) %>% 
   mutate(
-    Eligibility = factor(Eligibility, c("New2023", "SOC", "ZVL_85", "UV_85", "ZVL_90", "UV_95", ""))
+    Eligibility = factor(Eligibility, c("New2023", "SOC", "ZVL_85", "UV_85", "ZVL_90", "UV_95", "UV_100"))
   ) %>% 
   arrange(Eligibility)
 
@@ -113,7 +113,7 @@ make_profile <- function(df) {
     group_by(Eligibility, Agp) %>% 
     summarise(
       across(starts_with("d"), \(x) sum(x * N_Uptake)),
-      N_Doses = sum(N_Uptake * ifelse(endsWith(Arm, "1"), 1, 2)),
+      N_Doses = sum(N_Uptake * ifelse(endsWith(Arm, "1d"), 1, 2)),
       N = sum(N),
       N_Uptake = sum(N_Uptake),
       Arm = paste(unique(Arm), collapse = "")
