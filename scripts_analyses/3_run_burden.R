@@ -150,17 +150,19 @@ tab_programme <- tab_programme1 <- ce0 %>%
 write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_cont.csv"))
 
 
-# tab_programme <- tab_programme1 <- ce0 %>% 
-#   mutate(
-#     N_Uptake = N * case_when(
-#       Age %in% c(65, 70, 80) ~ pred1$pars$p_initial,
-#       Age < 80 ~ pred1$pars$p_catchup,
-#       T ~ 0
-#     )
-#   ) %>% 
-#   make_profile()
-# 
-# write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_call80.csv"))
+
+tab_programme <- tab_programme12 <- ce0 %>% 
+  mutate(
+    N_Uptake = N * ifelse(Age %in% c(65, 70), pred1$pars$p_initial, pred1$pars$p_catchup),
+    Arm = case_when(
+      Arm == "Vac_1d" ~ "Vac_2d",
+      Arm == "ReVac_RZV_1d" ~ "ReVac_RZV_2d",
+      T ~ Arm
+    ) 
+  ) %>% 
+  make_profile()
+
+write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_cont_2d.csv"))
 
 
 tab_programme <- tab_programme2 <- ce0 %>% 
@@ -173,10 +175,18 @@ write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_call80_cont.c
 
 
 
-# tab_programme0 %>% tail(5)
-tab_programme1 %>% tail(5)
-tab_programme2 %>% tail(5)
+tab_programme <- tab_programme22 <- ce0 %>% 
+  mutate(
+    N_Uptake = N * ifelse(Age %in% c(65, 70, 80), pred1$pars$p_initial, pred1$pars$p_catchup),
+    Arm = case_when(
+      Arm == "Vac_1d" ~ "Vac_2d",
+      Arm == "ReVac_RZV_1d" ~ "ReVac_RZV_2d",
+      T ~ Arm
+    ) 
+  ) %>% 
+  make_profile()
 
+write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_call80_cont_2d.csv"))
 
 
 
