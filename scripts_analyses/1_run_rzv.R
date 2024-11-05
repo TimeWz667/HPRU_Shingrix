@@ -15,14 +15,14 @@ a_run <- function(pars, age0) {
       mutate(Arm = "SOC")
     
     df1 <- populate(age0, pars) %>% 
-      vaccinate(age0, "RZV", pars) %>% 
+      vaccinate(age0, "RZV_2d", pars) %>% 
       run_to_end(pars) %>% 
       append_ce(pars) %>% 
       summarise(pars) %>% 
       mutate(Arm = "Vac_2d")
     
     df2 <- populate(age0, pars) %>% 
-      vaccinate(age0, "ReRZV1", pars) %>% 
+      vaccinate(age0, "ReRZV_1d", pars) %>% 
       run_to_end(pars) %>% 
       append_ce(pars) %>% 
       summarise(pars) %>% 
