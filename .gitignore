@@ -53,6 +53,7 @@ pars/pars_ve_zvl_*.rdata
 pars/pars_ic.rdata
 pars/pars_nic.rdata
 pars/parset_*.rdata
+pars/pars_base*.rdata
 
 # Temp files during HTML generation
 figure/
