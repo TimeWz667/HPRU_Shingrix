@@ -1,255 +1,243 @@
 
 
-projection <- function(pars, year0 = 2013, year1 = 2050) {
-  
-}
+model_proj <- list()
+class(model_proj) <- "model_proj"
 
 
-pars <- tar_read(pars_proj)
-
-
-p_uptake <- pars$pars_proj_c334c586f7cb2b6d_Uptake
-p_demo <- pars$pars_proj_c334c586f7cb2b6d_Demography
-
-
-p_uptake
-
-
-n0 <- tibble(Year = 2013, Age = 50:100, Vaccine = "None", Prop = 1)
-
-
-
-strategy_null <- function(df, p_uptake, year) {
-  require(tidyverse)
-  return(df %>% mutate(eli = NA, p_uptake = 0))
-}
-
-
-strategy_zvl <- function(df, p_uptake, year) {
-  require(tidyverse)
-  p_ini <- p_uptake$p_initial
-  p_cat <- p_uptake$p_catchup
-  
-  df <- df %>% 
-    mutate(
-      eli = case_when(
-        Vaccine != "None" ~ NA,
-        Age < 70 ~ NA,
-        Age < 80 ~ "ZVL",
-        T ~ NA
-      ),
-      p_uptake = case_when(
-        is.na(eli) ~ 0,
-        Age == 70 ~ p_ini,
-        T ~ p_cat
-      )
-    )
+model_proj$uptaking <- function(df, yr, strategy, pars_uptake) {
+  df <- df %>% strategy(pars_uptake, yr)
+  if ((df %>% filter(!is.na(eli)) %>% nrow()) <= 0) {
+    return(df)
+  }
+  df <- bind_rows(
+    df %>% filter(is.na(eli)),
+    df %>% filter(!is.na(eli)) %>% 
+      mutate(
+        Prop_n = Prop * (1 - p_uptake), 
+        Prop_v = Prop * p_uptake
+      ) %>% 
+      pivot_longer(c(Prop_n, Prop_v)) %>% 
+      mutate(
+        Prop = value,
+        TimeVac = case_when(
+          name == "Prop_n" ~ TimeVac,
+          Vaccine == eli ~ TimeVac,
+          T ~ 1
+        ),
+        Vaccine = ifelse(name == "Prop_n", Vaccine, eli)
+      ) %>% 
+      select(-c(name, value))
+  ) %>% 
+    select(-c(eli, p_uptake)) %>% 
+    arrange(Year, Age)
   
   return(df)
 }
 
 
-strategy_changeonly <- function(df, p_uptake, year) {
-  require(tidyverse)
-  p_ini <- p_uptake$p_initial
-  p_cat <- p_uptake$p_catchup
-  
+model_proj$ageing <- function(df, yr, age0, age1) {
   df <- df %>% 
     mutate(
-      eli = case_when(
-        Vaccine != "None" ~ NA,
-        Age < 70 ~ NA,
-        Age < 80 ~ ifelse(yr < 2023, "ZVL", "RZV_2d"),
-        T ~ NA
-      ),
-      p_uptake = case_when(
-        is.na(eli) ~ 0,
-        Age == 70 ~ p_ini,
-        T ~ p_cat
-      )
-    )
+      Age = Age + 1,
+      TimeVac = ifelse(TimeVac > 0, TimeVac + 1, TimeVac),
+      Year = yr
+    ) %>% 
+    filter(Age <= age1) %>%       
+    bind_rows(
+      tibble(Year = yr, Age = age0, Vaccine = "None", TimeVac = -1, Prop = 1)
+    ) %>% 
+    arrange(Age)
   
   return(df)
 }
 
 
-strategy_scheduled <- function(df, p_uptake, year) {
+a_projection <- function(pars, strategy, year0 = 2013, year1 = 2050, age0 = 0, age1 = 100) {
   require(tidyverse)
-  p_ini <- p_uptake$p_initial
-  p_cat <- p_uptake$p_catchup
+
+  # pars <- tar_read(pars_proj)
+  # names(pars) <- gsub("pars_proj_c334c586f7cb2b6d_", "", names(pars))
+  # 
+  p_uptake <- pars$Uptake
+  p_demo <- pars$Demography
   
-  if (year < 2023) {
-    df <- df %>% 
-      mutate(
-        eli = case_when(
-          Vaccine != "None" ~ NA,
-          Age < 70 ~ NA,
-          Age < 80 ~ "ZVL",
-          T ~ NA
-        ),
-        p_uptake = case_when(
-          is.na(eli) ~ 0,
-          Age == 70 ~ p_ini,
-          T ~ p_cat
-        )
-      )
-  } else if (year < 2028) {
-    df <- df %>% 
-      mutate(
-        eli = case_when(
-          Vaccine != "None" ~ NA,
-          Age < 65 ~ NA,
-          Age >= 80 ~ NA,
-          Age >= 70 ~ "RZV_2d",
-          Age < (65 + year - 2023) ~ "RZV_2d",
-          T ~ NA
-        ),
-        p_uptake = case_when(
-          is.na(eli) ~ 0,
-          Age %in% c(65, 70) ~ p_ini,
-          T ~ p_cat
-        )
-      )
-  } else if (year < 2033) {
-    df <- df %>% 
-      mutate(
-        eli = case_when(
-          Vaccine != "None" ~ NA,
-          Age < 60 ~ NA,
-          Age >= 80 ~ NA,
-          Age >= 65 ~ "RZV_2d",
-          Age < (60 + year - 2028) ~ "RZV_2d",
-          T ~ NA
-        ),
-        p_uptake = case_when(
-          is.na(eli) ~ 0,
-          Age %in% c(60, 65) ~ p_ini,
-          T ~ p_cat
-        )
-      )
-  } else {
-    df <- df %>% 
-      mutate(
-        eli = case_when(
-          Vaccine != "None" ~ NA,
-          Age < 60 ~ NA,
-          Age < 80 ~ "RZV_2d",
-          T ~ NA
-        ),
-        p_uptake = case_when(
-          is.na(eli) ~ 0,
-          Age == 60 ~ p_ini,
-          T ~ p_cat
-        )
-      )
-  }
+  population <- with(model_proj, {
+    yr <- year0
+    pop <- tibble(Year = yr, Age = age0:age1, Vaccine = "None", TimeVac = -1, Prop = 1) 
+    pop <- pop %>% uptaking(yr = yr, strategy = strategy, pars_uptake = p_uptake)
+    
+    collector <- pop
+    
+    while (yr < year1) {
+      yr <- yr + 1
+      pop <- pop %>% 
+        ageing(yr, age0, age1) %>% 
+        uptaking(yr = yr, strategy = strategy, pars_uptake = p_uptake)
+      collector <- collector %>% bind_rows(pop)
+      # print(nrow(collector))
+    }
+  
+    collector
+  }) %>% 
+  left_join(p_demo$N, by = c("Year", "Age")) %>%
+  mutate(
+    N = N * Prop
+  ) %>% 
+  select(-Prop)
+    
+  
+  ves_rzv <- bind_rows(
+    pars$VE_RZV_2d,
+    pars$VE_RZV_1d,
+    pars$VE_ReRZV_2d,
+    pars$VE_ReRZV_1d,
+  )
+  
+  ves_zvl <- pars$VE_ZVL
+  
+#  population <- population %>% crossing(Key = 1:100)
+  population <- population %>% crossing(Key = 1:pars$N_Sims)
+  
+  vaccinated <- bind_rows(
+    population %>% 
+      filter(Vaccine == "ZVL") %>% 
+      left_join(ves_zvl, by = c("Key", "Age", "Vaccine", "TimeVac")),
+    population %>% 
+      filter(Vaccine == "None") %>% 
+      mutate(Protection = 0),
+    population %>% 
+      filter(!(Vaccine %in% c("ZVL", "None"))) %>% 
+      left_join(ves_rzv, by = c("Key", "Vaccine", "TimeVac"))
+  ) %>% 
+    mutate(
+      N_Uptake_ZVL = ifelse((TimeVac == 1) * (Vaccine == "ZVL"), N, 0),
+      N_Uptake_RZV = ifelse((TimeVac == 1) * endsWith(Vaccine, "RZV_1d"), N, 0) +
+                     ifelse((TimeVac == 1) * endsWith(Vaccine, "RZV_2d"), 2 * N, 0),
+      N_Covered_ZVL = ifelse((TimeVac == 1) * (Vaccine == "ZVL"), N, 0),
+      N_Covered_RZV = ifelse((TimeVac == 1) * !(Vaccine %in% c("None", "ZVL")), N, 0),
+                            
+    ) %>% 
+    group_by(Key, Year, Age) %>% 
+    summarise(
+      Protection = weighted.mean(Protection, w = N),
+      across(starts_with("N"), sum)
+    ) %>% 
+    ungroup()
+
+  
+  sims <- vaccinated %>% 
+    left_join(p_demo$DeathIm %>% select(Year, Age, r_mor_bg = r_death), by = c("Year", "Age")) %>% 
+    inner_join(pars$Epidemiology, by = c("Key", "Age")) %>% 
+    mutate(
+      r_mor = (1 - Protection) * r_mor_hz + r_mor_bg,
+      p_mor_hz = (1 - Protection) * r_mor_hz * (1 - exp(- r_mor)) / r_mor,
+      N_HZ = (1 - Protection) * r_hz * N,
+      N_HZ_GP = p_gp * N_HZ,
+      N_HZ_Hosp = N_HZ - N_HZ_GP,
+      N_HZ_PHN = p_phn * N_HZ,
+      N_HZ_PHN_GP = p_gp * N_HZ_PHN,
+      N_HZ_Death = p_mor_hz * N_HZ
+    ) %>% 
+    select(-starts_with(c("r_", "p_")))
+  
+  
+  yss_agp <- sims %>% 
+    filter(Age >= 60 & Age < 100) %>% 
+    mutate(
+      Agp = cut(Age, seq(60, 100, 5), right = F)
+    ) %>% 
+    group_by(Key, Year, Agp) %>% 
+    summarise(
+      Protection = weighted.mean(Protection, N),
+      across(starts_with("N"), sum)
+    ) %>% 
+    mutate(
+      Coverage_ZVL = N_Covered_ZVL / N,
+      Coverage_RZV = N_Covered_RZV / N,
+      Coverage = Coverage_ZVL + Coverage_RZV,
+      IncR_HZ = N_HZ / N,
+      IncR_HZ_Hosp = N_HZ_Hosp  / N,
+      IncR_HZ_PHN = N_HZ_PHN / N,
+      MorR_HZ = N_HZ_Death / N
+    ) %>% 
+    ungroup()
+  
+  yss_68 <- sims %>% 
+    filter(Age >= 60 & Age < 100) %>% 
+    mutate(
+      Agp = ifelse(Age < 80, "60_80", "80+")
+    ) %>% 
+    group_by(Key, Year, Agp) %>% 
+    summarise(
+      Protection = weighted.mean(Protection, N),
+      across(starts_with("N"), sum)
+    ) %>% 
+    mutate(
+      Coverage_ZVL = N_Covered_ZVL / N,
+      Coverage_RZV = N_Covered_RZV / N,
+      Coverage = Coverage_ZVL + Coverage_RZV,
+      IncR_HZ = N_HZ / N,
+      IncR_HZ_Hosp = N_HZ_Hosp  / N,
+      IncR_HZ_PHN = N_HZ_PHN / N,
+      MorR_HZ = N_HZ_Death / N
+    ) %>% 
+    ungroup()
+  
+  yss_all <- sims %>% 
+    filter(Age >= 60 & Age < 100) %>% 
+    group_by(Key, Year) %>% 
+    summarise(
+      Protection = weighted.mean(Protection, N),
+      across(starts_with("N"), sum)
+    ) %>% 
+    mutate(
+      Agp = "All",
+      Coverage_ZVL = N_Covered_ZVL / N,
+      Coverage_RZV = N_Covered_RZV / N,
+      Coverage = Coverage_ZVL + Coverage_RZV,
+      IncR_HZ = N_HZ / N,
+      IncR_HZ_Hosp = N_HZ_Hosp  / N,
+      IncR_HZ_PHN = N_HZ_PHN / N,
+      MorR_HZ = N_HZ_Death / N
+    ) %>% 
+    ungroup()
+  
+  return(list(
+    vtype = pars$vtype,
+    Yss_Agp = yss_agp,
+    Yss_68 = yss_68,
+    Yss_All = yss_all
+  ))
+  
 }
 
 
-strategy_scheduled65 <- function(df, p_uptake, year) strategy_scheduled(df, p_uptake, min(year, 2027))
-
-
-strategy_scheduled_o1d <- function(df, p_uptake, year, year0 = 2024, cap_age = 85) {
-  require(tidyverse)
-  p_ini <- p_uptake$p_initial
-  p_cat <- p_uptake$p_catchup
+exec_projection <- function(pars, year1 = 2050) {
+  res = list(
+    "Null" = a_projection(pars, strategy_null, year0 = 2013, year1 = year1, age0 = 50, age1 = 100),
+    "Stay" = a_projection(pars, strategy_zvl, year0 = 2013, year1 = year1, age0 = 50, age1 = 100),
+    "ToRZV" = a_projection(pars, strategy_changeonly, year0 = 2013, year1 = year1, age0 = 50, age1 = 100),
+    "Sch65" = a_projection(pars, strategy_scheduled65, year0 = 2013, year1 = year1, age0 = 50, age1 = 100),
+    "Sch" = a_projection(pars, strategy_scheduled, year0 = 2013, year1 = year1, age0 = 50, age1 = 100),
+    "Sch1d85" = a_projection(pars, strategy_scheduled_1d85, year0 = 2013, year1 = year1, age0 = 50, age1 = 100),
+    "Sch1d95" = a_projection(pars, strategy_scheduled_1d95, year0 = 2013, year1 = year1, age0 = 50, age1 = 100),
+    "Sch2d85" = a_projection(pars, strategy_scheduled_2d85, year0 = 2013, year1 = year1, age0 = 50, age1 = 100),
+    "Sch2d95" = a_projection(pars, strategy_scheduled_2d95, year0 = 2013, year1 = year1, age0 = 50, age1 = 100)
+  )
   
   
-  sch <- strategy_scheduled(df, p_uptake, year)
+  yss_agp = lapply(names(res), \(k) res[[k]]$Yss_Agp %>% mutate(Scenario = k)) %>% bind_rows() 
+  yss_68 = lapply(names(res), \(k) res[[k]]$Yss_68 %>% mutate(Scenario = k)) %>% bind_rows() 
+  yss_all = lapply(names(res), \(k) res[[k]]$Yss_All %>% mutate(Scenario = k)) %>% bind_rows() 
   
-  if (year >= year0) { 
-    sch <- sch %>% 
-      mutate(
-        eli = case_when(
-          !is.na(eli) ~ eli,
-          Age < 80 ~ NA,
-          Age >= cap_age ~ NA,
-          Vaccine == "None" ~ "RZV_1d",
-          T ~ "ReRZV_1d"
-        ),
-        p_uptake = case_when(
-          p_uptake > 0 ~ p_uptake,
-          is.na(eli) ~ 0,
-          Age == 80 ~ p_ini,
-          T ~ p_cat
-        )
-      )
-  }
-  sch
+  return(list(
+    vtype = pars$vtype,
+    Year1 = year1,
+    Yss_Agp = yss_agp,
+    Yss_68 = yss_68,
+    Yss_All = yss_all
+  ))
 }
-
-
-strategy_scheduled_o2d <- function(df, p_uptake, year, year0 = 2024, cap_age = 85) {
-  require(tidyverse)
-  p_ini <- p_uptake$p_initial
-  p_cat <- p_uptake$p_catchup
-  
-  
-  sch <- strategy_scheduled(df, p_uptake, year)
-  
-  if (year >= year0) { 
-    sch <- sch %>% 
-      mutate(
-        eli = case_when(
-          !is.na(eli) ~ eli,
-          Age < 80 ~ NA,
-          Age >= cap_age ~ NA,
-          Vaccine == "None" ~ "RZV_2d",
-          T ~ "ReRZV_2d"
-        ),
-        p_uptake = case_when(
-          p_uptake > 0 ~ p_uptake,
-          is.na(eli) ~ 0,
-          Age == 80 ~ p_ini,
-          T ~ p_cat
-        )
-      )
-  }
-  sch
-}
-
-
-strategy_scheduled_1d85 <- function(df, p_uptake, year) strategy_scheduled_o1d(df, p_uptake, year, year0 = 2024, cap_age = 85) 
-strategy_scheduled_1d <- function(df, p_uptake, year) strategy_scheduled_o1d(df, p_uptake, year, year0 = 2024, cap_age = 101) 
-
-strategy_scheduled_2d85 <- function(df, p_uptake, year) strategy_scheduled_o2d(df, p_uptake, year, year0 = 2024, cap_age = 85) 
-strategy_scheduled_2d <- function(df, p_uptake, year) strategy_scheduled_o2d(df, p_uptake, year, year0 = 2024, cap_age = 101) 
-
-
-
-
-
-
-
-
-up <- lapply(2013:2050, \(year) {
-  crossing(Age = 50:100, Vaccine = c("None", "ZVL", "RZV_2d"))  %>% 
-    strategy_scheduled(p_uptake, year) %>% 
-    mutate(Year = year)
-}) %>% 
-  bind_rows()
-
-up %>% 
-  filter(Age >= 60) %>% 
-  filter(Year == 2034) %>% 
-  filter(!is.na(eli))
-
-
-
-up <- lapply(2013:2050, \(year) {
-  crossing(Age = 50:100, Vaccine = c("None", "ZVL", "RZV_2d"))  %>% 
-    strategy_scheduled_1d(p_uptake, year) %>% 
-    mutate(Year = year)
-}) %>% 
-  bind_rows()
-
-
-up %>% 
-  filter(Age >= 79) %>% 
-  filter(Year == 2027) %>% 
-  filter(!is.na(eli))
-
-
 
 
 

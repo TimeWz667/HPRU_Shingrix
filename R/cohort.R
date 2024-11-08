@@ -196,7 +196,7 @@ a_run_re <- function(keys, pars, age0, age1s) {
       df %>% mutate(Scenario = "Overall"),
       age1s %>% lapply(\(age1){
         df %>% 
-          filter(Arm == "SOC" | Age1 == age1) %>% 
+          filter(Arm %in% c("SOC", "Vac") | Age1 == age1) %>% 
           filter(Age >= age1) %>% 
           mutate(Scenario = "Second_" + glue::as_glue(age1))
       })
@@ -227,7 +227,7 @@ exec_cohort_rzv <- function(pars, age0s) {
 
 exec_cohort_rerzv <- function(pars, age0s, age1s) {
   keys <- 1:pars$N_Sims
-  
+
   pb <- txtProgressBar(min = min(age0s), max = max(age0s), style = 3,  width = 50, char = "=") 
   
   yss <- age0s %>% 

@@ -150,7 +150,7 @@ load_inputs <- function(pars_ce, vtype=c("rw", "tr"),
       Protection = apply_lor(Protection, lor_re + lor_single) 
     )
   
-  if (vtype == "rw") {
+  if (vtype != "rw") {
     pars$VE_RZV_2d <- pars$VE_RZV_2d %>% mutate(Protection = apply_lor(Protection, -lor_rw))
     pars$VE_RZV_1d <- pars$VE_RZV_1d %>% mutate(Protection = apply_lor(Protection, -lor_rw))
     pars$VE_ReRZV_2d <- pars$VE_ReRZV_2d %>% mutate(Protection = apply_lor(Protection, -lor_rw))
