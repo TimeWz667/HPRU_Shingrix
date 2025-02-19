@@ -5,7 +5,7 @@ vis_proj <- function(stats_proj, prefix, ext = ".png") {
   gs <- list()
   
   tags <- c(
-    "Null" = "No vaccine",
+    "Null" = "No vaccine for HZ",
     "Stay" = "No new programme (keep ZVL)",
     "ToRZV" = "(1) Replace ZVL by RZV",
     "Sch65" = "(2) = (1) + RZV to 65 from 2028",
