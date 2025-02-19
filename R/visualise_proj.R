@@ -60,6 +60,11 @@ vis_proj <- function(stats_proj, prefix, ext = ".png") {
     facet_grid(.~Agp, labeller = labeller(Agp = c("60_80" = "Aged 60 - 80", "80+" = "Aged 80+"))) +
     expand_limits(y = 0)
   
+  gs$g_inc_bind <- ggpubr::ggarrange(
+    gs$g_inc_all + labs(subtitle = "(A)") + theme(legend.position = "None"),
+    gs$g_inc_68 + labs(subtitle = "(B)") + theme(legend.position = "right"),
+    nrow = 2, common.legend = F
+  )
   
   gs$g_avt_sch <- stats_proj[[4]] %>%
     filter(Year <= 2040 & Year >= 2022) %>%
@@ -86,10 +91,12 @@ vis_proj <- function(stats_proj, prefix, ext = ".png") {
     scale_colour_discrete("Scenario", labels = tags) +
     guides(colour = guide_legend(reverse = T))
   
+
   
   ggsave(gs$g_inc_all, filename = here::here("docs", "figs", paste0(prefix, "_inc_all", ext)), width = 6, height = 4)  
   ggsave(gs$g_inc_agp, filename = here::here("docs", "figs", paste0(prefix, "_inc_agp", ext)), width = 15, height = 4)  
   ggsave(gs$g_inc_68, filename = here::here("docs", "figs", paste0(prefix, "_inc_68", ext)), width = 8, height = 4)  
+  ggsave(gs$g_inc_bind, filename = here::here("docs", "figs", paste0(prefix, "_inc_bind", ext)), width = 8, height = 7)  
   ggsave(gs$g_avt_sch, filename = here::here("docs", "figs", paste0(prefix, "_avt_sch", ext)), width = 6, height = 4)  
   ggsave(gs$g_avt_old, filename = here::here("docs", "figs", paste0(prefix, "_avt_oo", ext)), width = 6, height = 4)  
   
