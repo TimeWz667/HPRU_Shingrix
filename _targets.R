@@ -53,13 +53,13 @@ list(
 
   tar_target(gs_proj, vis_proj(stats_proj, paste0("g_proj_", vtype)), pattern = map(stats_proj, vtype)),
 
-  ## Outputing
+  ## Output
   tar_target(f_p_base, save_pars(pars_base, f = here::here("pars", paste0("pars_base_", dis, "_", vtype, ".rdata"))),
-             pattern = map(pars_base, cross(vtype, dis)), format = "file")
+             pattern = map(pars_base, cross(vtype, dis)), format = "file"),
   
   
   ## Sensitivity analyses
-  
+  tar_target(g_psa_price, sens_price(yss_uv, paste0(dis, "_", vtype)), pattern = map(yss_uv, cross(vtype, dis)))
 
 
 )
