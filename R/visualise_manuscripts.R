@@ -56,6 +56,7 @@ vis_thres <- function(stats_uv, stats_re, prefix, ext = ".png") {
     expand_limits(y = c(0, 200)) +
     theme(legend.position = "bottom", axis.text.x = element_text(angle = 60, hjust = 1))
   
+  
   ggsave(gs$g_panel, filename = here::here("docs", "figs", paste0(prefix, "_panel", ext)), width = 12, height = 5)
   
 }
