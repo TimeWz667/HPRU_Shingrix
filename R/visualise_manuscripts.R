@@ -149,9 +149,9 @@ vis_thres <- function(stats_uv, stats_re, prefix, ext = ".png") {
   
   ggsave(gs$g_panel, filename = here::here("docs", "figs", pre + "thres_panel" + ext), width = 12, height = 5)
   
-  ggsave(gs$g_wf, filename = here::here("docs", "figs", pre + "rzv_waterfall_" + ext), width = 8, height = 7.5)
-  ggsave(gs$g_comp_stack, filename = here::here("docs", "figs", pre + "rzv_mb_stack_" + ext), width = 8, height = 5.5)
-  ggsave(gs$g_comp_fill, filename = here::here("docs", "figs", pre + "rzv_mb_fill_" + ext), width = 8, height = 5.5)
+  ggsave(gs$g_wf, filename = here::here("docs", "figs", pre + "rzv_waterfall" + ext), width = 8, height = 7.5)
+  ggsave(gs$g_comp_stack, filename = here::here("docs", "figs", pre + "rzv_mb_stack" + ext), width = 8, height = 5.5)
+  ggsave(gs$g_comp_fill, filename = here::here("docs", "figs", pre + "rzv_mb_fill" + ext), width = 8, height = 5.5)
   
   
   return(gs)

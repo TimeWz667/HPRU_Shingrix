@@ -59,7 +59,7 @@ list(
   
   
   ## Sensitivity analyses
-  tar_target(g_psa_price, sens_price(yss_uv, paste0(dis, "_", vtype)), pattern = map(yss_uv, cross(vtype, dis)))
-
+  tar_target(g_psa_price, sens_price(yss_uv, paste0(dis, "_", vtype)), pattern = map(yss_uv, cross(vtype, dis))),
+  tar_target(g_sens_ce, sens_ce(yss_uv, paste0(dis, "_", vtype)), pattern = map(yss_uv, cross(vtype, dis)))
 
 )

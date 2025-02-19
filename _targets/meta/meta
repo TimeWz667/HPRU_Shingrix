@@ -78,13 +78,6 @@ stats_re_cf37bcb24be56e4d|branch|79ec2ceec43e638a|0217227418de0914|78e8c71aa3dbc
 stats_re|pattern|d2f9d48f676ae595|0217227418de0914||812629445||||4109213|rds|local|vector||stats_re_101b22ead2898109*stats_re_bb253103e21d280a*stats_re_ceb1a549c01175aa*stats_re_83096e35a1c3c245*stats_re_318a21477b258631*stats_re_cf37bcb24be56e4d|76.09||
 yss_proj_3ce36ec664bd14c0|branch|99982f7437959d18|92bbf63f384c3913|d84eb9bd1015c106|-1896846816||t20138.8061622414s|s302381482b|302381482|rds|local|vector|yss_proj||438.8||
 yss_proj_f4bbd7a5e9065565|branch|3de4dfde08ea725f|92bbf63f384c3913|525c3a03e1de3b5d|280269877||t20138.811396385s|s302606228b|302606228|rds|local|vector|yss_proj||442.05||
-gs_thres_b298d53739ad0f84|branch|2f4d01050ef8101e|f3d745f75458e8fe|ae84c74bfe9fe0a7|860043346||t20138.8454910245s|s1077104b|1077104|rds|local|vector|gs_thres||1.23|Ignoring unknown aesthetics x|
-gs_thres_44545b467be39011|branch|80008ad4879088d9|f3d745f75458e8fe|bf97d6cb3b554e04|-1454766006||t20138.8455047093s|s1360886b|1360886|rds|local|vector|gs_thres||0.98|Ignoring unknown aesthetics x|
-gs_thres_89b22ab683160b55|branch|25ca86f590f9dfe5|f3d745f75458e8fe|201507579e2dd48b|1908596690||t20138.8455181927s|s1361462b|1361462|rds|local|vector|gs_thres||0.97|Ignoring unknown aesthetics x|
-gs_thres_5aeabf11742bdd27|branch|6f461879de60cfd0|f3d745f75458e8fe|ea0ed40ce51e9132|-2003964565||t20138.845532198s|s1077238b|1077238|rds|local|vector|gs_thres||1.02|Ignoring unknown aesthetics x|
-gs_thres_28359249b3c34b69|branch|01294c9d6167792f|f3d745f75458e8fe|f9d4823ac13f4af8|-274928193||t20138.8455473715s|s1361564b|1361564|rds|local|vector|gs_thres||1.13|Ignoring unknown aesthetics x|
-gs_thres_615aa7ab0c8bbe5e|branch|e4a29c76034993b0|f3d745f75458e8fe|36dd72b1d4b3e70a|723687893||t20138.8455601988s|s1362059b|1362059|rds|local|vector|gs_thres||0.9|Ignoring unknown aesthetics x|
-gs_thres|pattern|5229d88ae765fe19|f3d745f75458e8fe||-258532320||||7600313|rds|local|vector||gs_thres_b298d53739ad0f84*gs_thres_44545b467be39011*gs_thres_89b22ab683160b55*gs_thres_5aeabf11742bdd27*gs_thres_28359249b3c34b69*gs_thres_615aa7ab0c8bbe5e|6.23||
 gs_proj_f380148e302b2897|branch|c058b24e678b2049|a6183818bc4f1dfc|733c7e1dd9a4087c|31929556||t20138.8652342631s|s2123158b|2123158|rds|local|vector|gs_proj||1.45||
 gs_proj_df1a7da9d490a7dd|branch|ed580466240577c0|a6183818bc4f1dfc|01a86e7a8269b164|-1928721682||t20138.8652523764s|s2122923b|2122923|rds|local|vector|gs_proj||1.26||
 gs_proj|pattern|0fac595f87a91d2f|a6183818bc4f1dfc||-999626388||||4246081|rds|local|vector||gs_proj_f380148e302b2897*gs_proj_df1a7da9d490a7dd|2.71||
@@ -94,6 +87,7 @@ strategy_null|function|dbeab201195748c0
 strategy_scheduled|function|72c024b47830877c
 strategy_zvl|function|d94962a9fe78f53e
 m_cohort|object|9fdfe2327916a5a5
+sens_ce|function|4bc65b5f4aefc7ec
 sample_table|function|45e0b3b7f99b33a7
 strategy_scheduled_old|function|f0d16d9619f5a5f1
 vis_proj|function|f2a7d4f26a7a2b9c
@@ -104,9 +98,9 @@ save_pars|function|81e33fc9b03b2e40
 compile_zvl|function|1ba2c946044561c8
 apply_lor|function|fa7d8b4c65690e9f
 load_inputs_background|function|6c7f623466b4b463
-vis_thres|function|5f371772b1dc9421
+vis_thres|function|41116cfc5fa2872c
 get_pars|function|4a950a34d8fcc1fd
-sens_price|function|bdbc0fbe0838c4e9
+sens_price|function|6e0048542c8d36c1
 strategy_scheduled65|function|9b0229d79242a206
 a_run_re|function|3c389a2f12dd219e
 a_run_uv|function|19cd79c5a421b2a0
@@ -126,10 +120,24 @@ load_inputs|function|d61b4a79f59bc22f
 exec_cohort_rerzv|function|b81c757ea131c033
 exec_cohort_rzv|function|3f940e08ea6224eb
 exec_projection|function|738e2a8d6376ab84
-g_psa_price_6fac9f44b30cb685|branch|0c4d10ad6c286278|355a9ae2579b7a89|65e0b79526bf3eeb|-1826212033||t20138.9497273544s|s29160706b|29160706|rds|local|vector|g_psa_price||3.41|A numeric legend.position argument in theme was deprecated in ggplot23.5.0.ℹ Please use the legend.position.inside argument of theme instead.|
-g_psa_price_167880278381efbc|branch|dcd163fbff57bd93|355a9ae2579b7a89|ce443ba06ecf1a8c|-1014484784||t20138.9497719149s|s29201224b|29201224|rds|local|vector|g_psa_price||2.24||
-g_psa_price_2c8d08e008d46b91|branch|03b3eb0ee7332727|355a9ae2579b7a89|9a765763a1248e39|444353367||t20138.9498112127s|s29188299b|29188299|rds|local|vector|g_psa_price||1.97||
-g_psa_price_1638403482b4b6b5|branch|243e5dd4f80b005f|355a9ae2579b7a89|050c1f1d16f086f2|-792977861||t20138.9498530657s|s29219385b|29219385|rds|local|vector|g_psa_price||2.22||
-g_psa_price_279f5472f32c34a1|branch|b0fd34d0eb91912c|355a9ae2579b7a89|24bfbf355311db8a|-916990714||t20138.9498952708s|s29251198b|29251198|rds|local|vector|g_psa_price||2.23||
-g_psa_price_82e86e4cc5766099|branch|70df3e9e59afc786|355a9ae2579b7a89|7e8f2fda6aa5f9ed|-1819973943||t20138.949936097s|s29245139b|29245139|rds|local|vector|g_psa_price||2.12||
-g_psa_price|pattern|920416fcadfeb4b9|355a9ae2579b7a89||1800022873||||175265951|rds|local|vector||g_psa_price_6fac9f44b30cb685*g_psa_price_167880278381efbc*g_psa_price_2c8d08e008d46b91*g_psa_price_1638403482b4b6b5*g_psa_price_279f5472f32c34a1*g_psa_price_82e86e4cc5766099|14.19||
+g_psa_price_6fac9f44b30cb685|branch|e3f60afb39ee8fb8|355a9ae2579b7a89|f841e5234da98937|-1826212033||t20138.9961620091s|s29160701b|29160701|rds|local|vector|g_psa_price||3.38|A numeric legend.position argument in theme was deprecated in ggplot23.5.0.ℹ Please use the legend.position.inside argument of theme instead.|
+g_psa_price_167880278381efbc|branch|322d641f2fe045f0|355a9ae2579b7a89|9e010d0cb7f4a2b4|-1014484784||t20138.9962062654s|s29201223b|29201223|rds|local|vector|g_psa_price||2.23||
+g_psa_price_2c8d08e008d46b91|branch|203ac1027aa6aa83|355a9ae2579b7a89|9179a4bff7dce977|444353367||t20138.9962473394s|s29188302b|29188302|rds|local|vector|g_psa_price||2.09||
+g_psa_price_1638403482b4b6b5|branch|170d6228599d98cc|355a9ae2579b7a89|0c25169a43887135|-792977861||t20138.9962920368s|s29219384b|29219384|rds|local|vector|g_psa_price||2.43||
+g_psa_price_279f5472f32c34a1|branch|524e8b0c65177d08|355a9ae2579b7a89|b14186b4231d2ed0|-916990714||t20138.9963349644s|s29251195b|29251195|rds|local|vector|g_psa_price||2.3||
+g_psa_price_82e86e4cc5766099|branch|f1eea028adaa4088|355a9ae2579b7a89|4bf20a7b21cfdf4c|-1819973943||t20138.9963762844s|s29245142b|29245142|rds|local|vector|g_psa_price||2.16||
+g_psa_price|pattern|9e1efb184da1b6ef|355a9ae2579b7a89||1800022873||||175265947|rds|local|vector||g_psa_price_6fac9f44b30cb685*g_psa_price_167880278381efbc*g_psa_price_2c8d08e008d46b91*g_psa_price_1638403482b4b6b5*g_psa_price_279f5472f32c34a1*g_psa_price_82e86e4cc5766099|14.59||
+g_sens_ce_6fac9f44b30cb685|branch|42aa7f82c206bfec|c35b771296ede006|36d0dd87d0cb7e4a|-813074042||t20138.996429401s|s38972064b|38972064|rds|local|vector|g_sens_ce||2.67|Ignoring unknown aesthetics y|
+g_sens_ce_167880278381efbc|branch|8c6b2be8cceb0517|c35b771296ede006|77e7ec5d80ba4859|-185688616||t20138.9964819913s|s38971475b|38971475|rds|local|vector|g_sens_ce||2.56|Ignoring unknown aesthetics y|
+g_sens_ce_2c8d08e008d46b91|branch|7e1c161384cbb189|c35b771296ede006|66f6f2e799eac296|-829003060||t20138.9965318471s|s38953191b|38953191|rds|local|vector|g_sens_ce||2.41|Ignoring unknown aesthetics y|
+g_sens_ce_1638403482b4b6b5|branch|c1a5a75565e985ad|c35b771296ede006|52ec92ca6193df6f|-1440578236||t20138.9965823633s|s39014944b|39014944|rds|local|vector|g_sens_ce||2.48|Ignoring unknown aesthetics y|
+g_sens_ce_279f5472f32c34a1|branch|d534c60cb03be784|c35b771296ede006|84427c65db5cfea3|-1695548942||t20138.9966328497s|s39012286b|39012286|rds|local|vector|g_sens_ce||2.42|Ignoring unknown aesthetics y|
+g_sens_ce_82e86e4cc5766099|branch|daa619a8e9673905|c35b771296ede006|5c6da41710ac0e2a|812651430||t20138.9966833623s|s38996690b|38996690|rds|local|vector|g_sens_ce||2.49|Ignoring unknown aesthetics y|
+g_sens_ce|pattern|0a08bfa23d30dc4c|c35b771296ede006||278367185||||233920650|rds|local|vector||g_sens_ce_6fac9f44b30cb685*g_sens_ce_167880278381efbc*g_sens_ce_2c8d08e008d46b91*g_sens_ce_1638403482b4b6b5*g_sens_ce_279f5472f32c34a1*g_sens_ce_82e86e4cc5766099|15.03||
+gs_thres_b298d53739ad0f84|branch|66b80f23c94e38e6|f3d745f75458e8fe|17d707fee76b5f82|860043346||t20138.9966979893s|s1077107b|1077107|rds|local|vector|gs_thres||1.05|Ignoring unknown aesthetics x|
+gs_thres_44545b467be39011|branch|f60506f2d678a3d7|f3d745f75458e8fe|d814072e000c78e6|-1454766006||t20138.9967114189s|s1360889b|1360889|rds|local|vector|gs_thres||0.96|Ignoring unknown aesthetics x|
+gs_thres_89b22ab683160b55|branch|1fbb5786637feed6|f3d745f75458e8fe|2bb99af1da0e4406|1908596690||t20138.9967249246s|s1361467b|1361467|rds|local|vector|gs_thres||0.95|Ignoring unknown aesthetics x|
+gs_thres_5aeabf11742bdd27|branch|70893b5cc07edd83|f3d745f75458e8fe|421c04e422aaf90a|-2003964565||t20138.9967387728s|s1077242b|1077242|rds|local|vector|gs_thres||1|Ignoring unknown aesthetics x|
+gs_thres_28359249b3c34b69|branch|9180b033b36492ec|f3d745f75458e8fe|f8b354442222f9d3|-274928193||t20138.9967531815s|s1361569b|1361569|rds|local|vector|gs_thres||1.05|Ignoring unknown aesthetics x|
+gs_thres_615aa7ab0c8bbe5e|branch|bc5ed8b75557ac89|f3d745f75458e8fe|fc9f44d4c58a559b|723687893||t20138.9967669997s|s1362062b|1362062|rds|local|vector|gs_thres||0.98|Ignoring unknown aesthetics x|
+gs_thres|pattern|8f884b4dcbf402c7|f3d745f75458e8fe||-258532320||||7600336|rds|local|vector||gs_thres_b298d53739ad0f84*gs_thres_44545b467be39011*gs_thres_89b22ab683160b55*gs_thres_5aeabf11742bdd27*gs_thres_28359249b3c34b69*gs_thres_615aa7ab0c8bbe5e|5.99||

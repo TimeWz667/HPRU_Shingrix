@@ -58,7 +58,7 @@ sens_price <- function(yss_uv, prefix, ext = ".png") {
   
   pre <- "g_" + glue::as_glue(prefix) + "_"
   
-  ggsave(g_psa, filename = here::here("docs", "figs", pre + "sens_price_" + ext), width = 8, height = 5.5)
+  ggsave(g_psa, filename = here::here("docs", "figs", pre + "sens_price" + ext), width = 8, height = 5.5)
   
   return(g_psa)
   
