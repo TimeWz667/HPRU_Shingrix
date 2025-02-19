@@ -39,26 +39,23 @@ list(
   ## Cohort model
   tar_target(yss_uv, exec_cohort_rzv(pars_base, age0s = 50:99), pattern = map(pars_base)),
   tar_target(yss_re, exec_cohort_rerzv(pars_base, age0s = seq(60, 75, 5), age1s = 80:99), pattern = map(pars_base)),
-  
-  ## Long-term projection
-  tar_target(yss_proj, exec_projection(pars_proj), pattern = map(pars_proj)), 
-  
-  
-  ## Summarise results
+
   tar_target(stats_uv, summarise_cohort(yss_uv, paste0("tab_uv_", dis, "_", vtype)), pattern = map(yss_uv, cross(vtype, dis))),
   tar_target(stats_re, summarise_cohort_re(yss_re, paste0("tab_re_", dis, "_", vtype)), pattern = map(yss_re, cross(vtype, dis))),
   
   tar_target(gs_thres, vis_thres(stats_uv, stats_re, paste0("g_thres_", dis, "_", vtype)), pattern = map(stats_uv, stats_re, cross(vtype, dis))),
   
   
-  tar_target(stats_proj, summarise_proj(yss_proj, paste0("tab_proj_", vtype)), pattern = map(yss_proj, vtype)),
-  
-  tar_target(gs_proj, vis_proj(stats_proj, paste0("g_proj_", vtype)), pattern = map(stats_proj, vtype)),
-  
+  ## Long-term projection
+  tar_target(yss_proj, exec_projection(pars_proj), pattern = map(pars_proj)),
+
+  # tar_target(stats_proj, summarise_proj(yss_proj, paste0("tab_proj_", vtype)), pattern = map(yss_proj, vtype)),
+  # 
+  # tar_target(gs_proj, vis_proj(stats_proj, paste0("g_proj_", vtype)), pattern = map(stats_proj, vtype)),
+  # 
   ## Outputing
-  tar_target(f_p_base, save_pars(pars_base, f = here::here("pars", paste0("pars_base_", dis, "_", vtype, ".rdata"))), 
+  tar_target(f_p_base, save_pars(pars_base, f = here::here("pars", paste0("pars_base_", dis, "_", vtype, ".rdata"))),
              pattern = map(pars_base, cross(vtype, dis)), format = "file")
-  ## 
   
   
   ## Sensitivity analyses

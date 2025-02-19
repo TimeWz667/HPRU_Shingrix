@@ -63,7 +63,7 @@ load_inputs_ce <- function(pars_epi, dis_e, dis_c) {
   load(here::here("data", "processed_ce", "Cost_GP_Gauthier.rdata"))
   # load(here::here("data", "processed_ce", "QOL_LE.rdata"))
   cost_vac <- read_csv(here::here("data", "processed_ce", "Cost_Vac.csv"))
-  QL <- read_csv(here::here("data", "processed_ce", "QALY_loss_sims_uk.csv"))
+  QL <- read_csv(here::here("data", "processed_ce", "QALY_loss_sims_uk_b.csv"))
   QL <- sample_table(QL, n_sims)
   
   if (dis_e >= 0.035) {
