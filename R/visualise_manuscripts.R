@@ -57,8 +57,104 @@ vis_thres <- function(stats_uv, stats_re, prefix, ext = ".png") {
     theme(legend.position = "bottom", axis.text.x = element_text(angle = 60, hjust = 1))
   
   
-  ggsave(gs$g_panel, filename = here::here("docs", "figs", paste0(prefix, "_panel", ext)), width = 12, height = 5)
+  ## Composition
+  labs_comp <- c(
+    "dQ_HZ_d" = "HZ prevention",
+    "dQ_Life_d" = "Survival", 
+    "dC_GP_d" = "GP care",
+    "dC_Hosp_d" = "Hospitialisation",
+    "dC_VacRZV_d" = "Vaccination"
+  )
   
+  labs_arm <- c(RZV_2d = "Two doses", RZV_1d = "Single dose")
+  
+  waterfall <- stats_uv[[2]] %>% 
+    select(Scenario, Age0, Arm, Index, M) %>% 
+    filter(Index %in% c(names(labs_comp), "dN_VacRZV_d", "dQ_HZ_d")) %>% 
+    pivot_wider(names_from = Index, values_from = M) %>%
+    mutate(
+      #dC_GP_d = dC_GP_NonPHN_d + dC_GP_PHN_d,
+      Thres = (2e4 * (dQ_HZ_d + dQ_Life_d) - dC_Hosp_d - dC_GP_d) / dN_VacRZV_d,
+      dC_VacRZV_d = Thres * dN_VacRZV_d
+    ) %>% 
+    select(Age0, Arm, dQ_HZ_d, dQ_Life_d, dC_Hosp_d, dC_GP_d, dC_VacRZV_d) %>% 
+    pivot_longer(-c(Age0, Arm), names_to = "Index") %>% 
+    mutate(
+      Arm = factor(Arm, c("RZV_1d", "RZV_2d")),
+      Type = ifelse(startsWith(Index, "dQ"), "QoL", "Cost"),
+      Index = factor(Index, names(labs_comp)),
+      id = as.numeric(Index),
+      MB = ifelse(Type == "QoL", value * 2e4, -value)
+    )
+  
+  
+  
+  gs$g_wf <- waterfall %>% 
+    group_by(Age0, Arm) %>% 
+    arrange(Index) %>% 
+    mutate(
+      y1 = cumsum(MB),
+      y0 = c(0, y1[-n()]),
+      Direction = ifelse(MB > 0, "Beneficial", "Harmful")
+    ) %>% 
+    filter(Age0 %in% c(70, 80)) %>% 
+    ggplot() +
+    geom_rect(aes(x = Index, xmin = id - 0.4, xmax = id + 0.4, ymin = y0, ymax = y1, fill = Direction), alpha = 0.5) +
+    geom_segment(aes(x=ifelse(id == last(id), last(id) - 0.5, id - 0.4), 
+                     xend=ifelse(id == last(id), last(id) + 0.5, id + 1.4), 
+                     y=y1, 
+                     yend=y1)) +
+    geom_hline(yintercept = 0, linetype = 2) +
+    geom_vline(xintercept = 2.5) +
+    annotate("text", x = 2.3, y = 10, label = "QoL", hjust = 1) +
+    annotate("text", x = 2.7, y = 10, label = "Cost", hjust = 0) +
+    scale_y_continuous("Net monetary benefit (WTP = 20,000 GBP)") + 
+    scale_x_discrete("Source", labels = labs_comp) +
+    facet_grid(Age0~Arm, labeller = labeller(
+      Arm = c(Vac_2d = "Two doses", Vac_1d = "Single dose"),
+      Age0 = c("70" = "Vaccinated at 70 YOA", "80" = "Vaccinated at 80 YOA")
+    )) +
+    theme(axis.text.x = element_text(angle = 30, hjust = 1))
+  
+  
+  gs$g_comp_stack <- waterfall %>% 
+    group_by(Age0, Arm) %>% 
+    filter(Index != "dC_VacRZV_d") %>% 
+    #mutate(Index = fct_rev(Index)) %>% 
+    filter(Age0 <= 95) %>% 
+    ggplot(aes(x = Age0)) +
+    geom_bar(aes(y = MB, fill = Index), stat = "identity", position = "stack", colour = NA, width = 1) +
+    scale_y_continuous("Monetary benefit in GBP") +
+    scale_fill_discrete("Components", labels = labs_comp) +
+    facet_grid(.~Arm, labeller = labeller(Arm = labs_arm)) +
+    scale_x_continuous("Age of vaccination") +
+    labs(caption = "1 QALY = 20,000 GBP")
+  
+  
+  gs$g_comp_fill <- waterfall %>% 
+    group_by(Age0, Arm) %>% 
+    filter(Index != "dC_VacRZV_d") %>% 
+    #mutate(Index = fct_rev(Index)) %>% 
+    filter(Age0 <= 95) %>% 
+    ggplot(aes(x = Age0)) +
+    geom_bar(aes(y = MB, fill = Index), stat = "identity", position = "fill", colour = NA, width = 1) +
+    scale_fill_discrete("Components", labels = labs_comp) +
+    scale_y_continuous("Share of monetary benefit, %", labels = scales::percent) +
+    facet_grid(.~Arm, labeller = labeller(Arm = labs_arm)) +
+    scale_x_continuous("Age of vaccination") +
+    labs(caption = "1 QALY = 20,000 GBP")
+  
+  
+  pre <- "g_" + glue::as_glue(prefix) + "_"
+  
+  ggsave(gs$g_panel, filename = here::here("docs", "figs", pre + "thres_panel" + ext), width = 12, height = 5)
+  
+  ggsave(gs$g_wf, filename = here::here("docs", "figs", pre + "rzv_waterfall_" + ext), width = 8, height = 7.5)
+  ggsave(gs$g_comp_stack, filename = here::here("docs", "figs", pre + "rzv_mb_stack_" + ext), width = 8, height = 5.5)
+  ggsave(gs$g_comp_fill, filename = here::here("docs", "figs", pre + "rzv_mb_fill_" + ext), width = 8, height = 5.5)
+  
+  
+  return(gs)
 }
 
 
