@@ -126,10 +126,11 @@ summarise_cohort_re <- function(yss, prefix) {
 
   
   ss$stats_ce <- yss_diff %>% 
-    select(-N0) %>% 
+    #select(-N0) %>% 
     group_by(Scenario, Age0, Age1, Arm, Year0) %>% 
     select(-Key) %>% 
     summarise(
+      N0 = mean(N0),
       across(everything(), amlu),
       Thres20_50_M = median(Thres20, na.rm = T),
       Thres30_90_M = quantile(Thres30, 0.1, na.rm = T)
