@@ -52,19 +52,6 @@ sel_cols <- c("dRisk_HZ", "dQ_All_d", "dC_All_d", "dC_Med_d", "dC_VacRZV_d", "dN
 n_all <- profile %>% 
   group_by(Agp) %>% 
   summarise(N_All = sum(N))
-
-
-stats_ce %>% 
-  filter(Index %in% sel_cols) %>% 
-  select(Age = Age0, Arm, N0, name = Index, value = M) %>% 
-  pivot_wider()
-
-stats_cer %>% 
-  filter(Scenario != "Overall") %>% 
-  mutate(TimeVac = Age1 - Age0) %>% 
-  filter(Index %in% sel_cols) %>% 
-  select(Age = Age1, Arm, TimeVac, name = Index, value = M) %>% 
-  pivot_wider()
   
 
 vaccine <- bind_rows(
@@ -112,7 +99,6 @@ ce0 <- profile %>%
     ) 
   ) %>% 
   filter(!is.na(Arm)) %>% 
-  left_join(vaccine) %>% 
   mutate(
     Eligibility = factor(Eligibility, c("New2023", "SOC", "ZVL_85", "UV_85", "ZVL_90", "UV_95", "UV_100"))
   ) %>% 
@@ -153,53 +139,55 @@ make_profile <- function(df) {
 
 uptake <- pars_proj$Uptake
 
-tab_programme <- tab_programme1 <- ce0 %>% 
+tab_programme11 <- ce0 %>% 
   mutate(
     N_Uptake = N * ifelse(Age %in% c(65, 70), uptake$p_initial, uptake$p_catchup)
   ) %>% 
+  left_join(vaccine) %>% 
   make_profile()
 
-write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_cont.csv"))
 
-
-
-tab_programme <- tab_programme12 <- ce0 %>% 
+tab_programme12 <- ce0 %>% 
   mutate(
     N_Uptake = N * ifelse(Age %in% c(65, 70), uptake$p_initial, uptake$p_catchup),
     Arm = case_when(
-      Arm == "Vac_1d" ~ "Vac_2d",
-      Arm == "ReVac_RZV_1d" ~ "ReVac_RZV_2d",
+      Arm == "RZV_1d" ~ "RZV_2d",
+      Arm == "ReRZV_1d" ~ "ReRZV_2d",
       T ~ Arm
     ) 
   ) %>% 
+  left_join(vaccine) %>% 
   make_profile()
 
-write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_cont_2d.csv"))
 
-
-tab_programme <- tab_programme2 <- ce0 %>% 
+tab_programme21 <- ce0 %>% 
   mutate(
     N_Uptake = N * ifelse(Age %in% c(65, 70, 80), uptake$p_initial, uptake$p_catchup)
   ) %>% 
+  left_join(vaccine) %>% 
   make_profile()
 
-write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_call80_cont.csv"))
 
-
-
-tab_programme <- tab_programme22 <- ce0 %>% 
+tab_programme22 <- ce0 %>% 
   mutate(
     N_Uptake = N * ifelse(Age %in% c(65, 70, 80), uptake$p_initial, uptake$p_catchup),
     Arm = case_when(
-      Arm == "Vac_1d" ~ "Vac_2d",
-      Arm == "ReVac_RZV_1d" ~ "ReVac_RZV_2d",
+      Arm == "RZV_1d" ~ "RZV_2d",
+      Arm == "ReRZV_1d" ~ "ReRZV_2d",
       T ~ Arm
     ) 
   ) %>% 
+  left_join(vaccine) %>% 
   make_profile()
 
-write_csv(tab_programme, here::here("docs", "tabs", "tab_programme_call80_cont_2d.csv"))
 
 
+tab_programme <- bind_rows(
+  tab_programme11 %>% mutate(Scenario = "Cont_1d"),
+  tab_programme12 %>% mutate(Scenario = "Cont_2d"),
+  tab_programme21 %>% mutate(Scenario = "Boost_1d"),
+  tab_programme22 %>% mutate(Scenario = "Boost_2d")
+)
 
+write_csv(tab_programme, here::here("docs", "tabs", "tab_programme.csv"))
 
