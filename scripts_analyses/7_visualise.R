@@ -266,38 +266,3 @@ ggsave(g_icer, filename = here::here("docs", "figs", "g_zvl2rzv_icer.png"), widt
 ggsave(g_thres, filename = here::here("docs", "figs", "g_zvl2rzv_thres.png"), width = 10, height = 5)
 
 
-
-
-## Programme-based profile
-profile <- read_csv(here::here("docs", "tabs", "tab_programme_cont.csv"))
-
-profile <- profile %>% 
-  mutate(
-    Group = paste(Eligibility, ifelse(Agp != "[80,85)", "", Agp)),
-    Group = factor(Group, rev(unique(Group)))
-  )
-
-
-g_pro <- profile %>% 
-  mutate(N = c(Prop_Doses[1], diff(Prop_Doses))) %>% 
-  select(Arm, Group, N, dC_Med_d, dQ_All_d) %>% 
-  pivot_longer(c(N, dC_Med_d, dQ_All_d)) %>% 
-  ggplot() +
-  geom_histogram(aes(x = abs(value), y = name, fill = Group), stat = "identity", position = "fill") +
-  scale_y_discrete("", labels = c(N = "Population", dC_Med_d="Medical cost", dQ_All_d="QALY")) +
-  scale_x_continuous("Shares, %", labels = scales::percent) +
-  # scale_fill_discrete("", labels = c(
-  #   "ZVL_85 [80,85)" = "Vaccinated with ZVL, 80-85",
-  #   "UV_85 [80,85)" = "Unvaccinated, 80-85",
-  #   "New2023 " = "2023-2028 eligibility",
-  #   "SOC " = "~2023 eligibility",
-  #   "SOC " = "~2023 eligibility"
-  # )) +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  theme(legend.position = "bottom")
-
-g_pro
-
-
-ggsave(g_pro, filename = here::here("docs", "figs", "g_profile_burden.png"), width = 8, height = 4)
-
