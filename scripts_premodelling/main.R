@@ -20,7 +20,7 @@ source(here::here("scripts", "4_2_fit_coverage.R"))
 source(here::here("scripts", "4_3_sim_immunity.R"))
 
 
-## Legacy realisations
+## Legacy simulations
 source(here::here("scripts", "5_1_run_shingrix_nic.R"))
 source(here::here("scripts", "5_2_run_shingrix_ic.R"))
 source(here::here("scripts", "5_3_run_zostavax_nic_aj.R"))

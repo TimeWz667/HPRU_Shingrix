@@ -18,8 +18,6 @@ dat_ve <- read_xlsx(here::here("data", "VE.xlsx"), sheet = 1) %>%
   )
 
 
-
-
 dat_ve %>% 
   ggplot() + 
   geom_pointrange(aes(x = Yr, y = M, ymax = U, ymin = L, colour = Source)) + 
@@ -30,7 +28,7 @@ dat_ve %>%
 fit_loglin <- lm(log(M) ~ Yr, data = dat_ve %>% filter(!Realworld))
 fit_step2<- lm(log(M) ~ Yr + (Yr >= 9), data = dat_ve %>% filter(!Realworld))
 
-fit_ce <- read_csv(here::here("pars", "sims_ve_rzv_zlgamma.csv")) %>% 
+fit_ce <- read_csv(here::here("pars", "sims_ve_rzv_zlg.csv")) %>% 
   group_by(Yr) %>% 
   summarise(f_ga = mean(VE))
 
