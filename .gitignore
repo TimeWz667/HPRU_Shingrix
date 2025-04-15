@@ -59,4 +59,7 @@ pars/parset_*.rdata
 figure/
 
 
+docs/tabs/.legacy
+docs/figs/.legacy
+
 
