@@ -139,7 +139,7 @@ m_cohort$summarise_ce <- function(df, pars) {
 }
 
 
-
+# single run for first-time vaccination
 a_run_uv <- function(keys, pars, age0) {
   with(m_cohort, {
     df <- populate(keys, pars, age0)
@@ -167,6 +167,7 @@ a_run_uv <- function(keys, pars, age0) {
 }
 
 
+# single run for revaccination
 a_run_re <- function(keys, pars, age0, age1s) {
   with(m_cohort, {
     df <- populate(keys, pars, age0) %>% mutate(Arm = "SOC", Age1 = NA)

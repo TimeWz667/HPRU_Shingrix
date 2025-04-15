@@ -1,6 +1,6 @@
 
 
-summarise_cohort <- function(yss, prefix) {
+summarise_cohort <- function(yss) {
   require(tidyverse)
 
   yss_diff <- local({
@@ -32,7 +32,7 @@ summarise_cohort <- function(yss, prefix) {
   
   ss <- list()
   
-  ss$stats_ys <- yss %>% 
+  ss$stats_uv_ys <- yss %>% 
     group_by(Scenario, Age0, Arm) %>% 
     select(-Key) %>% 
     summarise_all(amlu) %>% 
@@ -42,7 +42,7 @@ summarise_cohort <- function(yss, prefix) {
   
   
   
-  ss$stats_ce <- yss_diff %>% 
+  ss$stats_uv_ce <- yss_diff %>% 
     group_by(Scenario, Age0, Arm, Year0, N0) %>% 
     select(-Key) %>% 
     summarise(
@@ -57,16 +57,11 @@ summarise_cohort <- function(yss, prefix) {
     pivot_wider() %>% 
     ungroup()
   
-  
-  write_csv(ss$stats_ys, file = here::here("docs", "tabs", paste0(prefix, "_stats_ys.csv")))
-  write_csv(ss$stats_ce, file = here::here("docs", "tabs", paste0(prefix, "_stats_ce.csv")))
-  
-
   return(ss)
 }
 
 
-summarise_cohort_re <- function(yss, prefix) {
+summarise_cohort_re <- function(yss) {
   require(tidyverse)
   
   
@@ -116,7 +111,7 @@ summarise_cohort_re <- function(yss, prefix) {
   
   ss <- list()
   
-  ss$stats_ys <- yss %>% 
+  ss$stats_re_ys <- yss %>% 
     group_by(Scenario, Arm, Age0, Age1) %>% 
     select(-Key) %>% 
     summarise_all(amlu) %>% 
@@ -125,7 +120,7 @@ summarise_cohort_re <- function(yss, prefix) {
     ungroup()
 
   
-  ss$stats_ce <- yss_diff %>% 
+  ss$stats_re_ce <- yss_diff %>% 
     #select(-N0) %>% 
     group_by(Scenario, Age0, Age1, Arm, Year0) %>% 
     select(-Key) %>% 
@@ -141,21 +136,17 @@ summarise_cohort_re <- function(yss, prefix) {
     pivot_longer(ends_with(c("_A", "_M", "_L", "_U")), names_pattern = "(\\S+)_(A|M|L|U)", names_to = c("Index", "name")) %>% 
     pivot_wider() %>% 
     ungroup()
-    
 
-  write_csv(ss$stats_ys, file = here::here("docs", "tabs", paste0(prefix, "_stats_ys.csv")))
-  write_csv(ss$stats_ce, file = here::here("docs", "tabs", paste0(prefix, "_stats_ce.csv")))
-  
   return(ss)
 }
 
 
-summarise_proj <- function(yss, prefix) {
+summarise_proj <- function(yss) {
   require(tidyverse)
   
   ss <- list()
   
-  ss$Stats_All <- yss$Yss_All %>% 
+  ss$stats_proj_all <- yss$Yss_All %>% 
     select(-Key) %>% 
     group_by(Scenario, Year, Agp) %>% 
     summarise_all(amlu) %>% 
@@ -163,7 +154,7 @@ summarise_proj <- function(yss, prefix) {
     pivot_wider() %>% 
     ungroup()
   
-  ss$Stats_Agp <- yss$Yss_Agp %>% 
+  ss$stats_proj_agp <- yss$Yss_Agp %>% 
     select(-Key) %>% 
     group_by(Scenario, Year, Agp) %>% 
     summarise_all(amlu) %>% 
@@ -171,7 +162,7 @@ summarise_proj <- function(yss, prefix) {
     pivot_wider() %>% 
     ungroup()
   
-  ss$Stats_68 <- yss$Yss_68 %>% 
+  ss$stats_proj_68 <- yss$Yss_68 %>% 
     select(-Key) %>% 
     group_by(Scenario, Year, Agp) %>% 
     summarise_all(amlu) %>% 
@@ -184,7 +175,7 @@ summarise_proj <- function(yss, prefix) {
   
   yss_all <- yss$Yss_All
   
-  ss$Diff_ZVL <- yss_all %>% 
+  ss$diff_proj_zvl <- yss_all %>% 
     select(Scenario, Agp, Key, Year, N_HZ, N_HZ_Death, IncR_HZ, MorR_HZ) %>% 
     filter(!Scenario %in% c("Null")) %>% 
     left_join(yss_all %>% 
@@ -209,7 +200,7 @@ summarise_proj <- function(yss, prefix) {
     ungroup()
   
   
-  ss$Diff_Sch <- yss_all %>% 
+  ss$diff_proj_ch <- yss_all %>% 
     select(Scenario, Agp, Key, Year, N_HZ, N_HZ_Death, IncR_HZ, MorR_HZ) %>% 
     filter(Scenario %in% c("Sch", "Sch1d85", "Sch1d95", "Sch2d85", "Sch2d95")) %>% 
     left_join(yss_all %>% 
@@ -232,18 +223,26 @@ summarise_proj <- function(yss, prefix) {
     pivot_longer(ends_with(c("A", "M", "L", "U")), names_pattern = "(\\S+)_(A|M|L|U)", names_to = c("Index", "name")) %>% 
     pivot_wider() %>% 
     ungroup()
-  
-  
-  write_csv(ss$Stats_All, here::here("docs", "tabs", paste0(prefix, "_stats_all.csv")))
-  write_csv(ss$Stats_Agp, here::here("docs", "tabs", paste0(prefix, "_stats_agp.csv")))
-  write_csv(ss$Stats_68, here::here("docs", "tabs", paste0(prefix, "_stats_68.csv")))
-  write_csv(ss$Diff_ZVL, here::here("docs", "tabs", paste0(prefix, "_diff_zvl.csv")))
-  write_csv(ss$Diff_Sch, here::here("docs", "tabs", paste0(prefix, "_diff_sch.csv")))
-  
-  
-  f <- here::here("docs", "tabs", paste0(prefix, "_stats.rdata"))
-  save(ss, file = f)
+
   return(ss)
 }
 
 
+save_tabs <- function(ss, prefix = "", folder = NA) {
+  require(tidyverse)
+  
+  if (!is.na(folder)) {
+    root <- here::here("docs", "tabs", folder)
+    dir.create(root, showWarnings = F)
+  } else {
+    root <- here::here("docs", "tabs")
+  }
+  
+  if (prefix != "") {
+    prefix <- paste0(prefix, "_")
+  }
+  
+  for (key in names(ss)) {
+     write_csv(ss[[key]], here::here(root, paste0(prefix, key, ".csv")))
+  }
+}
