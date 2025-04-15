@@ -1,5 +1,5 @@
 
-vis_proj <- function(stats_proj, prefix, ext = ".png") {
+vis_proj <- function(stats_proj) {
   require(ggplot2)
   
   gs <- list()
@@ -17,7 +17,7 @@ vis_proj <- function(stats_proj, prefix, ext = ".png") {
   )
   
   
-  gs$g_inc_all <- stats_proj$Stats_All %>% 
+  gs$g_inc_all <- stats_proj$stats_proj_all %>% 
     filter(Index == "IncR_HZ") %>% 
     filter(Year <= 2040 & Year >= 2022) %>%
     filter(Scenario %in% c("Stay", "ToRZV", "Sch65", "Sch", "Sch1d85", "Sch2d85")) %>% 
@@ -31,7 +31,7 @@ vis_proj <- function(stats_proj, prefix, ext = ".png") {
     expand_limits(y = 0)
   
   
-  gs$g_inc_agp <- stats_proj[[2]] %>% 
+  gs$g_inc_agp <- stats_proj$stats_proj_agp %>% 
     filter(Index == "IncR_HZ") %>% 
     filter(Year <= 2040 & Year >= 2022) %>%
     filter(Scenario %in% c("Stay", "ToRZV", "Sch65", "Sch", "Sch1d85", "Sch2d85")) %>% 
@@ -46,7 +46,7 @@ vis_proj <- function(stats_proj, prefix, ext = ".png") {
     expand_limits(y = 0)
   
   
-  gs$g_inc_68 <- stats_proj[[3]] %>% 
+  gs$g_inc_68 <- stats_proj$stats_proj_68 %>% 
     filter(Index == "IncR_HZ") %>% 
     filter(Year <= 2040 & Year >= 2022) %>%
     filter(Scenario %in% c("Stay", "ToRZV", "Sch65", "Sch", "Sch1d85", "Sch2d85")) %>% 
@@ -66,7 +66,7 @@ vis_proj <- function(stats_proj, prefix, ext = ".png") {
     nrow = 2, common.legend = F
   )
   
-  gs$g_avt_sch <- stats_proj[[4]] %>%
+  gs$g_avt_sch <- stats_proj$diff_proj_zvl %>%
     filter(Year <= 2040 & Year >= 2022) %>%
     filter(Index == "Avt_Inc") %>%
     filter(Scenario %in% c("Stay", "ToRZV", "Sch65", "Sch")) %>% 
@@ -79,7 +79,7 @@ vis_proj <- function(stats_proj, prefix, ext = ".png") {
     guides(colour = guide_legend(reverse = T))
   
   
-  gs$g_avt_old <- stats_proj[[5]] %>%
+  gs$g_avt_old <- stats_proj$diff_proj_ch %>%
     filter(Year <= 2040 & Year >= 2022) %>%
     filter(Index == "Avt_Inc") %>%
     filter(Scenario %in% c("Sch", "Sch1d85", "Sch2d85", "Sch1d95", "Sch2d95")) %>% 
@@ -91,19 +91,35 @@ vis_proj <- function(stats_proj, prefix, ext = ".png") {
     scale_colour_discrete("Scenario", labels = tags) +
     guides(colour = guide_legend(reverse = T))
   
-
-  
-  ggsave(gs$g_inc_all, filename = here::here("docs", "figs", paste0(prefix, "_inc_all", ext)), width = 6, height = 4)  
-  ggsave(gs$g_inc_agp, filename = here::here("docs", "figs", paste0(prefix, "_inc_agp", ext)), width = 15, height = 4)  
-  ggsave(gs$g_inc_68, filename = here::here("docs", "figs", paste0(prefix, "_inc_68", ext)), width = 8, height = 4)  
-  ggsave(gs$g_inc_bind, filename = here::here("docs", "figs", paste0(prefix, "_inc_bind", ext)), width = 8, height = 7)  
-  ggsave(gs$g_avt_sch, filename = here::here("docs", "figs", paste0(prefix, "_avt_sch", ext)), width = 6, height = 4)  
-  ggsave(gs$g_avt_old, filename = here::here("docs", "figs", paste0(prefix, "_avt_oo", ext)), width = 6, height = 4)  
-  
   
   return(gs)
 }
 
+
+save_fig_proj <- function(gs, prefix = "", folder = NA, ext = ".pdf") {
+  require(tidyverse)
+  
+  if (!is.na(folder)) {
+    root <- here::here("docs", "figs", folder)
+    dir.create(root, showWarnings = F)
+  } else {
+    root <- here::here("docs", "figs")
+  }
+  
+  if (prefix != "") {
+    prefix <- glue::as_glue("g_") + prefix + "_"
+  } else {
+    prefix <- glue::as_glue("g_")
+  }
+  
+  ggsave(gs$g_inc_all, filename = here::here(root, prefix + prefix + "inc_all" + ext), width = 6, height = 4)  
+  ggsave(gs$g_inc_agp, filename = here::here(root, prefix + "inc_agp" + ext), width = 15, height = 4)  
+  ggsave(gs$g_inc_68, filename = here::here(root, prefix + "inc_68" + ext), width = 8, height = 4)  
+  ggsave(gs$g_inc_bind, filename = here::here(root, prefix + "inc_bind" + ext), width = 8, height = 7)  
+  ggsave(gs$g_avt_sch, filename = here::here(root, prefix + "avt_sch" + ext), width = 6, height = 4)  
+  ggsave(gs$g_avt_old, filename = here::here(root, prefix + "avt_oo" + ext), width = 6, height = 4)
+  
+}
 
 
 

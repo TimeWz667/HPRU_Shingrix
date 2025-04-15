@@ -1,12 +1,12 @@
 
 
-vis_thres <- function(stats_uv, stats_re, prefix, ext = ".png") {
+vis_thres <- function(stats_uv, stats_re) {
   require(ggplot2)
 
   gs <- list()
 
   d_main <- bind_rows(
-    stats_uv$stats_ce %>% 
+    stats_uv$stats_uv_ce %>% 
       filter(Index %in% c("Thres20_50", "Thres30_90")) %>% 
       filter(Age0 >= 60) %>% 
       filter((Arm == "RZV_1d" & Age0 >= 80) | Arm == "RZV_2d") %>% 
@@ -20,7 +20,7 @@ vis_thres <- function(stats_uv, stats_re, prefix, ext = ".png") {
       ) %>% 
       filter(!is.na(Arm)) %>% 
       select(Age = Age0, Arm, Index, M),
-    stats_re$stats_ce %>% 
+    stats_re$stats_re_ce %>% 
       filter(Scenario != "Overall") %>% 
       filter(Index %in% c("Thres20_50", "Thres30_90")) %>% 
       filter(Age1 >= 80) %>% 
@@ -68,7 +68,7 @@ vis_thres <- function(stats_uv, stats_re, prefix, ext = ".png") {
   
   labs_arm <- c(RZV_2d = "Two doses", RZV_1d = "Single dose")
   
-  waterfall <- stats_uv[[2]] %>% 
+  waterfall <- stats_uv$stats_uv_ce %>% 
     select(Scenario, Age0, Arm, Index, M) %>% 
     filter(Index %in% c(names(labs_comp), "dN_VacRZV_d", "dQ_HZ_d")) %>% 
     pivot_wider(names_from = Index, values_from = M) %>%
@@ -144,17 +144,33 @@ vis_thres <- function(stats_uv, stats_re, prefix, ext = ".png") {
     scale_x_continuous("Age of vaccination") +
     labs(caption = "1 QALY = 20,000 GBP")
   
-  
-  pre <- "g_" + glue::as_glue(prefix) + "_"
-  
-  ggsave(gs$g_panel, filename = here::here("docs", "figs", pre + "thres_panel" + ext), width = 12, height = 5)
-  
-  ggsave(gs$g_wf, filename = here::here("docs", "figs", pre + "rzv_waterfall" + ext), width = 8, height = 7.5)
-  ggsave(gs$g_comp_stack, filename = here::here("docs", "figs", pre + "rzv_mb_stack" + ext), width = 8, height = 5.5)
-  ggsave(gs$g_comp_fill, filename = here::here("docs", "figs", pre + "rzv_mb_fill" + ext), width = 8, height = 5.5)
-  
-  
   return(gs)
 }
+
+
+save_fig_thres <- function(gs, prefix = "", folder = NA, ext = ".pdf") {
+  require(tidyverse)
+  
+  if (!is.na(folder)) {
+    root <- here::here("docs", "figs", folder)
+    dir.create(root, showWarnings = F)
+  } else {
+    root <- here::here("docs", "figs")
+  }
+  
+  if (prefix != "") {
+    prefix <- glue::as_glue("g_") + prefix + "_"
+  } else {
+    prefix <- glue::as_glue("g_")
+  }
+  
+  ggsave(gs$g_panel, filename = here::here(root, prefix + "thres_panel" + ext), width = 12, height = 5)
+  
+  ggsave(gs$g_wf, filename = here::here(root, prefix + "rzv_waterfall" + ext), width = 8, height = 7.5)
+  ggsave(gs$g_comp_stack, filename = here::here(root, prefix + "rzv_mb_stack" + ext), width = 8, height = 5.5)
+  ggsave(gs$g_comp_fill, filename = here::here(root, prefix + "rzv_mb_fill" + ext), width = 8, height = 5.5)
+  
+}
+
 
 
