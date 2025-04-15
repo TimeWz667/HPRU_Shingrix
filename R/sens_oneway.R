@@ -113,8 +113,8 @@ summarise_sens_ce <- function(sens_ce, prefix = "", folder = NA, ext = ".pdf") {
     dir.create(root_tab, showWarnings = F)
     dir.create(root_fig, showWarnings = F)
   } else {
-    root_tab <- here::here("docs", "figs")
-    root_fig <- here::here("docs", "tabs")
+    root_tab <- here::here("docs", "tabs")
+    root_fig <- here::here("docs", "figs")
   }
   
   if (prefix != "") {
