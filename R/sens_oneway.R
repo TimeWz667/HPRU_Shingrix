@@ -1,4 +1,4 @@
-sens_ce <- function(yss_uv, prefix, ext = ".png") { 
+sens_ce <- function(yss_uv) { 
   require(tidyverse)
   
   fn_thres <- function(df) {
@@ -95,6 +95,38 @@ sens_ce <- function(yss_uv, prefix, ext = ".png") {
     arrange(R) %>% 
     pull(Pars)
   
+  sens_ce <- case1 %>% 
+    select(Pars, Direction, Thres, Age0) %>% 
+    left_join(case0 %>% select(Age0, Thres0 = Thres)) 
+
+  return(sens_ce)
+    
+}
+
+
+summarise_sens_ce <- function(sens_ce, prefix = "", folder = NA, ext = ".pdf") {
+  require(tidyverse)
+  
+  if (!is.na(folder)) {
+    root_tab <- here::here("docs", "tabs", folder)
+    root_fig <- here::here("docs", "figs", folder)
+    dir.create(root_tab, showWarnings = F)
+    dir.create(root_fig, showWarnings = F)
+  } else {
+    root_tab <- here::here("docs", "figs")
+    root_fig <- here::here("docs", "tabs")
+  }
+  
+  if (prefix != "") {
+    prefix_fig <- glue::as_glue("g_") + prefix + "_"
+    prefix_tab <- glue::as_glue(prefix) + "_"
+  } else {
+    prefix_fig <- glue::as_glue("g_")
+    prefix_tab <- glue::as_glue("")
+  }
+
+  write_csv(sens_ce, here::here(root_tab, prefix_tab + "sens_ce1d.csv"))
+  
   
   labs_lvs <- c(
     "C_GP_PHN" = "Cost, GP, PHN",
@@ -104,14 +136,10 @@ sens_ce <- function(yss_uv, prefix, ext = ".png") {
     "Q_HZ" = "QALY, HZ"
   )
   
-  sens_ce <- case1 %>% 
-    select(Pars, Direction, Thres, Age0) %>% 
-    left_join(case0 %>% select(Age0, Thres0 = Thres)) 
-  
   g_sens_ce <- sens_ce %>%
     filter(Age0 %in% c(75, 80, 85)) %>% 
     mutate(
-      Pars = factor(Pars, lvs),
+      Pars = factor(Pars, names(labs_lvs)),
       i = as.numeric(Pars),
       D = ifelse(Direction > 0, "+10%", "-10%"),
       a0 = paste0("Age of vaccination: ", Age0)
@@ -124,11 +152,8 @@ sens_ce <- function(yss_uv, prefix, ext = ".png") {
     scale_y_discrete("Components", labels = labs_lvs) +
     facet_wrap(a0~.)
   
+  ggsave(g_sens_ce, filename = here::here(root_fig, prefix_fig + "sens_ce1d" + ext), width = 8, height = 4)
   
-  pre <- "g_" + glue::as_glue(prefix) + "_"
   
-  ggsave(g_sens_ce, filename = here::here("docs", "figs", pre + "sens_ce" + ext), width = 8, height = 4)
   
-  return(g_sens_ce)
-    
 }

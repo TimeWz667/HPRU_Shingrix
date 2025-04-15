@@ -112,7 +112,7 @@ save_fig_proj <- function(gs, prefix = "", folder = NA, ext = ".pdf") {
     prefix <- glue::as_glue("g_")
   }
   
-  ggsave(gs$g_inc_all, filename = here::here(root, prefix + prefix + "inc_all" + ext), width = 6, height = 4)  
+  ggsave(gs$g_inc_all, filename = here::here(root, prefix + "inc_all" + ext), width = 6, height = 4)  
   ggsave(gs$g_inc_agp, filename = here::here(root, prefix + "inc_agp" + ext), width = 15, height = 4)  
   ggsave(gs$g_inc_68, filename = here::here(root, prefix + "inc_68" + ext), width = 8, height = 4)  
   ggsave(gs$g_inc_bind, filename = here::here(root, prefix + "inc_bind" + ext), width = 8, height = 7)  
