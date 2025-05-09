@@ -1,6 +1,7 @@
 library(tidyverse)
 library(readxl)
 library(ggpubr)
+library(tidybayes)
 
 theme_set(theme_bw())
 
