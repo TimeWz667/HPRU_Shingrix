@@ -43,7 +43,8 @@ load_inputs_epi <- function(pars_bg) {
       filter(IC == 0) %>% 
       left_join(r_mor_hz, by = c("Key", "Age")) %>% 
       select(-IC) %>% 
-      arrange(Key, Age)
+      arrange(Key, Age) %>% 
+      sample_table(n_sims)
   })
   
   pars$Epidemiology <- pars_epi
@@ -63,15 +64,23 @@ load_inputs_ce <- function(pars_epi, dis_e, dis_c) {
   load(here::here("data", "processed_ce", "Cost_GP_Gauthier.rdata"))
   # load(here::here("data", "processed_ce", "QOL_LE.rdata"))
   cost_vac <- read_csv(here::here("data", "processed_ce", "Cost_Vac.csv"))
-  QL <- read_csv(here::here("data", "processed_ce", "QALY_loss_sims_uk_b.csv"))
-  QL <- sample_table(QL, n_sims)
+  
+  ql_ph <- read_csv(here::here("data", "processed_ce", "pars_ql_ph_uk.csv")) %>% sample_table(n_sims)
+  ql_pn <- read_csv(here::here("data", "processed_ce", "pars_ql_pn_uk.csv")) %>% sample_table(n_sims)
+  ql_0 <- read_csv(here::here("data", "processed_ce", "pars_ql_baseline_uk.csv")) %>% sample_table(n_sims)
   
   if (dis_e >= 0.035) {
-    QL <- QL %>% select(Key, Age, QL = QL35, QLH = QLH35)
+    QL <- ql_ph %>% select(Key, Age, QL_ph = QL35) %>% 
+      left_join(ql_pn %>% select(Key, Age, QL_pn = QL35)) %>% 
+      left_join(ql_0 %>% select(Key, Age, QL_0 = QL35))
   } else if (dis_e >= 0.015) {
-    QL <- QL %>% select(Key, Age, QL = QL15, QLH = QLH15)
+    QL <- ql_ph %>% select(Key, Age, QL_ph = QL15) %>% 
+      left_join(ql_pn %>% select(Key, Age, QL_pn = QL15)) %>% 
+      left_join(ql_0 %>% select(Key, Age, QL_0 = QL15))
   } else {
-    QL <- QL %>% select(Key, Age, QL = QL00, QLH = QLH00)
+    QL <- ql_ph %>% select(Key, Age, QL_ph = QL00) %>% 
+      left_join(ql_pn %>% select(Key, Age, QL_pn = QL00)) %>% 
+      left_join(ql_0 %>% select(Key, Age, QL_0 = QL00))
   }
   
   pars$CostVac <- cost_vac %>% 
@@ -105,7 +114,7 @@ load_inputs_ce <- function(pars_epi, dis_e, dis_c) {
     select(Key, cost_GP_pp_non_PHN_HZ_inf, cost_GP_pp_PHN_inf)
   
   
-  pars$CostEff <- sample_table(QL, n_sims) %>% 
+  pars$CostEff <- QL %>% 
     left_join(c_hosp, by = "Age") %>% 
     left_join(sample_table(c_gp, n_sims), by = "Key")
   

@@ -62,7 +62,7 @@ vis_thres <- function(stats_uv, stats_re) {
     "dQ_HZ_d" = "HZ prevention",
     "dQ_Life_d" = "Survival", 
     "dC_GP_d" = "GP care",
-    "dC_Hosp_d" = "Hospitialisation",
+    "dC_Hosp_d" = "Hospitalization",
     "dC_VacRZV_d" = "Vaccination"
   )
   

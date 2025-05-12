@@ -88,8 +88,8 @@ m_cohort$append_ce <- function(df, pars) {
     mutate(
       cost_vac_pp = ifelse(is.na(cost_vac_pp), 0, cost_vac_pp),
       Q_Life = QALY,
-      Q_HZ = - N_HZ * QLH,
-      Q_HZ_Norm = - N_HZ * QL,
+      Q_HZ = - N_HZ * QL_ph,
+      Q_HZ_Norm = - N_HZ * QL_pn,
       Q_All = Q_Life + Q_HZ,
       C_Hosp = N_HZ_Hosp * cost_hosp_pp_inf,
       C_GP_NonPHN = (N_HZ_GP - N_HZ_PHN_GP) * cost_GP_pp_non_PHN_HZ_inf,
