@@ -19,7 +19,7 @@ vis_proj <- function(stats_proj) {
   
   gs$g_inc_all <- stats_proj$stats_proj_all %>% 
     filter(Index == "IncR_HZ") %>% 
-    filter(Year <= 2040 & Year >= 2022) %>%
+    filter(Year <= 2050 & Year >= 2022) %>%
     filter(Scenario %in% c("Stay", "ToRZV", "Sch65", "Sch", "Sch1d85", "Sch2d85")) %>% 
     mutate(Scenario = factor(Scenario, names(tags))) %>% 
     ggplot() +
@@ -33,7 +33,7 @@ vis_proj <- function(stats_proj) {
   
   gs$g_inc_agp <- stats_proj$stats_proj_agp %>% 
     filter(Index == "IncR_HZ") %>% 
-    filter(Year <= 2040 & Year >= 2022) %>%
+    filter(Year <= 2050 & Year >= 2022) %>%
     filter(Scenario %in% c("Stay", "ToRZV", "Sch65", "Sch", "Sch1d85", "Sch2d85")) %>% 
     mutate(Scenario = factor(Scenario, names(tags))) %>% 
     ggplot() +
@@ -48,7 +48,7 @@ vis_proj <- function(stats_proj) {
   
   gs$g_inc_68 <- stats_proj$stats_proj_68 %>% 
     filter(Index == "IncR_HZ") %>% 
-    filter(Year <= 2040 & Year >= 2022) %>%
+    filter(Year <= 2050 & Year >= 2022) %>%
     filter(Scenario %in% c("Stay", "ToRZV", "Sch65", "Sch", "Sch1d85", "Sch2d85")) %>% 
     mutate(Scenario = factor(Scenario, names(tags))) %>% 
     ggplot() +
@@ -67,7 +67,7 @@ vis_proj <- function(stats_proj) {
   )
   
   gs$g_avt_sch <- stats_proj$diff_proj_zvl %>%
-    filter(Year <= 2040 & Year >= 2022) %>%
+    filter(Year <= 2050 & Year >= 2022) %>%
     filter(Index == "Avt_Inc") %>%
     filter(Scenario %in% c("Stay", "ToRZV", "Sch65", "Sch")) %>% 
     mutate(Scenario = factor(Scenario, names(tags))) %>% 
@@ -80,7 +80,7 @@ vis_proj <- function(stats_proj) {
   
   
   gs$g_avt_old <- stats_proj$diff_proj_ch %>%
-    filter(Year <= 2040 & Year >= 2022) %>%
+    filter(Year <= 2050 & Year >= 2022) %>%
     filter(Index == "Avt_Inc") %>%
     filter(Scenario %in% c("Sch", "Sch1d85", "Sch2d85", "Sch1d95", "Sch2d95")) %>% 
     mutate(Scenario = factor(Scenario, names(tags))) %>% 
