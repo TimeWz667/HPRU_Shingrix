@@ -40,7 +40,7 @@ vis_thres <- function(stats_uv, stats_re) {
     "RZV_2d" = "Two-doses RZV\n",
     "RZV_1d" = "Single-dose RZV\n",
     "ReRZV_2d 70" = "Two-doses RZV\nZVL at 70 YOA",
-    "ReRZV_1d 70" = "Single-doses RZV\nZVL at 70 YOA"
+    "ReRZV_1d 70" = "Single-dose RZV\nZVL at 70 YOA"
   )
   
   gs$g_panel <- d_main %>% 
