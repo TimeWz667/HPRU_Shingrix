@@ -30,7 +30,7 @@ gs$g_gpr_r_hz_gp <- Epi_HZ %>%
   geom_pointinterval(data = epi_gp %>% filter(Age <= 90), aes(x = Age, y = M, ymin = L, ymax = U)) +
   scale_colour_brewer() +
   facet_wrap(.~ IC, scales = "free_y", labeller = label_both) +
-  scale_y_continuous("Incidence HZ, GP-only, per 1,000", labels = scales::number_format(scale = 1e3)) +
+  scale_y_continuous("Incidence HZ, outpatients, per 1,000", labels = scales::number_format(scale = 1e3)) +
   expand_limits(y = 0)
 
 
@@ -208,13 +208,15 @@ g_comp <- ggarrange(
   nrow = 2, ncol = 2, align = "v"
 )
 
+g_comp
+
 ggsave(g_comp, filename = here::here("outputs", "figs", "g_epi_nic_comp.png"), width = 7.5, height = 6.8)
 
 
 
 
+load(here::here("data", "processed_demography", "Population_ONS.rdata"))
 
-load("D:/Projects/HPRU/Shingrix/Analyses/data/processed_demography/Population_ONS.rdata")
 demo <- demo_ons %>% filter(Location == "England") %>% 
   filter(Age < 100) %>% 
   mutate(

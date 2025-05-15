@@ -60,9 +60,10 @@ load_inputs_ce <- function(pars_epi, dis_e, dis_c) {
   n_sims <- pars$N_Sims
   
   ## Parameters: CE -----
-  load(here::here("data", "processed_ce", "Cost_Hospitalisation_NIC.rdata"))
+  # load(here::here("data", "processed_ce", "Cost_Hospitalisation_NIC.rdata"))
   load(here::here("data", "processed_ce", "Cost_GP_Gauthier.rdata"))
-  # load(here::here("data", "processed_ce", "QOL_LE.rdata"))
+  load(here::here("data", "processed_ce", "coef_cost_hosp_nic.rdata"))
+  
   cost_vac <- read_csv(here::here("data", "processed_ce", "Cost_Vac.csv"))
   
   ql_ph <- read_csv(here::here("data", "processed_ce", "pars_ql_ph_uk.csv")) %>% sample_table(n_sims)
@@ -100,11 +101,19 @@ load_inputs_ce <- function(pars_epi, dis_e, dis_c) {
   
   ratio_inflation <- cpi_healthcare_2023 / cpi_healthcare_2012
   
-  c_hosp <- Cost_Hospitalisation_HZ %>% 
+  c_hosp <- crossing(Key = 1:n_sims, Age = 50:100) %>% 
+    left_join(coef_cost_hosp) %>% 
     mutate(
-      cost_hosp_pp_inf = Hospitalisation_costs_pp_HZ * ratio_inflation
+      cost_hosp_pp = b0 + ba * Age,
+      cost_hosp_pp_inf = cost_hosp_pp * ratio_inflation
     ) %>% 
-    select(Age, cost_hosp_pp_inf)
+    select(Key, Age, cost_hosp_pp, cost_hosp_pp_inf)
+  # 
+  # c_hosp <- Cost_Hospitalisation_HZ %>% 
+  #   mutate(
+  #     cost_hosp_pp_inf = Hospitalisation_costs_pp_HZ * ratio_inflation
+  #   ) %>% 
+  #   select(Age, cost_hosp_pp_inf)
   
   c_gp <- Cost_GP %>% 
     mutate(
@@ -115,7 +124,7 @@ load_inputs_ce <- function(pars_epi, dis_e, dis_c) {
   
   
   pars$CostEff <- QL %>% 
-    left_join(c_hosp, by = "Age") %>% 
+    left_join(sample_table(c_hosp, n_sims), by = c("Key", "Age")) %>% 
     left_join(sample_table(c_gp, n_sims), by = "Key")
   
   return(pars)

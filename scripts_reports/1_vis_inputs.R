@@ -333,18 +333,3 @@ ggsave(g_uptake_gof, filename = here::here("docs", "figs", "g_vaccine_uptake.png
 ggsave(g_vax_comp, filename = here::here("docs", "figs", "g_vaccine_comparison.png"), width = 7, height = 3)
 
 
-## Epidemiology
-
-
-
-load(file = here::here("pars", "parset_nic_c35q35y24n1k_realworld.rdata"))
-
-pars_set$Epidemiology %>% 
-  ggplot(aes(x = Age, y = r_hz * (1 - p_gp))) +
-  stat_lineribbon() +
-  scale_y_continuous("Incidence of HZ-related hospitalisation, per 100k", labels = scales::number_format(scale = 1e5)) +
-  scale_fill_brewer()
-
-
-
-

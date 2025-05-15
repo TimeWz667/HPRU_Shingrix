@@ -49,7 +49,7 @@ list(
   tar_target(gs_thres, vis_thres(stats_uv, stats_re), pattern = map(stats_uv, stats_re)),
 
 
-  ## Long-term projection
+  # ## Long-term projection
   tar_target(yss_proj, exec_projection(pars_proj), pattern = map(pars_proj)),
   tar_target(stats_proj, summarise_proj(yss_proj), pattern = map(yss_proj)),
   tar_target(gs_proj, vis_proj(stats_proj), pattern = map(stats_proj)),
@@ -65,19 +65,19 @@ list(
   tar_target(tabs_prog, save_tabs(stats_prog, folder = "prog", prefix = paste0("tab_", vtype)), pattern = map(stats_prog, vtype)),
 
   tar_target(figs_thres, save_fig_thres(gs_thres, folder = paste0(vtype, "_", dis), ext = ".pdf"), pattern = map(gs_thres, cross(vtype, dis))),
-  tar_target(figs_proj, save_fig_proj(gs_proj, folder = "proj", prefix = vtype, ext = ".pdf"), pattern = map(gs_proj, vtype)),
+  tar_target(figs_proj, save_fig_proj(gs_proj, folder = "proj", prefix = vtype, ext = ".pdf"), pattern = map(gs_proj, vtype))
 
-  ## Sensitivity analyses
-  tar_target(f_rzv_zle, here::here("pars", "pars_ve_rzv_rw_zle.rdata"), format = "file"),
-  tar_target(pars_waning, load_inputs_waning(pars_ce, f_ve_zvl = f_zvl, f_ve_rzv_zlg = f_rzv, f_ve_rzv_zle = f_rzv_zle), pattern = slice(pars_ce, 2)),
-  tar_target(stats_sens_waning, sens_waning(pars_waning, age0s = seq(50, 95, 5))),
-  tar_target(out_sens_waning, summarise_sens_waning(stats_sens_waning, folder = "rw_15")),
-
-
-  tar_target(stats_psa_price, sens_price(yss_uv), pattern = map(yss_uv)),
-  tar_target(out_psa_price, summarise_sens_price(stats_psa_price, folder = paste0(vtype, "_", dis)), pattern = map(stats_psa_price, cross(vtype, dis))),
-
-  tar_target(stats_sens_ce1w, sens_ce(yss_uv), pattern = map(yss_uv)),
-  tar_target(out_sens_ce1w, summarise_sens_ce(stats_sens_ce1w, folder = paste0(vtype, "_", dis)), pattern = map(stats_sens_ce1w, cross(vtype, dis)))
+  # ## Sensitivity analyses
+  # tar_target(f_rzv_zle, here::here("pars", "pars_ve_rzv_rw_zle.rdata"), format = "file"),
+  # tar_target(pars_waning, load_inputs_waning(pars_ce, f_ve_zvl = f_zvl, f_ve_rzv_zlg = f_rzv, f_ve_rzv_zle = f_rzv_zle), pattern = slice(pars_ce, 2)),
+  # tar_target(stats_sens_waning, sens_waning(pars_waning, age0s = seq(50, 95, 5))),
+  # tar_target(out_sens_waning, summarise_sens_waning(stats_sens_waning, folder = "rw_15")),
+  # 
+  # 
+  # tar_target(stats_psa_price, sens_price(yss_uv), pattern = map(yss_uv)),
+  # tar_target(out_psa_price, summarise_sens_price(stats_psa_price, folder = paste0(vtype, "_", dis)), pattern = map(stats_psa_price, cross(vtype, dis))),
+  # 
+  # tar_target(stats_sens_ce1w, sens_ce(yss_uv), pattern = map(yss_uv)),
+  # tar_target(out_sens_ce1w, summarise_sens_ce(stats_sens_ce1w, folder = paste0(vtype, "_", dis)), pattern = map(stats_sens_ce1w, cross(vtype, dis)))
 
 )
