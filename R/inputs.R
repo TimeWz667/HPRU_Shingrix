@@ -96,10 +96,12 @@ load_inputs_ce <- function(pars_epi, dis_e, dis_c) {
     )
   
   ## CPI for healthcare (2015 = 100)
+  cpi_healthcare_2006 <- 77.7
   cpi_healthcare_2012 <- 93.2
-  cpi_healthcare_2023 <- 126.4
+  cpi_healthcare_2024 <- 131.1 # 2024 Jan
   
-  ratio_inflation <- cpi_healthcare_2023 / cpi_healthcare_2012
+  
+  ratio_inflation <- cpi_healthcare_2024 / cpi_healthcare_2012
   
   c_hosp <- crossing(Key = 1:n_sims, Age = 50:100) %>% 
     left_join(coef_cost_hosp) %>% 
@@ -108,16 +110,12 @@ load_inputs_ce <- function(pars_epi, dis_e, dis_c) {
       cost_hosp_pp_inf = cost_hosp_pp * ratio_inflation
     ) %>% 
     select(Key, Age, cost_hosp_pp, cost_hosp_pp_inf)
-  # 
-  # c_hosp <- Cost_Hospitalisation_HZ %>% 
-  #   mutate(
-  #     cost_hosp_pp_inf = Hospitalisation_costs_pp_HZ * ratio_inflation
-  #   ) %>% 
-  #   select(Age, cost_hosp_pp_inf)
+  
+  ratio_inflation <- cpi_healthcare_2006 / cpi_healthcare_2012
   
   c_gp <- Cost_GP %>% 
     mutate(
-      cost_GP_pp_non_PHN_HZ_inf = cost_gp_pp_non_PHN_HZ  * ratio_inflation,
+      cost_GP_pp_non_PHN_HZ_inf = cost_gp_pp_non_PHN_HZ * ratio_inflation,
       cost_GP_pp_PHN_inf = cost_GP_pp_PHN * ratio_inflation
     ) %>% 
     select(Key, cost_GP_pp_non_PHN_HZ_inf, cost_GP_pp_PHN_inf)
