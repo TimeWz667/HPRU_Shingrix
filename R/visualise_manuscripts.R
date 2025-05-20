@@ -87,7 +87,12 @@ vis_thres <- function(stats_uv, stats_re) {
       MB = ifelse(Type == "QoL", value * 2e4, -value)
     )
   
-  
+  peak <- waterfall %>% 
+    filter(Index %in% c("dC_GP_d", "dC_Hosp_d")) %>% 
+    group_by(Arm, Age0) %>% 
+    mutate(cMB = c(0, cumsum(MB)[-2])) %>% 
+    group_by(Arm, Index) %>% 
+    filter(MB == max(MB))
   
   gs$g_wf <- waterfall %>% 
     group_by(Age0, Arm) %>% 
@@ -126,6 +131,39 @@ vis_thres <- function(stats_uv, stats_re) {
     geom_bar(aes(y = MB, fill = Index), stat = "identity", position = "stack", colour = NA, width = 1) +
     scale_y_continuous("Monetary benefit in GBP") +
     scale_fill_discrete("Components", labels = labs_comp) +
+    facet_grid(.~Arm, labeller = labeller(Arm = labs_arm)) +
+    scale_x_continuous("Age of vaccination") +
+    labs(caption = "1 QALY = 20,000 GBP")
+
+  
+  gs$g_comp_stack_ann <- waterfall %>% 
+    group_by(Age0, Arm) %>% 
+    filter(Index != "dC_VacRZV_d") %>% 
+    #mutate(Index = fct_rev(Index)) %>% 
+    filter(Age0 <= 95) %>% 
+    ggplot(aes(x = Age0)) +
+    geom_bar(aes(y = MB, fill = Index), stat = "identity", position = "stack", colour = NA, width = 1) +
+    geom_linerange(data = peak, aes(x = Age0, ymin = cMB, ymax = cMB + MB)) +
+    geom_text(data = peak, aes(x = Age0, y = cMB + MB, label = sprintf("£%s", round(MB, 1))), hjust = 0.5, vjust = -0.5) +
+    scale_y_continuous("Monetary benefit in GBP") +
+    scale_fill_discrete("Components", labels = labs_comp) +
+    facet_grid(.~Arm, labeller = labeller(Arm = labs_arm)) +
+    scale_x_continuous("Age of vaccination") +
+    labs(caption = "1 QALY = 20,000 GBP")
+  
+  
+  gs$g_comp_stack_ann_al <- waterfall %>% 
+    group_by(Age0, Arm) %>% 
+    filter(Index != "dC_VacRZV_d") %>% 
+    #mutate(Index = fct_rev(Index)) %>% 
+    filter(Age0 <= 95) %>% 
+    ggplot(aes(x = Age0)) +
+    geom_bar(aes(y = MB, fill = Index, alpha = ifelse(Type == "Cost", 1, 0.9)), stat = "identity", position = "stack", colour = NA, width = 1) +
+    geom_linerange(data = peak, aes(x = Age0, ymin = cMB, ymax = cMB + MB)) +
+    geom_text(data = peak, aes(x = Age0, y = cMB + MB, label = sprintf("£%s", round(MB, 1))), hjust = 0.5, vjust = -0.5) +
+    scale_y_continuous("Monetary benefit in GBP") +
+    scale_fill_discrete("Components", labels = labs_comp) +
+    scale_alpha(range = c(0.3, 1), guide = 'none') +
     facet_grid(.~Arm, labeller = labeller(Arm = labs_arm)) +
     scale_x_continuous("Age of vaccination") +
     labs(caption = "1 QALY = 20,000 GBP")
@@ -168,6 +206,8 @@ save_fig_thres <- function(gs, prefix = "", folder = NA, ext = ".pdf") {
   
   ggsave(gs$g_wf, filename = here::here(root, prefix + "rzv_waterfall" + ext), width = 8, height = 7.5)
   ggsave(gs$g_comp_stack, filename = here::here(root, prefix + "rzv_mb_stack" + ext), width = 8, height = 5.5)
+  ggsave(gs$g_comp_stack_ann, filename = here::here(root, prefix + "rzv_mb_stack_ann" + ext), width = 8, height = 5.5)
+  ggsave(gs$g_comp_stack_ann_al, filename = here::here(root, prefix + "rzv_mb_stack_ann_alp" + ext), width = 8, height = 5.5)
   ggsave(gs$g_comp_fill, filename = here::here(root, prefix + "rzv_mb_fill" + ext), width = 8, height = 5.5)
   
 }
