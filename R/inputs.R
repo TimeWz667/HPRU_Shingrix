@@ -111,7 +111,7 @@ load_inputs_ce <- function(pars_epi, dis_e, dis_c) {
     ) %>% 
     select(Key, Age, cost_hosp_pp, cost_hosp_pp_inf)
   
-  ratio_inflation <- cpi_healthcare_2006 / cpi_healthcare_2012
+  ratio_inflation <- cpi_healthcare_2024 / cpi_healthcare_2006
   
   c_gp <- Cost_GP %>% 
     mutate(

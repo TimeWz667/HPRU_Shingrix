@@ -2,6 +2,7 @@ library(targets)
 library(tidyverse)
 library(tidybayes)
 library(readxl)
+library(ggpubr)
 
 theme_set(theme_bw())
 
@@ -199,26 +200,34 @@ gs$g_cost_hosp <- pars$CostEff %>%
   scale_y_continuous("GBP(£)") +
   labs(subtitle = "Cost: direct medical cost per hospitalised episode")
 
+
+iqr <- pars$CostEff %>% 
+  filter(Age == 70) %>% 
+  pull(cost_GP_pp_non_PHN_HZ_inf) %>% 
+  quantile(c(0.1, 0.5, 0.9))
+
 gs$g_cost_gp <- pars$CostEff %>% 
   ggplot() +
   stat_interval(aes(x = Age, y = cost_GP_pp_non_PHN_HZ_inf)) +
   scale_colour_brewer() +
-  scale_y_continuous("GBP(£)", limits = c(95, 110)) +
+  scale_y_continuous("GBP(£)", limits = iqr[2] + 8 * c(iqr[1] - iqr[2], iqr[3] - iqr[2])) +
   labs(subtitle = "Cost: direct medical cost per GP only episode, non-PHN")
+
+
+iqr <- pars$CostEff %>% 
+  filter(Age == 70) %>% 
+  pull(cost_GP_pp_PHN_inf) %>% 
+  quantile(c(0.1, 0.5, 0.9))
 
 gs$g_cost_gpphn <- pars$CostEff %>% 
   ggplot() +
   stat_interval(aes(x = Age, y = cost_GP_pp_PHN_inf)) +
   scale_colour_brewer() +
-  scale_y_continuous("GBP(£)", limits = c(425, 500)) +
+  scale_y_continuous("GBP(£)", limits = iqr[2] + 8 * c(iqr[1] - iqr[2], iqr[3] - iqr[2])) +
   labs(subtitle = "Cost: direct medical cost per GP only episode, PHN")
 
 
-
-
-
 #### Vaccine
-
 apply_lor <- function(p0, lor) 1 / (1 + exp(-log(p0 / (1 - p0)) - lor))
 
 
@@ -238,6 +247,7 @@ load(here::here("pars", "pars_ve_lor.rdata"))
 
 
 ## ZVL VE -----
+load(here::here("pars", "pars_ve_zvl_rwa.rdata"))
 pars_ve_zvl %>% 
   mutate(AgeVac = Age - Yr) %>% 
   filter(AgeVac %in% seq(70, 75, 5)) %>% 
@@ -289,6 +299,9 @@ gs$g_vac_ve_zvl <- pars$VE_ZVL %>%
 
 
 ## RZV VE -----
+load(here::here("pars", "pars_ve_rzv_rw.rdata"))
+pars_ve_rzv <- pars_ve_rzv_rw
+
 d <- pars_ve_rzv%>% 
   filter(Yr <= 20) %>% 
   #filter(Yr %in% c(5, 10)) %>% 
@@ -418,6 +431,20 @@ gs$g_bind <- ggarrange(
 )
   
 
+gs$g_base <- ggarrange(
+  gs$g_r_hz,
+  gs$g_r_hz_gp,
+  gs$g_p_phn,
+  gs$g_p_mor,
+  gs$g_cost_gp,
+  gs$g_cost_gpphn,
+  gs$g_cost_hosp, 
+  gs$g_ql_ph,
+  nrow = 3,
+  ncol = 3,
+  common.legend = T, legend = "bottom"
+)
+
 gs$g_vac <- ggarrange(
   gs$g_vac_ve_zvl,
   gs$g_vac_ve_rzv,
@@ -425,8 +452,6 @@ gs$g_vac <- ggarrange(
   nrow = 3,
   ncol = 1
 )
-
-
 
 
 gs$g_epi <- ggarrange(
@@ -448,10 +473,10 @@ gs$g_cost <- ggarrange(
 
 
 
-
-
 ggsave(gs$g_epi, filename = here::here("docs", "figs", "data", "g_epi.png"), width = 5.5, height = 10)
 ggsave(gs$g_vac, filename = here::here("docs", "figs", "data", "g_vac.png"), width = 8.5, height = 15)
+ggsave(gs$g_base, filename = here::here("docs", "figs", "data", "g_base.png"), width = 15, height = 14)
+
 ggsave(gs$g_demo, filename = here::here("docs", "figs", "data", "g_demo.png"), width = 7.5, height = 10)
 ggsave(gs$g_cost, filename = here::here("docs", "figs", "data", "g_cost.png"), width = 5.5, height = 10)
 ggsave(gs$g_bind, filename = here::here("docs", "figs", "data", "g_bind.png"), width = 15, height = 20)
