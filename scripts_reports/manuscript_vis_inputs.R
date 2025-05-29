@@ -299,15 +299,14 @@ gs$g_vac_ve_zvl <- pars$VE_ZVL %>%
 
 
 ## RZV VE -----
-load(here::here("pars", "pars_ve_rzv_rw.rdata"))
-pars_ve_rzv <- pars_ve_rzv_rw
+load(here::here("pars", "pars_ve_rzv_rw_zlg.rdata"))
 
 d <- pars_ve_rzv%>% 
   filter(Yr <= 20) %>% 
   #filter(Yr %in% c(5, 10)) %>% 
   group_by(Vaccine, Yr) %>% 
   summarise(
-    VE = median(VE)
+    VE = mean(VE)
   ) %>% 
   mutate(
     Tag = "Real-world, two doses (Baseline)"
@@ -346,12 +345,11 @@ ve_rzv <- bind_rows(
   )
 
 
-gs$g_vac_ve_rzv <- pars$VE_RZV_2d %>% 
-  select(Yr = TimeVac, VE = Protection) %>% 
+gs$g_vac_ve_rzv <- pars_ve_rzv %>% 
   filter(Yr <= 20) %>% 
   group_by(Yr) %>% 
   summarise(
-    M = mean(apply_lor(VE, -lor_rw)),
+    M = median(apply_lor(VE, -lor_rw)),
     L = quantile(apply_lor(VE, -lor_rw), 0.025),
     U = quantile(apply_lor(VE, -lor_rw), 0.975)
   ) %>% 
@@ -366,6 +364,8 @@ gs$g_vac_ve_rzv <- pars$VE_RZV_2d %>%
   scale_color_discrete("") +
   expand_limits(y = 0, x = 0) +
   theme(legend.position = c(0.1, 0.1), legend.justification = c(0, 0))
+
+gs$g_vac_ve_rzv 
 
 
 ## ZVL uptake
