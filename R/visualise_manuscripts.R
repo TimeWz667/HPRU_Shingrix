@@ -127,6 +127,7 @@ vis_thres <- function(stats_uv, stats_re) {
     filter(Index != "dC_VacRZV_d") %>% 
     #mutate(Index = fct_rev(Index)) %>% 
     filter(Age0 <= 95) %>% 
+    filter(Age0 >= 60) %>% 
     ggplot(aes(x = Age0)) +
     geom_bar(aes(y = MB, fill = Index), stat = "identity", position = "stack", colour = NA, width = 1) +
     scale_y_continuous("Monetary benefit in GBP") +
@@ -141,6 +142,7 @@ vis_thres <- function(stats_uv, stats_re) {
     filter(Index != "dC_VacRZV_d") %>% 
     #mutate(Index = fct_rev(Index)) %>% 
     filter(Age0 <= 95) %>% 
+    filter(Age0 >= 60) %>% 
     ggplot(aes(x = Age0)) +
     geom_bar(aes(y = MB, fill = Index), stat = "identity", position = "stack", colour = NA, width = 1) +
     geom_linerange(data = peak, aes(x = Age0, ymin = cMB, ymax = cMB + MB)) +
@@ -157,6 +159,7 @@ vis_thres <- function(stats_uv, stats_re) {
     filter(Index != "dC_VacRZV_d") %>% 
     #mutate(Index = fct_rev(Index)) %>% 
     filter(Age0 <= 95) %>% 
+    filter(Age0 >= 60) %>% 
     ggplot(aes(x = Age0)) +
     geom_bar(aes(y = MB, fill = Index, alpha = ifelse(Type == "Cost", 1, 0.9)), stat = "identity", position = "stack", colour = NA, width = 1) +
     geom_linerange(data = peak, aes(x = Age0, ymin = cMB, ymax = cMB + MB)) +
@@ -174,6 +177,7 @@ vis_thres <- function(stats_uv, stats_re) {
     filter(Index != "dC_VacRZV_d") %>% 
     #mutate(Index = fct_rev(Index)) %>% 
     filter(Age0 <= 95) %>% 
+    filter(Age0 >= 60) %>% 
     ggplot(aes(x = Age0)) +
     geom_bar(aes(y = MB, fill = Index), stat = "identity", position = "fill", colour = NA, width = 1) +
     scale_fill_discrete("Components", labels = labs_comp) +
