@@ -75,7 +75,7 @@ m_cohort$run_to_end <- function(df, pars) {
       N_HZ_Hosp = N_HZ - N_HZ_GP,
       N_HZ_PHN = p_phn * N_HZ,
       N_HZ_PHN_GP = p_gp * N_HZ_PHN,
-      N_HZ_Death = p_mor_hz * N_HZ,
+      N_HZ_Death = r_mor_hz * N_Alive,
       QALY = norm * (N_Alive + N_Start) / 2
     ) %>% 
     select(-starts_with(c("r_", "p_", "n_"), ignore.case = F), - N)
