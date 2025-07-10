@@ -56,7 +56,7 @@ list(
 
   ## Programme-based measures
   tar_target(profile, sim_profile(pars_proj), pattern = map(pars_proj)),
-  tar_target(stats_prog, exec_programme(pars_proj, profile, stats_uv, stats_re), pattern = map(pars_proj, profile, slice(stats_uv, c(2, 5)), slice(stats_re, c(2, 5)))),
+  tar_target(stats_prog, exec_programme(pars_proj, profile, stats_uv, stats_re), pattern = map(pars_proj, profile, slice(stats_uv, c(3, 6)), slice(stats_re, c(3, 6)))),
 
   ## Output
   tar_target(tabs_uv, save_tabs(stats_uv, folder = paste0(vtype, "_", dis)), pattern = map(stats_uv, cross(vtype, dis))),
@@ -69,9 +69,9 @@ list(
 
   ## Sensitivity analyses
   tar_target(f_rzv_zle, here::here("pars", "pars_ve_rzv_rw_zle.rdata"), format = "file"),
-  tar_target(pars_waning, load_inputs_waning(pars_ce, f_ve_zvl = f_zvl, f_ve_rzv_zlg = f_rzv, f_ve_rzv_zle = f_rzv_zle), pattern = slice(pars_ce, 2)),
+  tar_target(pars_waning, load_inputs_waning(pars_ce, f_ve_zvl = f_zvl, f_ve_rzv_zlg = f_rzv, f_ve_rzv_zle = f_rzv_zle), pattern = slice(pars_ce, 3)),
   tar_target(stats_sens_waning, sens_waning(pars_waning, age0s = seq(50, 95, 5))),
-  tar_target(out_sens_waning, summarise_sens_waning(stats_sens_waning, folder = "rw_15", ext = ".png")),
+  tar_target(out_sens_waning, summarise_sens_waning(stats_sens_waning, folder = "rw_35", ext = ".png")),
 
 
   tar_target(stats_psa_price, sens_price(yss_uv), pattern = map(yss_uv)),

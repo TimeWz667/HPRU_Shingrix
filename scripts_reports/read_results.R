@@ -2,12 +2,12 @@ library(tidyverse)
 
 
 
-tab_ce_re <- read_csv(here::here("docs", "tabs", "rw_15", "stats_re_ce.csv"))
+tab_ce_re <- read_csv(here::here("docs", "tabs", "rw_35", "stats_re_ce.csv"))
 tab_ce_re %>% 
   filter(Index == "Thres")
 
 
-tab_ce_uv <- read_csv(here::here("docs", "tabs", "rw_15", "stats_uv_ce.csv"))
+tab_ce_uv <- read_csv(here::here("docs", "tabs", "rw_35", "stats_uv_ce.csv"))
 tab_ce_uv %>% 
   filter(Index == "Thres")
 
