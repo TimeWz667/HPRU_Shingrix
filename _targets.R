@@ -65,7 +65,7 @@ list(
   tar_target(tabs_prog, save_tabs(stats_prog, folder = "prog", prefix = paste0("tab_", vtype)), pattern = map(stats_prog, vtype)),
   
   tar_target(figs_thres, save_fig_thres(gs_thres, folder = paste0(vtype, "_", dis), ext = ".png"), pattern = map(gs_thres, cross(vtype, dis))),
-  tar_target(figs_proj, save_fig_proj(gs_proj, folder = "proj", prefix = vtype, ext = ".pdf"), pattern = map(gs_proj, vtype))
+  tar_target(figs_proj, save_fig_proj(gs_proj, folder = "proj", prefix = vtype, ext = ".pdf"), pattern = map(gs_proj, vtype)),
 
   ## Sensitivity analyses
   tar_target(f_rzv_zle, here::here("pars", "pars_ve_rzv_rw_zle.rdata"), format = "file"),
