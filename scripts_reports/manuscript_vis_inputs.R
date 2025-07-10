@@ -90,7 +90,7 @@ gs$g_p_mor <- pars$Epidemiology %>%
   ggplot() +
   stat_interval(aes(x = Age, y = r_mor_hz), linewidth = isize) +
   scale_colour_brewer() +
-  scale_y_continuous("Deaths per 1,000 case-years", labels = scales::number_format(scale = 1e3)) +
+  scale_y_continuous("Deaths per 1,000,000 person-year", labels = scales::number_format(scale = 1e6)) +
   labs(subtitle = "Herpes zoster mortality", colour = "Level") +
   coord_cartesian(ylim = c(0, 3.3e-5), xlim = c(48, 102), expand = FALSE)
 
